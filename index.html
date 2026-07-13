@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#1a1410" />
+  <title>ココニイタ。</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- レーダー画面 -->
+  <section id="radar-screen" class="screen">
+    <header class="topbar">
+      <h1 class="brand">ココニイタ。</h1>
+      <button id="range-btn" class="chip" type="button">500m</button>
+    </header>
+
+    <div class="radar-wrap">
+      <svg id="radar" viewBox="-100 -100 200 200" preserveAspectRatio="xMidYMid meet">
+        <!-- 同心円 -->
+        <g class="radar-rings">
+          <circle r="98" class="ring outer" />
+          <circle r="66" class="ring" />
+          <circle r="33" class="ring" />
+          <line x1="-98" y1="0" x2="98" y2="0" class="ring cross" />
+          <line x1="0" y1="-98" x2="0" y2="98" class="ring cross" />
+        </g>
+        <!-- 方位に合わせて回転するレイヤー -->
+        <g id="radar-rotate">
+          <!-- 北マーカー（自分の向き基準、回転する） -->
+          <text x="0" y="-90" class="compass-n" text-anchor="middle">N</text>
+          <!-- 記憶ピンはJSで動的追加 -->
+          <g id="memory-layer"></g>
+          <!-- 圏外方向インジケータ -->
+          <g id="edge-layer"></g>
+        </g>
+        <!-- 自分（回転しない） -->
+        <circle r="3" class="me" />
+        <!-- スイープ光 -->
+        <g id="sweep">
+          <path d="M 0 0 L 0 -98 A 98 98 0 0 1 84.85 -49 Z" class="sweep" />
+        </g>
+      </svg>
+
+      <div class="radar-hud">
+        <p id="hud-status" class="hud-line">位置情報を取得しています…</p>
+        <p id="hud-count" class="hud-line dim">記憶: —</p>
+      </div>
+    </div>
+
+    <footer class="bottombar">
+      <button id="place-btn" class="place-btn" type="button">＋ 記憶を置く</button>
+    </footer>
+  </section>
+
+  <!-- アップロード画面 -->
+  <section id="upload-screen" class="screen hidden">
+    <header class="topbar">
+      <button id="upload-back" class="chip back" type="button">← 戻る</button>
+      <h1 class="brand small">記憶を置く</h1>
+      <span class="chip invisible">.</span>
+    </header>
+
+    <div class="upload-body">
+      <div class="polaroid-frame empty" id="polaroid-slot">
+        <input id="media-input" type="file" accept="image/*" capture="environment" hidden />
+        <div id="polaroid-empty" class="polaroid-empty">
+          <p>写真を選ぶ</p>
+          <p class="small">タップして撮影 or 選択</p>
+        </div>
+        <img id="polaroid-preview" alt="" class="hidden" />
+      </div>
+
+      <label class="field">
+        <span>タイトル</span>
+        <input id="title-input" type="text" maxlength="40" placeholder="無題の記憶" />
+      </label>
+      <label class="field">
+        <span>ひとこと</span>
+        <textarea id="note-input" maxlength="140" rows="2" placeholder=""></textarea>
+      </label>
+
+      <div class="gps-panel" id="gps-panel">
+        <div class="gps-indicator" id="gps-indicator"></div>
+        <div class="gps-text">
+          <p id="gps-primary">位置を確認中…</p>
+          <p id="gps-secondary" class="small dim">精度が20m以内になるまでお待ちください</p>
+        </div>
+      </div>
+
+      <button id="save-btn" class="place-btn wide" type="button" disabled>ここに置く</button>
+    </div>
+  </section>
+
+  <!-- 記憶詳細（レーダーの点タップで開く） -->
+  <div id="viewer" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <div id="viewer-locked" class="locked hidden">
+        <p class="locked-title">まだ近づいていない</p>
+        <p class="locked-sub">半径20mまで近づくと解放されます</p>
+        <p id="viewer-distance" class="dim"></p>
+      </div>
+      <div id="viewer-open" class="hidden">
+        <div class="polaroid-frame small">
+          <img id="viewer-img" alt="memory" />
+        </div>
+        <h3 id="viewer-title"></h3>
+        <p id="viewer-note"></p>
+        <p id="viewer-meta" class="dim small"></p>
+      </div>
+      <div class="actions">
+        <button id="viewer-delete" type="button" class="ghost danger hidden">回収する</button>
+        <button id="viewer-close" type="button" class="primary">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 方位センサー許可プロンプト（iOS用） -->
+  <div id="orient-prompt" class="modal hidden">
+    <div class="modal-card">
+      <h3>方位センサーの利用</h3>
+      <p class="dim small">レーダーを端末の向きに合わせるため、方位センサーの使用を許可してください。</p>
+      <div class="actions">
+        <button id="orient-allow" class="primary" type="button">許可する</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
