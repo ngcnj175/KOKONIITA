@@ -395,8 +395,8 @@ function injectSweepGradient() {
   const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
   defs.innerHTML = `
     <linearGradient id="sweep-gradient" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#d9b46a" stop-opacity="0.6"/>
-      <stop offset="100%" stop-color="#d9b46a" stop-opacity="0"/>
+      <stop offset="0%" stop-color="#111111" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#111111" stop-opacity="0"/>
     </linearGradient>`;
   svg.insertBefore(defs, svg.firstChild);
 }
