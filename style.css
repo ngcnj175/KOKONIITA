@@ -206,7 +206,59 @@ html, body {
   justify-content: center;
   cursor: pointer;
 }
-.polaroid-frame.small { padding: 8px 8px 30px; min-width: 0; min-height: 0; }
+.polaroid-frame.small { padding: 8px 8px 30px; min-width: 0; min-height: 0; transform: none; }
+.polaroid-frame.back {
+  background: #f7f3e8;
+  min-height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 20px;
+}
+
+/* ---------- ポラロイド反転 ---------- */
+.polaroid-flip {
+  perspective: 1000px;
+  width: fit-content;
+  margin: 0 auto 8px;
+  cursor: pointer;
+}
+.flip-inner {
+  position: relative;
+  transition: transform 0.7s cubic-bezier(0.4, 0.0, 0.2, 1);
+  transform-style: preserve-3d;
+  transform: rotate(-1.5deg);
+}
+.polaroid-flip.flipped .flip-inner {
+  transform: rotate(-1.5deg) rotateY(180deg);
+}
+.flip-face {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.flip-back {
+  position: absolute;
+  inset: 0;
+  transform: rotateY(180deg);
+}
+.hint-flip {
+  text-align: center;
+  margin: 6px 0 8px;
+  font-family: "Klee One", "Hiragino Kaku Gothic ProN", sans-serif;
+}
+
+/* ---------- 手書き文字 ---------- */
+.handwritten {
+  font-family: "Yomogi", "Klee One", "Hiragino Maru Gothic ProN", cursive;
+  font-size: 17px;
+  line-height: 1.7;
+  color: #2a2418;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  letter-spacing: 0.03em;
+  transform: rotate(-0.8deg);
+}
 .polaroid-frame img {
   display: block;
   max-width: 100%;

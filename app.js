@@ -272,7 +272,6 @@ function openUpload() {
   $("polaroid-preview").src = "";
   $("polaroid-empty").classList.remove("hidden");
   $("polaroid-slot").classList.add("empty");
-  $("title-input").value = "";
   $("note-input").value = "";
   updateUploadGpsPanel();
   showScreen("upload-screen");
@@ -347,7 +346,6 @@ function savePlaced() {
     lat: myPos.lat,
     lng: myPos.lng,
     accuracy: myPos.accuracy,
-    title: $("title-input").value.trim() || "無題の記憶",
     note: $("note-input").value.trim(),
     image: pendingImageDataUrl,
     createdAt: Date.now(),
@@ -370,8 +368,8 @@ function openViewer(m) {
 
   if (unlocked) {
     $("viewer-img").src = m.image;
-    $("viewer-title").textContent = m.title;
-    $("viewer-note").textContent = m.note;
+    $("viewer-note").textContent = m.note || "（メッセージなし）";
+    $("polaroid-flip").classList.remove("flipped");
     const d = new Date(m.createdAt);
     $("viewer-meta").textContent = `置かれた日: ${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()}`;
   } else {
@@ -416,4 +414,7 @@ document.addEventListener("DOMContentLoaded", () => {
   $("save-btn").addEventListener("click", savePlaced);
   $("viewer-close").addEventListener("click", closeViewer);
   $("viewer-delete").addEventListener("click", deleteCurrent);
+  $("polaroid-flip").addEventListener("click", () => {
+    $("polaroid-flip").classList.toggle("flipped");
+  });
 });

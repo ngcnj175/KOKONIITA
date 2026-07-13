@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#ffffff" />
   <title>ココニイタ。</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Yomogi&family=Klee+One:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -73,12 +76,8 @@
       </div>
 
       <label class="field">
-        <span>タイトル</span>
-        <input id="title-input" type="text" maxlength="40" placeholder="無題の記憶" />
-      </label>
-      <label class="field">
-        <span>ひとこと</span>
-        <textarea id="note-input" maxlength="140" rows="2" placeholder=""></textarea>
+        <span>メッセージ</span>
+        <textarea id="note-input" maxlength="140" rows="3" placeholder="ここに残す言葉"></textarea>
       </label>
 
       <div class="gps-panel" id="gps-panel">
@@ -102,11 +101,21 @@
         <p id="viewer-distance" class="dim"></p>
       </div>
       <div id="viewer-open" class="hidden">
-        <div class="polaroid-frame small">
-          <img id="viewer-img" alt="memory" />
+        <div class="polaroid-flip" id="polaroid-flip">
+          <div class="flip-inner">
+            <div class="flip-face flip-front">
+              <div class="polaroid-frame small">
+                <img id="viewer-img" alt="memory" />
+              </div>
+            </div>
+            <div class="flip-face flip-back">
+              <div class="polaroid-frame small back">
+                <p id="viewer-note" class="handwritten"></p>
+              </div>
+            </div>
+          </div>
         </div>
-        <h3 id="viewer-title"></h3>
-        <p id="viewer-note"></p>
+        <p class="hint-flip dim small">タップで裏返す</p>
         <p id="viewer-meta" class="dim small"></p>
       </div>
       <div class="actions">
