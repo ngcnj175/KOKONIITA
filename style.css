@@ -383,6 +383,146 @@ button.primary, button.ghost {
 }
 button.primary { background: var(--ink); color: #fff; border: 1px solid var(--ink); }
 
+/* ---------- AR画面 ---------- */
+#ar-screen {
+  background: #000;
+  overflow: hidden;
+}
+.ar-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+}
+.ar-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+.ar-hud-top {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  z-index: 10;
+  padding: 12px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.ar-hud-top .chip {
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--ink);
+  border-color: transparent;
+  backdrop-filter: blur(6px);
+}
+.ar-hud-bottom {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  z-index: 10;
+  padding: 16px 20px 28px;
+  text-align: center;
+  background: linear-gradient(to top, rgba(0,0,0,0.55), rgba(0,0,0,0));
+}
+.ar-hint {
+  color: #fff;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  margin: 0;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+}
+
+/* ARに浮かぶ記憶 */
+.ar-item {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+  transition: opacity 0.4s;
+  will-change: transform, left, top;
+}
+.ar-item .polaroid-frame {
+  transform: none;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+  padding: 8px 8px 28px;
+  min-width: 0;
+  min-height: 0;
+  background: #fff;
+  animation: ar-float 6s ease-in-out infinite;
+}
+.ar-item .polaroid-frame img {
+  max-height: none;
+  width: 100%;
+  height: auto;
+  display: block;
+}
+@keyframes ar-float {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-6px) rotate(2deg); }
+}
+
+/* 距離段階 */
+.ar-item.ar-far {
+  width: 24px;
+  height: 24px;
+  opacity: 0.7;
+}
+.ar-item.ar-far .polaroid-frame { display: none; }
+.ar-item.ar-far::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.2) 60%, transparent 100%);
+  animation: ar-glow 2.5s ease-in-out infinite;
+}
+@keyframes ar-glow {
+  0%, 100% { transform: scale(1); opacity: 0.7; }
+  50% { transform: scale(1.3); opacity: 1; }
+}
+.ar-item.ar-mid {
+  width: 90px;
+  opacity: 0.55;
+}
+.ar-item.ar-mid .polaroid-frame {
+  padding: 6px 6px 22px;
+}
+.ar-item.ar-near {
+  width: 160px;
+  opacity: 1;
+  cursor: pointer;
+}
+.ar-item.ar-near .polaroid-frame img {
+  filter: sepia(0.2) contrast(0.95);
+}
+.ar-dist-tag {
+  position: absolute;
+  bottom: 4px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 10px;
+  color: var(--ink);
+  font-family: "Klee One", cursive;
+  letter-spacing: 0.05em;
+}
+
+.ar-error {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  background: rgba(0, 0, 0, 0.9);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+  gap: 16px;
+}
+.ar-error p { max-width: 320px; line-height: 1.6; }
+
 /* ---------- ボトムシート（履歴） ---------- */
 .sheet {
   position: fixed;

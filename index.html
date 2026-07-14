@@ -54,6 +54,7 @@
 
     <footer class="bottombar">
       <button id="history-btn" class="ghost-btn" type="button">履歴</button>
+      <button id="ar-btn" class="ghost-btn" type="button">AR</button>
       <button id="place-btn" class="place-btn" type="button">＋ 記憶を置く</button>
     </footer>
   </section>
@@ -90,6 +91,23 @@
       </div>
 
       <button id="save-btn" class="place-btn wide" type="button" disabled>ここに置く</button>
+    </div>
+  </section>
+
+  <!-- AR画面 -->
+  <section id="ar-screen" class="screen hidden">
+    <video id="ar-video" class="ar-video" autoplay playsinline muted></video>
+    <div id="ar-overlay" class="ar-overlay"></div>
+    <div class="ar-hud-top">
+      <button id="ar-back" class="chip back" type="button">← 戻る</button>
+      <span id="ar-count" class="chip ar-count">周辺: 0</span>
+    </div>
+    <div class="ar-hud-bottom">
+      <p id="ar-hint" class="ar-hint">端末をゆっくり動かして周囲を見渡してください</p>
+    </div>
+    <div id="ar-error" class="ar-error hidden">
+      <p id="ar-error-msg"></p>
+      <button id="ar-error-back" class="primary" type="button">戻る</button>
     </div>
   </section>
 

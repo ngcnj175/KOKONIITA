@@ -355,6 +355,160 @@ function savePlaced() {
   closeUpload();
 }
 
+// ---------- AR画面 ----------
+const AR_FOV_DEG = 60;             // 想定水平画角
+const AR_FAR_MAX_M = 200;          // ARに映る最遠距離
+const AR_MID_MAX_M = 50;           // 光点→半透明ポラロイドの境界
+const AR_NEAR_MAX_M = 20;          // タップで解放される距離
+let arStream = null;
+let arRafId = null;
+let arActive = false;
+
+async function openAR() {
+  showScreen("ar-screen");
+  arActive = true;
+  $("ar-error").classList.add("hidden");
+  const video = $("ar-video");
+  try {
+    arStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: "environment" } },
+      audio: false,
+    });
+    video.srcObject = arStream;
+  } catch (err) {
+    showArError(`カメラを起動できませんでした：${err.message}`);
+    return;
+  }
+  arLoop();
+}
+
+function closeAR() {
+  arActive = false;
+  if (arRafId) { cancelAnimationFrame(arRafId); arRafId = null; }
+  if (arStream) {
+    arStream.getTracks().forEach(t => t.stop());
+    arStream = null;
+  }
+  $("ar-overlay").innerHTML = "";
+  showScreen("radar-screen");
+}
+
+function showArError(msg) {
+  $("ar-error-msg").textContent = msg;
+  $("ar-error").classList.remove("hidden");
+}
+
+// 記憶ID→縦位置（0.35〜0.65）を安定に決めるハッシュ
+function verticalRatioForId(id) {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = ((h << 5) - h + id.charCodeAt(i)) | 0;
+  const norm = (Math.abs(h) % 1000) / 1000;
+  return 0.35 + norm * 0.30;
+}
+
+function arLoop() {
+  if (!arActive) return;
+  renderArFrame();
+  arRafId = requestAnimationFrame(arLoop);
+}
+
+function renderArFrame() {
+  const overlay = $("ar-overlay");
+  if (!myPos) {
+    overlay.innerHTML = "";
+    $("ar-count").textContent = "位置情報待ち…";
+    return;
+  }
+  const memories = loadMemories();
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  const halfFov = AR_FOV_DEG / 2;
+
+  // 既存要素を id 管理でリユース（毎フレーム作り直さない）
+  const existing = new Map();
+  overlay.querySelectorAll(".ar-item").forEach(el => {
+    existing.set(el.dataset.id, el);
+  });
+
+  let visibleCount = 0;
+
+  for (const m of memories) {
+    const dist = distanceMeters(myPos, { lat: m.lat, lng: m.lng });
+    if (dist > AR_FAR_MAX_M) {
+      const el = existing.get(m.id);
+      if (el) el.remove();
+      existing.delete(m.id);
+      continue;
+    }
+
+    const bearing = bearingDeg(myPos, { lat: m.lat, lng: m.lng });
+    let diff = ((bearing - heading + 540) % 360) - 180; // -180..180
+    if (Math.abs(diff) > halfFov) {
+      // 視野外
+      const el = existing.get(m.id);
+      if (el) el.remove();
+      existing.delete(m.id);
+      continue;
+    }
+
+    visibleCount++;
+
+    // 段階クラス
+    let stage;
+    if (dist > AR_MID_MAX_M) stage = "ar-far";
+    else if (dist > AR_NEAR_MAX_M) stage = "ar-mid";
+    else stage = "ar-near";
+
+    const x = w / 2 + (diff / halfFov) * (w / 2);
+    const y = h * verticalRatioForId(m.id);
+
+    let el = existing.get(m.id);
+    if (!el) {
+      el = document.createElement("div");
+      el.className = `ar-item ${stage}`;
+      el.dataset.id = m.id;
+      el.innerHTML = `
+        <div class="polaroid-frame">
+          <img alt="" />
+          <div class="ar-dist-tag"></div>
+        </div>`;
+      el.querySelector("img").src = m.image;
+      el.addEventListener("click", () => onArItemTap(m, dist));
+      overlay.appendChild(el);
+    } else {
+      // 段階が変わったらクラス更新
+      if (!el.classList.contains(stage)) {
+        el.classList.remove("ar-far", "ar-mid", "ar-near");
+        el.classList.add(stage);
+      }
+      existing.delete(m.id);
+    }
+
+    // 距離タグ更新
+    const tag = el.querySelector(".ar-dist-tag");
+    if (tag) tag.textContent = `${Math.round(dist)}m`;
+
+    el.style.left = `${x}px`;
+    el.style.top = `${y}px`;
+  }
+
+  // 残存＝視野外に消えた要素を除去
+  existing.forEach(el => el.remove());
+
+  $("ar-count").textContent = `視界: ${visibleCount}`;
+  const hint = $("ar-hint");
+  if (visibleCount === 0) {
+    hint.textContent = "この方向に記憶はありません";
+  } else {
+    hint.textContent = "近づくと記憶が鮮明になります";
+  }
+}
+
+function onArItemTap(m, dist) {
+  if (dist > AR_NEAR_MAX_M) return; // 20m以内のみ解放
+  openViewer(m);
+}
+
 // ---------- 履歴（ボトムシート） ----------
 function openHistory() {
   renderHistoryList();
@@ -479,6 +633,9 @@ document.addEventListener("DOMContentLoaded", () => {
   $("history-btn").addEventListener("click", openHistory);
   $("history-close").addEventListener("click", closeHistory);
   $("history-backdrop").addEventListener("click", closeHistory);
+  $("ar-btn").addEventListener("click", openAR);
+  $("ar-back").addEventListener("click", closeAR);
+  $("ar-error-back").addEventListener("click", closeAR);
   $("upload-back").addEventListener("click", closeUpload);
   $("polaroid-slot").addEventListener("click", () => $("media-input").click());
   $("media-input").addEventListener("change", handleMediaPick);
