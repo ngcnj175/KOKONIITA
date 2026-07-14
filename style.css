@@ -495,12 +495,12 @@ button.primary { background: var(--ink); color: #fff; border: 1px solid var(--in
   display: block;
 }
 @-webkit-keyframes ar-rotate-y {
-  from { -webkit-transform: rotateY(0deg); transform: rotateY(0deg); }
-  to   { -webkit-transform: rotateY(360deg); transform: rotateY(360deg); }
+  from { -webkit-transform: rotateZ(-15deg) rotateY(0deg); transform: rotateZ(-15deg) rotateY(0deg); }
+  to   { -webkit-transform: rotateZ(-15deg) rotateY(360deg); transform: rotateZ(-15deg) rotateY(360deg); }
 }
 @keyframes ar-rotate-y {
-  from { transform: rotateY(0deg); }
-  to   { transform: rotateY(360deg); }
+  from { transform: rotateZ(-15deg) rotateY(0deg); }
+  to   { transform: rotateZ(-15deg) rotateY(360deg); }
 }
 
 /* プレースホルダ（画像未解放時のアイコン） */
