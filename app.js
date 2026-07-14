@@ -486,28 +486,42 @@ function renderArFrame() {
       el.className = `ar-item ${stage}`;
       el.dataset.id = m.id;
       el.innerHTML = `
-        <div class="polaroid-frame">
-          <div class="ar-slot"></div>
-          <div class="ar-dist-tag"></div>
+        <div class="ar-flipper">
+          <div class="ar-face ar-front">
+            <div class="polaroid-frame">
+              <div class="ar-slot"></div>
+              <div class="ar-dist-tag"></div>
+            </div>
+          </div>
+          <div class="ar-face ar-back">
+            <div class="polaroid-frame back">
+              <div class="ar-back-slot"></div>
+            </div>
+          </div>
         </div>`;
       overlay.appendChild(el);
     } else {
       if (!el.classList.contains(stage)) {
         el.classList.remove("ar-icon", "ar-near");
         el.classList.add(stage);
-        el.dataset.stage = ""; // 中身再描画フラグ
+        el.dataset.stage = "";
       }
       existing.delete(m.id);
     }
 
     // 中身の描画（段階変化時のみ）
     if (el.dataset.stage !== stage) {
-      const slot = el.querySelector(".ar-slot");
+      const frontSlot = el.querySelector(".ar-slot");
+      const backSlot = el.querySelector(".ar-back-slot");
       if (stage === "ar-near") {
-        slot.innerHTML = `<img alt="" />`;
-        slot.querySelector("img").src = m.image;
+        frontSlot.innerHTML = `<img alt="" />`;
+        frontSlot.querySelector("img").src = m.image;
+        const msg = (m.note || "").trim();
+        backSlot.innerHTML = `<p class="handwritten"></p>`;
+        backSlot.querySelector("p").textContent = msg || "（メッセージなし）";
       } else {
-        slot.innerHTML = `<div class="ar-placeholder">${placeholderSvg}</div>`;
+        frontSlot.innerHTML = `<div class="ar-placeholder">${placeholderSvg}</div>`;
+        backSlot.innerHTML = `<div class="ar-placeholder">${placeholderSvg}</div>`;
       }
       el.dataset.stage = stage;
     }

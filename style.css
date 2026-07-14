@@ -440,6 +440,26 @@ button.primary { background: var(--ink); color: #fff; border: 1px solid var(--in
   pointer-events: auto;
   transition: opacity 0.4s;
   will-change: transform, left, top;
+  -webkit-perspective: 800px;
+  perspective: 800px;
+}
+.ar-flipper {
+  position: relative;
+  width: 100%;
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+  will-change: transform;
+  -webkit-animation: ar-rotate-y 12s linear infinite;
+  animation: ar-rotate-y 12s linear infinite;
+}
+.ar-face {
+  width: 100%;
+}
+.ar-face.ar-back {
+  position: absolute;
+  inset: 0;
+  -webkit-transform: rotateY(180deg);
+  transform: rotateY(180deg);
 }
 .ar-item .polaroid-frame {
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
@@ -448,10 +468,21 @@ button.primary { background: var(--ink); color: #fff; border: 1px solid var(--in
   min-height: 0;
   width: 100%;
   background: #fff;
-  transform-origin: 50% 50%;
-  will-change: transform;
-  -webkit-animation: ar-rotate 12s linear infinite;
-  animation: ar-rotate 12s linear infinite;
+  transform: none;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+.ar-item .polaroid-frame.back {
+  background: #f7f3e8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+}
+.ar-item .polaroid-frame.back .handwritten {
+  font-size: 14px;
+  padding: 8px 4px;
+  margin: 0;
 }
 .ar-slot {
   width: 100%;
@@ -463,13 +494,13 @@ button.primary { background: var(--ink); color: #fff; border: 1px solid var(--in
   height: auto;
   display: block;
 }
-@-webkit-keyframes ar-rotate {
-  from { -webkit-transform: rotate(0deg); transform: rotate(0deg); }
-  to   { -webkit-transform: rotate(360deg); transform: rotate(360deg); }
+@-webkit-keyframes ar-rotate-y {
+  from { -webkit-transform: rotateY(0deg); transform: rotateY(0deg); }
+  to   { -webkit-transform: rotateY(360deg); transform: rotateY(360deg); }
 }
-@keyframes ar-rotate {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
+@keyframes ar-rotate-y {
+  from { transform: rotateY(0deg); }
+  to   { transform: rotateY(360deg); }
 }
 
 /* プレースホルダ（画像未解放時のアイコン） */
