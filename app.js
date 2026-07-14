@@ -444,12 +444,6 @@ function renderArFrame() {
   });
 
   let visibleCount = 0;
-  const placeholderSvg = `
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-      <rect x="3" y="4" width="18" height="16" rx="1"/>
-      <circle cx="8.5" cy="9.5" r="1.5" fill="currentColor" stroke="none"/>
-      <path d="M3 17l5-5 4 4 3-3 6 6"/>
-    </svg>`;
 
   for (const m of memories) {
     const dist = distanceMeters(myPos, { lat: m.lat, lng: m.lng });
@@ -520,8 +514,8 @@ function renderArFrame() {
         backSlot.innerHTML = `<p class="handwritten"></p>`;
         backSlot.querySelector("p").textContent = msg || "（メッセージなし）";
       } else {
-        frontSlot.innerHTML = `<div class="ar-placeholder">${placeholderSvg}</div>`;
-        backSlot.innerHTML = `<div class="ar-placeholder">${placeholderSvg}</div>`;
+        frontSlot.innerHTML = `<div class="ar-placeholder"></div>`;
+        backSlot.innerHTML = `<div class="ar-placeholder blank"></div>`;
       }
       el.dataset.stage = stage;
     }

@@ -473,7 +473,7 @@ button.primary { background: var(--ink); color: #fff; border: 1px solid var(--in
   backface-visibility: hidden;
 }
 .ar-item .polaroid-frame.back {
-  background: #f7f3e8;
+  background: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -507,20 +507,10 @@ button.primary { background: var(--ink); color: #fff; border: 1px solid var(--in
 .ar-placeholder {
   width: 100%;
   aspect-ratio: 1 / 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: repeating-linear-gradient(
-    45deg,
-    #efeae0 0 6px,
-    #f7f3e8 6px 12px
-  );
-  color: var(--ink);
+  background: #000;
 }
-.ar-placeholder svg {
-  width: 42%;
-  height: 42%;
-  opacity: 0.55;
+.ar-placeholder.blank {
+  background: #fff;
 }
 
 /* 距離段階（100m以内でアイコン表示、20m以内で画像解放） */
