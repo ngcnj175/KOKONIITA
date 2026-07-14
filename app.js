@@ -9,6 +9,8 @@ const JPEG_QUALITY = 0.6;
 
 // レーダー表示範囲（メートル）。ボタンで循環。
 const RANGE_STEPS = [100, 500, 1000, 5000];
+const RANGE_DOT_R = { 100: 4.0, 500: 3.0, 1000: 2.3, 5000: 1.4 };
+const RANGE_CLUSTER_R = { 100: 6.0, 500: 4.8, 1000: 4.0, 5000: 3.0 };
 let rangeIndex = 1; // 初期 500m
 
 // クラスタリング閾値（レーダー座標系での距離。viewBox=200 → 半径100）
@@ -166,10 +168,16 @@ function renderRadar() {
   const clusters = clusterPoints(points, CLUSTER_PX);
 
   // 記憶ピン描画
+  const dotR = RANGE_DOT_R[range] ?? 2.5;
+  const clusterR = RANGE_CLUSTER_R[range] ?? 4.5;
   for (const c of clusters) {
     const count = c.memories.length;
     const isCluster = count > 1;
-    const r = isCluster ? 4.5 : 2.5;
+    // クラスタ内に20m以内があれば近距離扱い
+    const hasNear = c.memories.some(m =>
+      distanceMeters(myPos, { lat: m.lat, lng: m.lng }) <= UNLOCK_RADIUS_M
+    );
+    const r = isCluster ? clusterR : dotR;
 
     const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
 
@@ -177,17 +185,21 @@ function renderRadar() {
     dot.setAttribute("cx", c.x.toFixed(2));
     dot.setAttribute("cy", c.y.toFixed(2));
     dot.setAttribute("r", r);
-    dot.setAttribute("class", isCluster ? "memory-dot cluster" : "memory-dot");
-    dot.addEventListener("click", (ev) => {
-      ev.stopPropagation();
-      if (isCluster) {
-        // クラスタ内で最も近いものを開く（暫定）
-        const nearest = c.memories.reduce((a, b) => (a.d < b.d ? a : b), c.memories[0]);
-        openViewer(nearest);
-      } else {
-        openViewer(c.memories[0]);
-      }
-    });
+    const classes = ["memory-dot"];
+    if (isCluster) classes.push("cluster");
+    if (hasNear) classes.push("near");
+    dot.setAttribute("class", classes.join(" "));
+    if (hasNear) {
+      dot.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        // 20m以内で最も近いものを開く
+        const near = c.memories
+          .map(m => ({ m, d: distanceMeters(myPos, { lat: m.lat, lng: m.lng }) }))
+          .filter(x => x.d <= UNLOCK_RADIUS_M)
+          .sort((a, b) => a.d - b.d)[0];
+        if (near) openViewer(near.m);
+      });
+    }
     g.appendChild(dot);
 
     if (isCluster) {
@@ -357,9 +369,10 @@ function savePlaced() {
 
 // ---------- AR画面 ----------
 const AR_FOV_DEG = 60;             // 想定水平画角
-const AR_FAR_MAX_M = 200;          // ARに映る最遠距離
-const AR_MID_MAX_M = 50;           // 光点→半透明ポラロイドの境界
-const AR_NEAR_MAX_M = 20;          // タップで解放される距離
+const AR_FAR_MAX_M = 100;          // ARに映る最遠距離
+const AR_NEAR_MAX_M = 20;          // タップで画像解放される距離
+const AR_ICON_MIN_PX = 70;         // 100m地点でのアイコンサイズ
+const AR_ICON_MAX_PX = 180;        // 20m地点でのアイコンサイズ
 let arStream = null;
 let arRafId = null;
 let arActive = false;
@@ -431,6 +444,12 @@ function renderArFrame() {
   });
 
   let visibleCount = 0;
+  const placeholderSvg = `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <rect x="3" y="4" width="18" height="16" rx="1"/>
+      <circle cx="8.5" cy="9.5" r="1.5" fill="currentColor" stroke="none"/>
+      <path d="M3 17l5-5 4 4 3-3 6 6"/>
+    </svg>`;
 
   for (const m of memories) {
     const dist = distanceMeters(myPos, { lat: m.lat, lng: m.lng });
@@ -444,7 +463,6 @@ function renderArFrame() {
     const bearing = bearingDeg(myPos, { lat: m.lat, lng: m.lng });
     let diff = ((bearing - heading + 540) % 360) - 180; // -180..180
     if (Math.abs(diff) > halfFov) {
-      // 視野外
       const el = existing.get(m.id);
       if (el) el.remove();
       existing.delete(m.id);
@@ -453,12 +471,12 @@ function renderArFrame() {
 
     visibleCount++;
 
-    // 段階クラス
-    let stage;
-    if (dist > AR_MID_MAX_M) stage = "ar-far";
-    else if (dist > AR_NEAR_MAX_M) stage = "ar-mid";
-    else stage = "ar-near";
+    // 距離に応じたサイズ（100m→AR_ICON_MIN_PX, 20m以下→AR_ICON_MAX_PX）
+    const clamped = Math.max(AR_NEAR_MAX_M, Math.min(AR_FAR_MAX_M, dist));
+    const t = (AR_FAR_MAX_M - clamped) / (AR_FAR_MAX_M - AR_NEAR_MAX_M); // 0..1
+    const size = AR_ICON_MIN_PX + (AR_ICON_MAX_PX - AR_ICON_MIN_PX) * t;
 
+    const stage = dist <= AR_NEAR_MAX_M ? "ar-near" : "ar-icon";
     const x = w / 2 + (diff / halfFov) * (w / 2);
     const y = h * verticalRatioForId(m.id);
 
@@ -469,27 +487,40 @@ function renderArFrame() {
       el.dataset.id = m.id;
       el.innerHTML = `
         <div class="polaroid-frame">
-          <img alt="" />
+          <div class="ar-slot"></div>
           <div class="ar-dist-tag"></div>
         </div>`;
-      el.querySelector("img").src = m.image;
-      el.addEventListener("click", () => onArItemTap(m, dist));
       overlay.appendChild(el);
     } else {
-      // 段階が変わったらクラス更新
       if (!el.classList.contains(stage)) {
-        el.classList.remove("ar-far", "ar-mid", "ar-near");
+        el.classList.remove("ar-icon", "ar-near");
         el.classList.add(stage);
+        el.dataset.stage = ""; // 中身再描画フラグ
       }
       existing.delete(m.id);
     }
 
-    // 距離タグ更新
-    const tag = el.querySelector(".ar-dist-tag");
-    if (tag) tag.textContent = `${Math.round(dist)}m`;
+    // 中身の描画（段階変化時のみ）
+    if (el.dataset.stage !== stage) {
+      const slot = el.querySelector(".ar-slot");
+      if (stage === "ar-near") {
+        slot.innerHTML = `<img alt="" />`;
+        slot.querySelector("img").src = m.image;
+      } else {
+        slot.innerHTML = `<div class="ar-placeholder">${placeholderSvg}</div>`;
+      }
+      el.dataset.stage = stage;
+    }
 
+    // タップ処理は近距離時のみ
+    el.onclick = stage === "ar-near" ? () => onArItemTap(m, dist) : null;
+
+    // サイズ・距離・位置更新
+    el.style.width = `${size}px`;
     el.style.left = `${x}px`;
     el.style.top = `${y}px`;
+    const tag = el.querySelector(".ar-dist-tag");
+    if (tag) tag.textContent = `${Math.round(dist)}m`;
   }
 
   // 残存＝視野外に消えた要素を除去
@@ -609,21 +640,8 @@ function deleteCurrent() {
   closeViewer();
 }
 
-// ---------- スイープ光のグラデーション定義 ----------
-function injectSweepGradient() {
-  const svg = $("radar");
-  const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
-  defs.innerHTML = `
-    <linearGradient id="sweep-gradient" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#111111" stop-opacity="0.5"/>
-      <stop offset="100%" stop-color="#111111" stop-opacity="0"/>
-    </linearGradient>`;
-  svg.insertBefore(defs, svg.firstChild);
-}
-
 // ---------- 起動 ----------
 document.addEventListener("DOMContentLoaded", () => {
-  injectSweepGradient();
   watchLocation();
   setupOrientation();
   renderRadar();
