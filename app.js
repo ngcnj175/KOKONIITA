@@ -741,7 +741,8 @@ function renderHistoryList() {
     body.className = "history-body";
     const msg = document.createElement("p");
     msg.className = "history-msg";
-    msg.textContent = m.note || "（メッセージなし）";
+    if (m.note) msg.textContent = m.note;
+    else { msg.textContent = ""; msg.classList.add("dim"); }
     const meta = document.createElement("p");
     meta.className = "history-meta";
     const d = new Date(m.createdAt);
@@ -842,7 +843,7 @@ function openViewer(m) {
 
   if (unlocked) {
     $("viewer-img").src = m.image;
-    $("viewer-note").textContent = m.note || "（メッセージなし）";
+    $("viewer-note").textContent = m.note || "";
     $("polaroid-flip").classList.remove("flipped");
     const d = new Date(m.createdAt);
     $("viewer-meta").textContent = `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()}`;
@@ -871,7 +872,6 @@ document.addEventListener("DOMContentLoaded", () => {
   $("save-btn").addEventListener("click", savePlaced);
   $("compose-cancel").addEventListener("click", closeComposeSheet);
   $("compose-backdrop").addEventListener("click", closeComposeSheet);
-  $("viewer-close").addEventListener("click", closeViewer);
   $("viewer").addEventListener("click", (e) => {
     if (e.target === $("viewer")) closeViewer();
   });

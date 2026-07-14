@@ -35,13 +35,17 @@ html, body {
 
 /* ---------- 共通ヘッダ／フッタ ---------- */
 .topbar {
+  position: relative;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   padding: 12px 14px;
   border-bottom: 1px solid rgba(17, 17, 17, 0.1);
 }
 .brand {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   margin: 0;
   font-size: 16px;
   letter-spacing: 0.25em;
@@ -210,7 +214,7 @@ html, body {
   padding: 12px 12px 44px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   border: 1px solid rgba(17, 17, 17, 0.08);
-  transform: rotate(-1.5deg);
+  transform: rotate(-4deg);
   width: fit-content;
   max-width: 100%;
   margin: 0 auto;
@@ -242,10 +246,10 @@ html, body {
   position: relative;
   transition: transform 0.7s cubic-bezier(0.4, 0.0, 0.2, 1);
   transform-style: preserve-3d;
-  transform: rotate(-1.5deg);
+  transform: rotate(-4deg);
 }
 .polaroid-flip.flipped .flip-inner {
-  transform: rotate(-1.5deg) rotateY(180deg);
+  transform: rotate(-4deg) rotateY(180deg);
 }
 .flip-face {
   backface-visibility: hidden;
@@ -264,15 +268,15 @@ html, body {
 
 /* flip 時に表裏サイズを完全一致させる */
 .polaroid-flip .polaroid-frame.small {
-  padding: 10px 10px 40px;
-  width: 260px;
+  padding: 11px 11px 44px;
+  width: 286px;
   min-height: 0;
   transform: none;
   cursor: pointer;
 }
 .polaroid-flip .polaroid-frame.small img {
-  width: 240px;
-  height: 240px;
+  width: 264px;
+  height: 264px;
   object-fit: cover;
   max-width: none;
   max-height: none;
@@ -285,8 +289,8 @@ html, body {
   min-height: 0;
 }
 .polaroid-flip .polaroid-frame.small.back .handwritten {
-  width: 240px;
-  min-height: 240px;
+  width: 264px;
+  min-height: 264px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -467,23 +471,6 @@ html, body {
   padding: 20px;
 }
 .viewer.hidden { display: none; }
-.viewer-close {
-  position: absolute;
-  top: 14px;
-  right: 14px;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: none;
-  background: rgba(255, 255, 255, 0.85);
-  color: var(--ink);
-  font-size: 16px;
-  line-height: 1;
-  cursor: pointer;
-  backdrop-filter: blur(6px);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-}
-.viewer-close:active { background: rgba(255, 255, 255, 1); }
 .locked-card {
   background: #fff;
   border-radius: 4px;
