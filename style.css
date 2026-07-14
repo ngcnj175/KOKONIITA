@@ -448,8 +448,10 @@ button.primary { background: var(--ink); color: #fff; border: 1px solid var(--in
   min-height: 0;
   width: 100%;
   background: #fff;
-  transform: none;
-  animation: ar-rotate 18s ease-in-out infinite;
+  transform-origin: 50% 50%;
+  will-change: transform;
+  -webkit-animation: ar-rotate 12s linear infinite;
+  animation: ar-rotate 12s linear infinite;
 }
 .ar-slot {
   width: 100%;
@@ -461,10 +463,13 @@ button.primary { background: var(--ink); color: #fff; border: 1px solid var(--in
   height: auto;
   display: block;
 }
+@-webkit-keyframes ar-rotate {
+  from { -webkit-transform: rotate(0deg); transform: rotate(0deg); }
+  to   { -webkit-transform: rotate(360deg); transform: rotate(360deg); }
+}
 @keyframes ar-rotate {
-  from { transform: rotate(-8deg); }
-  50%  { transform: rotate(8deg); }
-  to   { transform: rotate(-8deg); }
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }
 
 /* プレースホルダ（画像未解放時のアイコン） */
