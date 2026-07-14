@@ -4,8 +4,9 @@
 const STORAGE_KEY = "kokoniita.memories.v1";
 const UNLOCK_RADIUS_M = 20;
 const GPS_ACCURACY_THRESHOLD_M = 20;
-const MAX_IMAGE_DIM = 1024;
-const JPEG_QUALITY = 0.6;
+const MAX_IMAGE_DIM = 1600;      // クロップ前の作業用最大寸法
+const OUTPUT_SIZE = 720;         // 保存する正方形サイズ
+const JPEG_QUALITY = 0.72;
 
 // レーダー表示範囲（メートル）。ボタンで循環。
 const RANGE_STEPS = [100, 500, 1000, 5000];
@@ -282,8 +283,6 @@ function showScreen(id) {
 }
 
 // ---------- 記憶を置く ----------
-let pendingImageDataUrl = null;
-
 // ＋記憶を置くボタン押下：GPS精度チェック→OKなら写真選択起動
 function onPlaceButtonTap() {
   if (!myPos) {
@@ -308,11 +307,11 @@ async function handleMediaPick(e) {
     showToast("位置精度が低くなりました。もう一度お試しください");
     return;
   }
-  const dataUrl = await compressImage(file);
-  pendingImageDataUrl = dataUrl;
-  $("compose-preview").src = dataUrl;
+  const dataUrl = await downscaleImage(file, MAX_IMAGE_DIM);
   $("note-input").value = "";
   openComposeSheet();
+  // シートが開ききってから cropper サイズを測る
+  requestAnimationFrame(() => requestAnimationFrame(() => loadCropper(dataUrl)));
 }
 
 function openComposeSheet() {
@@ -325,8 +324,9 @@ function closeComposeSheet() {
   sheet.classList.remove("open");
   setTimeout(() => {
     sheet.classList.add("hidden");
-    pendingImageDataUrl = null;
-    $("compose-preview").src = "";
+    const cimg = $("cropper-img");
+    if (cimg) cimg.removeAttribute("src");
+    cropper.ready = false;
   }, 320);
 }
 
@@ -337,36 +337,161 @@ function updatePlaceButtonState() {
   btn.classList.toggle("looks-disabled", disabled);
 }
 
-async function compressImage(file) {
+async function downscaleImage(file, maxDim) {
+  const url = URL.createObjectURL(file);
   const img = await new Promise((res, rej) => {
     const i = new Image();
     i.onload = () => res(i);
     i.onerror = rej;
-    i.src = URL.createObjectURL(file);
+    i.src = url;
   });
-  const scale = Math.min(1, MAX_IMAGE_DIM / Math.max(img.width, img.height));
+  const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
   const w = Math.round(img.width * scale);
   const h = Math.round(img.height * scale);
   const canvas = document.createElement("canvas");
   canvas.width = w; canvas.height = h;
   canvas.getContext("2d").drawImage(img, 0, 0, w, h);
-  URL.revokeObjectURL(img.src);
-  return canvas.toDataURL("image/jpeg", JPEG_QUALITY);
+  URL.revokeObjectURL(url);
+  return canvas.toDataURL("image/jpeg", 0.9);
+}
+
+// ---------- クロップ ----------
+const cropper = {
+  ready: false,
+  cw: 0, ch: 0, iw: 0, ih: 0,
+  x: 0, y: 0, scale: 1, minScale: 1, maxScale: 4,
+};
+const cropTouches = new Map();
+let pinchStartDist = 0, pinchStartScale = 1;
+
+function loadCropper(dataUrl) {
+  const container = $("cropper");
+  const img = $("cropper-img");
+  img.onload = () => {
+    const rect = container.getBoundingClientRect();
+    cropper.cw = rect.width;
+    cropper.ch = rect.height;
+    cropper.iw = img.naturalWidth;
+    cropper.ih = img.naturalHeight;
+    cropper.minScale = Math.max(cropper.cw / cropper.iw, cropper.ch / cropper.ih);
+    cropper.maxScale = cropper.minScale * 4;
+    cropper.scale = cropper.minScale;
+    cropper.x = (cropper.cw - cropper.iw * cropper.scale) / 2;
+    cropper.y = (cropper.ch - cropper.ih * cropper.scale) / 2;
+    const slider = $("zoom-slider");
+    slider.min = cropper.minScale;
+    slider.max = cropper.maxScale;
+    slider.step = (cropper.maxScale - cropper.minScale) / 200;
+    slider.value = cropper.minScale;
+    cropper.ready = true;
+    applyCropperTransform();
+  };
+  img.src = dataUrl;
+}
+
+function applyCropperTransform() {
+  if (!cropper.ready) return;
+  const scaledW = cropper.iw * cropper.scale;
+  const scaledH = cropper.ih * cropper.scale;
+  cropper.x = Math.min(0, Math.max(cropper.cw - scaledW, cropper.x));
+  cropper.y = Math.min(0, Math.max(cropper.ch - scaledH, cropper.y));
+  $("cropper-img").style.transform =
+    `translate(${cropper.x}px, ${cropper.y}px) scale(${cropper.scale})`;
+}
+
+function zoomAt(newScale, cx, cy) {
+  newScale = Math.max(cropper.minScale, Math.min(cropper.maxScale, newScale));
+  const k = newScale / cropper.scale;
+  cropper.x = cx - k * (cx - cropper.x);
+  cropper.y = cy - k * (cy - cropper.y);
+  cropper.scale = newScale;
+  $("zoom-slider").value = newScale;
+  applyCropperTransform();
+}
+
+function setupCropperEvents() {
+  const el = $("cropper");
+
+  el.addEventListener("pointerdown", (e) => {
+    if (!cropper.ready) return;
+    el.setPointerCapture(e.pointerId);
+    cropTouches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (cropTouches.size === 2) {
+      const [a, b] = [...cropTouches.values()];
+      pinchStartDist = Math.hypot(a.x - b.x, a.y - b.y);
+      pinchStartScale = cropper.scale;
+    }
+  });
+
+  el.addEventListener("pointermove", (e) => {
+    if (!cropTouches.has(e.pointerId)) return;
+    const prev = cropTouches.get(e.pointerId);
+    const dx = e.clientX - prev.x;
+    const dy = e.clientY - prev.y;
+    cropTouches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    if (cropTouches.size === 1) {
+      cropper.x += dx;
+      cropper.y += dy;
+      applyCropperTransform();
+    } else if (cropTouches.size === 2) {
+      const [a, b] = [...cropTouches.values()];
+      const dist = Math.hypot(a.x - b.x, a.y - b.y);
+      const rect = el.getBoundingClientRect();
+      const midX = (a.x + b.x) / 2 - rect.left;
+      const midY = (a.y + b.y) / 2 - rect.top;
+      zoomAt(pinchStartScale * (dist / pinchStartDist), midX, midY);
+    }
+  });
+
+  const endPointer = (e) => { cropTouches.delete(e.pointerId); };
+  el.addEventListener("pointerup", endPointer);
+  el.addEventListener("pointercancel", endPointer);
+  el.addEventListener("pointerleave", endPointer);
+
+  el.addEventListener("wheel", (e) => {
+    if (!cropper.ready) return;
+    e.preventDefault();
+    const rect = el.getBoundingClientRect();
+    const cx = e.clientX - rect.left;
+    const cy = e.clientY - rect.top;
+    const factor = Math.exp(-e.deltaY * 0.0015);
+    zoomAt(cropper.scale * factor, cx, cy);
+  }, { passive: false });
+
+  $("zoom-slider").addEventListener("input", (e) => {
+    if (!cropper.ready) return;
+    zoomAt(parseFloat(e.target.value), cropper.cw / 2, cropper.ch / 2);
+  });
+}
+
+function cropToDataUrl(size = OUTPUT_SIZE, quality = JPEG_QUALITY) {
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  const sx = -cropper.x / cropper.scale;
+  const sy = -cropper.y / cropper.scale;
+  const sw = cropper.cw / cropper.scale;
+  const sh = cropper.ch / cropper.scale;
+  ctx.drawImage($("cropper-img"), sx, sy, sw, sh, 0, 0, size, size);
+  return canvas.toDataURL("image/jpeg", quality);
 }
 
 function savePlaced() {
-  if (!pendingImageDataUrl || !myPos) return;
+  if (!cropper.ready || !myPos) return;
   if (myPos.accuracy > GPS_ACCURACY_THRESHOLD_M) {
     showToast("位置精度が低くなったため置けませんでした");
     return;
   }
+  const image = cropToDataUrl();
   const memory = {
     id: crypto.randomUUID(),
     lat: myPos.lat,
     lng: myPos.lng,
     accuracy: myPos.accuracy,
     note: $("note-input").value.trim(),
-    image: pendingImageDataUrl,
+    image,
     createdAt: Date.now(),
   };
   addMemory(memory);
@@ -695,4 +820,5 @@ document.addEventListener("DOMContentLoaded", () => {
   $("polaroid-flip").addEventListener("click", () => {
     $("polaroid-flip").classList.toggle("flipped");
   });
+  setupCropperEvents();
 });
