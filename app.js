@@ -20,6 +20,7 @@ const $ = (id) => document.getElementById(id);
 
 // ---------- 状態 ----------
 let myPos = null;      // {lat, lng, accuracy}
+let gpsError = null;   // 位置情報エラー
 let heading = 0;       // 度、0=北、時計回り
 let orientReady = false;
 
@@ -71,11 +72,16 @@ function watchLocation() {
     (pos) => {
       const { latitude, longitude, accuracy } = pos.coords;
       myPos = { lat: latitude, lng: longitude, accuracy };
+      gpsError = null;
       updateHud();
       renderRadar();
       updateUploadGpsPanel();
     },
-    (err) => { $("hud-status").textContent = `位置情報エラー: ${err.message}`; },
+    (err) => {
+      gpsError = err.message || "位置情報を取得できません";
+      $("hud-status").textContent = `位置情報エラー: ${gpsError}`;
+      updateUploadGpsPanel();
+    },
     { enableHighAccuracy: true, maximumAge: 3000, timeout: 15000 }
   );
 }
@@ -328,31 +334,43 @@ function updateUploadGpsPanel() {
   const primary = $("gps-primary");
   const secondary = $("gps-secondary");
   const btn = $("save-btn");
+  const forceBtn = $("force-save-btn");
 
+  if (gpsError && !myPos) {
+    ind.className = "gps-indicator";
+    primary.textContent = "位置情報を取得できません";
+    secondary.textContent = gpsError;
+    btn.disabled = true;
+    forceBtn.classList.add("hidden");
+    return;
+  }
   if (!myPos) {
     ind.className = "gps-indicator pending";
     primary.textContent = "位置を確認中…";
-    secondary.textContent = "GPSの信号を待っています";
+    secondary.textContent = "GPSの信号を待っています（屋外に出ると早くなります）";
     btn.disabled = true;
+    forceBtn.classList.add("hidden");
     return;
   }
   const acc = Math.round(myPos.accuracy);
   if (myPos.accuracy > GPS_ACCURACY_THRESHOLD_M) {
     ind.className = "gps-indicator";
     primary.textContent = `位置精度: ±${acc}m`;
-    secondary.textContent = `±${GPS_ACCURACY_THRESHOLD_M}m以内になるまでお待ちください`;
+    secondary.textContent = `±${GPS_ACCURACY_THRESHOLD_M}m以内になるまで通常は待つ場所です`;
     btn.disabled = true;
+    forceBtn.classList.toggle("hidden", !pendingImageDataUrl);
   } else {
     ind.className = "gps-indicator ok";
     primary.textContent = `位置精度: ±${acc}m`;
     secondary.textContent = "この場所に置けます";
     btn.disabled = !pendingImageDataUrl;
+    forceBtn.classList.add("hidden");
   }
 }
 
-function savePlaced() {
+function savePlaced(opts = {}) {
   if (!pendingImageDataUrl || !myPos) return;
-  if (myPos.accuracy > GPS_ACCURACY_THRESHOLD_M) return;
+  if (!opts.force && myPos.accuracy > GPS_ACCURACY_THRESHOLD_M) return;
   const memory = {
     id: crypto.randomUUID(),
     lat: myPos.lat,
@@ -665,7 +683,11 @@ document.addEventListener("DOMContentLoaded", () => {
   $("upload-back").addEventListener("click", closeUpload);
   $("polaroid-slot").addEventListener("click", () => $("media-input").click());
   $("media-input").addEventListener("change", handleMediaPick);
-  $("save-btn").addEventListener("click", savePlaced);
+  $("save-btn").addEventListener("click", () => savePlaced());
+  $("force-save-btn").addEventListener("click", () => {
+    if (!confirm(`位置精度が悪い状態で置きます（±${Math.round(myPos.accuracy)}m）。よろしいですか？`)) return;
+    savePlaced({ force: true });
+  });
   $("viewer-close").addEventListener("click", closeViewer);
   $("viewer-delete").addEventListener("click", deleteCurrent);
   $("polaroid-flip").addEventListener("click", () => {
