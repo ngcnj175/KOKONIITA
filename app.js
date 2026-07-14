@@ -355,6 +355,74 @@ function savePlaced() {
   closeUpload();
 }
 
+// ---------- 履歴（ボトムシート） ----------
+function openHistory() {
+  renderHistoryList();
+  const sheet = $("history-sheet");
+  sheet.classList.remove("hidden");
+  requestAnimationFrame(() => sheet.classList.add("open"));
+}
+function closeHistory() {
+  const sheet = $("history-sheet");
+  sheet.classList.remove("open");
+  setTimeout(() => sheet.classList.add("hidden"), 320);
+}
+
+function renderHistoryList() {
+  const list = $("history-list");
+  const empty = $("history-empty");
+  const memories = loadMemories().sort((a, b) => b.createdAt - a.createdAt);
+  list.innerHTML = "";
+  if (memories.length === 0) {
+    empty.classList.remove("hidden");
+    return;
+  }
+  empty.classList.add("hidden");
+
+  for (const m of memories) {
+    const item = document.createElement("div");
+    item.className = "history-item";
+
+    const img = document.createElement("img");
+    img.className = "history-thumb";
+    img.src = m.image;
+    img.alt = "";
+
+    const body = document.createElement("div");
+    body.className = "history-body";
+    const msg = document.createElement("p");
+    msg.className = "history-msg";
+    msg.textContent = m.note || "（メッセージなし）";
+    const meta = document.createElement("p");
+    meta.className = "history-meta";
+    const d = new Date(m.createdAt);
+    meta.textContent = `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()}`;
+    body.appendChild(msg);
+    body.appendChild(meta);
+
+    const dist = document.createElement("div");
+    dist.className = "history-dist";
+    if (myPos) {
+      const meters = distanceMeters(myPos, { lat: m.lat, lng: m.lng });
+      dist.textContent = meters < 1000
+        ? `${Math.round(meters)}m`
+        : `${(meters / 1000).toFixed(1)}km`;
+    } else {
+      dist.textContent = "—";
+    }
+
+    item.appendChild(img);
+    item.appendChild(body);
+    item.appendChild(dist);
+    item.addEventListener("click", () => {
+      closeHistory();
+      setTimeout(() => openViewer(m), 320);
+    });
+
+    list.appendChild(item);
+  }
+}
+
 // ---------- 記憶詳細 ----------
 function openViewer(m) {
   $("viewer").classList.remove("hidden");
@@ -408,6 +476,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   $("range-btn").addEventListener("click", cycleRange);
   $("place-btn").addEventListener("click", openUpload);
+  $("history-btn").addEventListener("click", openHistory);
+  $("history-close").addEventListener("click", closeHistory);
+  $("history-backdrop").addEventListener("click", closeHistory);
   $("upload-back").addEventListener("click", closeUpload);
   $("polaroid-slot").addEventListener("click", () => $("media-input").click());
   $("media-input").addEventListener("change", handleMediaPick);

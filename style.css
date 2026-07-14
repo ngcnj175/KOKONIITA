@@ -69,8 +69,22 @@ html, body {
   padding: 16px 14px 24px;
   border-top: 1px solid rgba(17, 17, 17, 0.1);
   display: flex;
+  align-items: center;
   justify-content: center;
+  gap: 12px;
 }
+.ghost-btn {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--ink);
+  padding: 12px 20px;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 13px;
+  letter-spacing: 0.15em;
+  cursor: pointer;
+}
+.ghost-btn:active { background: rgba(17, 17, 17, 0.06); }
 .place-btn {
   background: var(--ink);
   color: #fff;
@@ -368,5 +382,119 @@ button.primary, button.ghost {
   letter-spacing: 0.1em;
 }
 button.primary { background: var(--ink); color: #fff; border: 1px solid var(--ink); }
+
+/* ---------- ボトムシート（履歴） ---------- */
+.sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  pointer-events: none;
+}
+.sheet.hidden { display: none; }
+.sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(17, 17, 17, 0.35);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: auto;
+}
+.sheet.open .sheet-backdrop { opacity: 1; }
+
+.sheet-panel {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  max-height: 85vh;
+  background: #fff;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.15);
+  transform: translateY(100%);
+  transition: transform 0.32s cubic-bezier(0.2, 0.7, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  pointer-events: auto;
+}
+.sheet.open .sheet-panel { transform: translateY(0); }
+
+.sheet-handle {
+  width: 40px;
+  height: 4px;
+  background: rgba(17, 17, 17, 0.2);
+  border-radius: 2px;
+  margin: 10px auto 4px;
+  flex-shrink: 0;
+}
+.sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px 12px;
+  border-bottom: 1px solid rgba(17, 17, 17, 0.08);
+  flex-shrink: 0;
+}
+.sheet-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--ink);
+  font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+}
+
+.history-list {
+  overflow-y: auto;
+  padding: 8px 12px 24px;
+  flex: 1;
+  -webkit-overflow-scrolling: touch;
+}
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 8px;
+  border-bottom: 1px solid rgba(17, 17, 17, 0.06);
+  cursor: pointer;
+}
+.history-item:active { background: rgba(17, 17, 17, 0.04); }
+.history-thumb {
+  width: 56px;
+  height: 56px;
+  border-radius: 4px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: #f0f0f0;
+  border: 1px solid rgba(17, 17, 17, 0.08);
+}
+.history-body { flex: 1; min-width: 0; }
+.history-msg {
+  margin: 0 0 3px;
+  font-size: 13px;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  word-break: break-word;
+}
+.history-meta {
+  margin: 0;
+  font-size: 11px;
+  color: var(--dim);
+}
+.history-dist {
+  font-size: 11px;
+  color: var(--dim);
+  flex-shrink: 0;
+  text-align: right;
+}
+.history-empty {
+  text-align: center;
+  padding: 40px 20px;
+  font-size: 13px;
+}
+
 button.ghost { background: transparent; color: var(--dim); border: 1px solid rgba(17, 17, 17, 0.2); }
 button.ghost.danger { color: var(--danger); border-color: rgba(178, 58, 58, 0.4); }
