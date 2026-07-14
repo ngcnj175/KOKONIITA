@@ -55,41 +55,33 @@
     </footer>
   </section>
 
-  <!-- アップロード画面 -->
-  <section id="upload-screen" class="screen hidden">
-    <header class="topbar">
-      <button id="upload-back" class="chip back" type="button">← 戻る</button>
-      <h1 class="brand small">記憶を置く</h1>
-      <span class="chip invisible">.</span>
-    </header>
+  <!-- 隠しファイル入力（＋記憶を置く から直接呼ぶ） -->
+  <input id="media-input" type="file" accept="image/*" hidden />
 
-    <div class="upload-body">
-      <div class="polaroid-frame empty" id="polaroid-slot">
-        <input id="media-input" type="file" accept="image/*" hidden />
-        <div id="polaroid-empty" class="polaroid-empty">
-          <p>写真を選ぶ</p>
-          <p class="small">タップして撮影 or 選択</p>
+  <!-- 記憶を置くボトムシート（写真選択後にせり上がる） -->
+  <div id="compose-sheet" class="sheet hidden" role="dialog" aria-modal="true">
+    <div class="sheet-backdrop" id="compose-backdrop"></div>
+    <div class="sheet-panel">
+      <div class="sheet-handle"></div>
+      <header class="sheet-head">
+        <h2 class="sheet-title">記憶を置く</h2>
+        <button id="compose-cancel" class="chip" type="button">やめる</button>
+      </header>
+      <div class="compose-body">
+        <div class="polaroid-frame small">
+          <img id="compose-preview" alt="" />
         </div>
-        <img id="polaroid-preview" alt="" class="hidden" />
+        <label class="field">
+          <span>メッセージ（任意）</span>
+          <textarea id="note-input" maxlength="140" rows="3" placeholder="ここに残す言葉"></textarea>
+        </label>
+        <button id="save-btn" class="place-btn wide" type="button">ここに置く</button>
       </div>
-
-      <label class="field">
-        <span>メッセージ</span>
-        <textarea id="note-input" maxlength="140" rows="3" placeholder="ここに残す言葉"></textarea>
-      </label>
-
-      <div class="gps-panel" id="gps-panel">
-        <div class="gps-indicator" id="gps-indicator"></div>
-        <div class="gps-text">
-          <p id="gps-primary">位置を確認中…</p>
-          <p id="gps-secondary" class="small dim">精度が20m以内になるまでお待ちください</p>
-        </div>
-      </div>
-
-      <button id="save-btn" class="place-btn wide" type="button" disabled>ここに置く</button>
-      <button id="force-save-btn" class="ghost-btn wide hidden" type="button">この精度でも置く</button>
     </div>
-  </section>
+  </div>
+
+  <!-- トースト -->
+  <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
 
   <!-- AR画面 -->
   <section id="ar-screen" class="screen hidden">

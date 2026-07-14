@@ -75,12 +75,12 @@ function watchLocation() {
       gpsError = null;
       updateHud();
       renderRadar();
-      updateUploadGpsPanel();
+      updatePlaceButtonState();
     },
     (err) => {
       gpsError = err.message || "位置情報を取得できません";
       $("hud-status").textContent = `位置情報エラー: ${gpsError}`;
-      updateUploadGpsPanel();
+      updatePlaceButtonState();
     },
     { enableHighAccuracy: true, maximumAge: 3000, timeout: 15000 }
   );
@@ -281,32 +281,60 @@ function showScreen(id) {
   $(id).classList.remove("hidden");
 }
 
-// ---------- アップロード ----------
+// ---------- 記憶を置く ----------
 let pendingImageDataUrl = null;
 
-function openUpload() {
-  pendingImageDataUrl = null;
-  $("polaroid-preview").classList.add("hidden");
-  $("polaroid-preview").src = "";
-  $("polaroid-empty").classList.remove("hidden");
-  $("polaroid-slot").classList.add("empty");
-  $("note-input").value = "";
-  updateUploadGpsPanel();
-  showScreen("upload-screen");
+// ＋記憶を置くボタン押下：GPS精度チェック→OKなら写真選択起動
+function onPlaceButtonTap() {
+  if (!myPos) {
+    showToast(gpsError
+      ? `位置情報エラー：${gpsError}`
+      : "位置情報を取得中です。もう少しお待ちください");
+    return;
+  }
+  if (myPos.accuracy > GPS_ACCURACY_THRESHOLD_M) {
+    showToast(`位置精度が低いため置けません（±${Math.round(myPos.accuracy)}m）`);
+    return;
+  }
+  $("media-input").click();
 }
-function closeUpload() { showScreen("radar-screen"); }
 
 async function handleMediaPick(e) {
   const file = e.target.files?.[0];
+  e.target.value = ""; // 同じファイル再選択対応
   if (!file) return;
+  // 選択直後にもう一度精度チェック（時間経過で悪化した場合）
+  if (!myPos || myPos.accuracy > GPS_ACCURACY_THRESHOLD_M) {
+    showToast("位置精度が低くなりました。もう一度お試しください");
+    return;
+  }
   const dataUrl = await compressImage(file);
   pendingImageDataUrl = dataUrl;
-  const img = $("polaroid-preview");
-  img.src = dataUrl;
-  img.classList.remove("hidden");
-  $("polaroid-empty").classList.add("hidden");
-  $("polaroid-slot").classList.remove("empty");
-  updateUploadGpsPanel();
+  $("compose-preview").src = dataUrl;
+  $("note-input").value = "";
+  openComposeSheet();
+}
+
+function openComposeSheet() {
+  const sheet = $("compose-sheet");
+  sheet.classList.remove("hidden");
+  requestAnimationFrame(() => sheet.classList.add("open"));
+}
+function closeComposeSheet() {
+  const sheet = $("compose-sheet");
+  sheet.classList.remove("open");
+  setTimeout(() => {
+    sheet.classList.add("hidden");
+    pendingImageDataUrl = null;
+    $("compose-preview").src = "";
+  }, 320);
+}
+
+function updatePlaceButtonState() {
+  const btn = $("place-btn");
+  if (!btn) return;
+  const disabled = !myPos || myPos.accuracy > GPS_ACCURACY_THRESHOLD_M;
+  btn.classList.toggle("looks-disabled", disabled);
 }
 
 async function compressImage(file) {
@@ -326,51 +354,12 @@ async function compressImage(file) {
   return canvas.toDataURL("image/jpeg", JPEG_QUALITY);
 }
 
-function updateUploadGpsPanel() {
-  const uploadOpen = !$("upload-screen").classList.contains("hidden");
-  if (!uploadOpen) return;
-
-  const ind = $("gps-indicator");
-  const primary = $("gps-primary");
-  const secondary = $("gps-secondary");
-  const btn = $("save-btn");
-  const forceBtn = $("force-save-btn");
-
-  if (gpsError && !myPos) {
-    ind.className = "gps-indicator";
-    primary.textContent = "位置情報を取得できません";
-    secondary.textContent = gpsError;
-    btn.disabled = true;
-    forceBtn.classList.add("hidden");
-    return;
-  }
-  if (!myPos) {
-    ind.className = "gps-indicator pending";
-    primary.textContent = "位置を確認中…";
-    secondary.textContent = "GPSの信号を待っています（屋外に出ると早くなります）";
-    btn.disabled = true;
-    forceBtn.classList.add("hidden");
-    return;
-  }
-  const acc = Math.round(myPos.accuracy);
-  if (myPos.accuracy > GPS_ACCURACY_THRESHOLD_M) {
-    ind.className = "gps-indicator";
-    primary.textContent = `位置精度: ±${acc}m`;
-    secondary.textContent = `±${GPS_ACCURACY_THRESHOLD_M}m以内になるまで通常は待つ場所です`;
-    btn.disabled = true;
-    forceBtn.classList.toggle("hidden", !pendingImageDataUrl);
-  } else {
-    ind.className = "gps-indicator ok";
-    primary.textContent = `位置精度: ±${acc}m`;
-    secondary.textContent = "この場所に置けます";
-    btn.disabled = !pendingImageDataUrl;
-    forceBtn.classList.add("hidden");
-  }
-}
-
-function savePlaced(opts = {}) {
+function savePlaced() {
   if (!pendingImageDataUrl || !myPos) return;
-  if (!opts.force && myPos.accuracy > GPS_ACCURACY_THRESHOLD_M) return;
+  if (myPos.accuracy > GPS_ACCURACY_THRESHOLD_M) {
+    showToast("位置精度が低くなったため置けませんでした");
+    return;
+  }
   const memory = {
     id: crypto.randomUUID(),
     lat: myPos.lat,
@@ -382,7 +371,23 @@ function savePlaced(opts = {}) {
   };
   addMemory(memory);
   renderRadar();
-  closeUpload();
+  closeComposeSheet();
+  showToast("記憶を置きました");
+}
+
+// ---------- トースト ----------
+let toastTimer = null;
+function showToast(msg, ms = 3000) {
+  const t = $("toast");
+  t.textContent = msg;
+  t.classList.remove("hidden");
+  // 次の描画サイクルで .show を付与（RAFが背景タブで止まる問題を避けるため setTimeout を使用）
+  setTimeout(() => t.classList.add("show"), 16);
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    t.classList.remove("show");
+    setTimeout(() => t.classList.add("hidden"), 260);
+  }, ms);
 }
 
 // ---------- AR画面 ----------
@@ -671,23 +676,20 @@ document.addEventListener("DOMContentLoaded", () => {
   watchLocation();
   setupOrientation();
   renderRadar();
+  updatePlaceButtonState();
 
   $("range-btn").addEventListener("click", cycleRange);
-  $("place-btn").addEventListener("click", openUpload);
+  $("place-btn").addEventListener("click", onPlaceButtonTap);
   $("history-btn").addEventListener("click", openHistory);
   $("history-close").addEventListener("click", closeHistory);
   $("history-backdrop").addEventListener("click", closeHistory);
   $("ar-btn").addEventListener("click", openAR);
   $("ar-back").addEventListener("click", closeAR);
   $("ar-error-back").addEventListener("click", closeAR);
-  $("upload-back").addEventListener("click", closeUpload);
-  $("polaroid-slot").addEventListener("click", () => $("media-input").click());
   $("media-input").addEventListener("change", handleMediaPick);
-  $("save-btn").addEventListener("click", () => savePlaced());
-  $("force-save-btn").addEventListener("click", () => {
-    if (!confirm(`位置精度が悪い状態で置きます（±${Math.round(myPos.accuracy)}m）。よろしいですか？`)) return;
-    savePlaced({ force: true });
-  });
+  $("save-btn").addEventListener("click", savePlaced);
+  $("compose-cancel").addEventListener("click", closeComposeSheet);
+  $("compose-backdrop").addEventListener("click", closeComposeSheet);
   $("viewer-close").addEventListener("click", closeViewer);
   $("viewer-delete").addEventListener("click", deleteCurrent);
   $("polaroid-flip").addEventListener("click", () => {
