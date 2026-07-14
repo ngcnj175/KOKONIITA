@@ -371,7 +371,7 @@ function savePlaced() {
 const AR_FOV_DEG = 60;             // 想定水平画角
 const AR_FAR_MAX_M = 100;          // ARに映る最遠距離
 const AR_NEAR_MAX_M = 20;          // タップで画像解放される距離
-const AR_ICON_MIN_PX = 70;         // 100m地点でのアイコンサイズ
+const AR_ICON_MIN_PX = 20;         // 100m地点でのアイコンサイズ
 const AR_ICON_MAX_PX = 180;        // 20m地点でのアイコンサイズ
 let arStream = null;
 let arRafId = null;
