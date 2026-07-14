@@ -721,6 +721,14 @@ function renderHistoryList() {
   empty.classList.add("hidden");
 
   for (const m of memories) {
+    const row = document.createElement("div");
+    row.className = "history-row";
+
+    const delBtn = document.createElement("button");
+    delBtn.className = "history-delete";
+    delBtn.type = "button";
+    delBtn.textContent = "回収";
+
     const item = document.createElement("div");
     item.className = "history-item";
 
@@ -755,13 +763,72 @@ function renderHistoryList() {
     item.appendChild(img);
     item.appendChild(body);
     item.appendChild(dist);
-    item.addEventListener("click", () => {
+    row.appendChild(delBtn);
+    row.appendChild(item);
+
+    attachHistorySwipe(item, () => {
+      if (!confirm("この記憶を回収しますか？")) {
+        item.classList.remove("revealed");
+        return;
+      }
+      removeMemory(m.id);
+      renderHistoryList();
+      renderRadar();
+    }, () => {
       closeHistory();
       setTimeout(() => openViewer(m), 320);
     });
 
-    list.appendChild(item);
+    list.appendChild(row);
   }
+}
+
+function attachHistorySwipe(item, onDelete, onTap) {
+  const REVEAL = 96;
+  const THRESHOLD = 40;
+  let startX = 0, baseX = 0, dx = 0, active = false, moved = false;
+
+  item.addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    startX = e.clientX;
+    baseX = item.classList.contains("revealed") ? -REVEAL : 0;
+    dx = 0;
+    active = true;
+    moved = false;
+    item.classList.add("swiping");
+  });
+
+  item.addEventListener("pointermove", (e) => {
+    if (!active) return;
+    dx = e.clientX - startX;
+    if (Math.abs(dx) > 4) moved = true;
+    const x = Math.max(-REVEAL * 1.3, Math.min(0, baseX + dx));
+    item.style.transform = `translateX(${x}px)`;
+  });
+
+  const end = () => {
+    if (!active) return;
+    active = false;
+    item.classList.remove("swiping");
+    item.style.transform = "";
+    const final = baseX + dx;
+    item.classList.toggle("revealed", final < -THRESHOLD);
+  };
+  item.addEventListener("pointerup", end);
+  item.addEventListener("pointercancel", end);
+
+  item.addEventListener("click", (e) => {
+    if (moved) { e.stopPropagation(); return; }
+    if (item.classList.contains("revealed")) {
+      item.classList.remove("revealed");
+      e.stopPropagation();
+      return;
+    }
+    onTap();
+  });
+
+  item.parentElement && item.parentElement.querySelector(".history-delete")
+    ?.addEventListener("click", (e) => { e.stopPropagation(); onDelete(); });
 }
 
 // ---------- 記憶詳細 ----------
@@ -772,29 +839,18 @@ function openViewer(m) {
 
   $("viewer-locked").classList.toggle("hidden", unlocked);
   $("viewer-open").classList.toggle("hidden", !unlocked);
-  $("viewer-delete").classList.toggle("hidden", !unlocked);
-  $("viewer-delete").dataset.id = m.id;
 
   if (unlocked) {
     $("viewer-img").src = m.image;
     $("viewer-note").textContent = m.note || "（メッセージなし）";
     $("polaroid-flip").classList.remove("flipped");
     const d = new Date(m.createdAt);
-    $("viewer-meta").textContent = `置かれた日: ${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()}`;
+    $("viewer-meta").textContent = `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()}`;
   } else {
     $("viewer-distance").textContent = `距離: 約${Math.round(dist)}m`;
   }
 }
 function closeViewer() { $("viewer").classList.add("hidden"); }
-
-function deleteCurrent() {
-  const id = $("viewer-delete").dataset.id;
-  if (!id) return;
-  if (!confirm("この記憶を回収しますか？")) return;
-  removeMemory(id);
-  renderRadar();
-  closeViewer();
-}
 
 // ---------- 起動 ----------
 document.addEventListener("DOMContentLoaded", () => {
@@ -816,7 +872,9 @@ document.addEventListener("DOMContentLoaded", () => {
   $("compose-cancel").addEventListener("click", closeComposeSheet);
   $("compose-backdrop").addEventListener("click", closeComposeSheet);
   $("viewer-close").addEventListener("click", closeViewer);
-  $("viewer-delete").addEventListener("click", deleteCurrent);
+  $("viewer").addEventListener("click", (e) => {
+    if (e.target === $("viewer")) closeViewer();
+  });
   $("polaroid-flip").addEventListener("click", () => {
     $("polaroid-flip").classList.toggle("flipped");
   });

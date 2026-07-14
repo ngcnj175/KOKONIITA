@@ -124,34 +124,28 @@
   </div>
 
   <!-- 記憶詳細（レーダーの点タップで開く） -->
-  <div id="viewer" class="modal hidden" role="dialog" aria-modal="true">
-    <div class="modal-card">
-      <div id="viewer-locked" class="locked hidden">
-        <p class="locked-title">まだ近づいていない</p>
-        <p class="locked-sub">半径20mまで近づくと解放されます</p>
-        <p id="viewer-distance" class="dim"></p>
-      </div>
-      <div id="viewer-open" class="hidden">
-        <div class="polaroid-flip" id="polaroid-flip">
-          <div class="flip-inner">
-            <div class="flip-face flip-front">
-              <div class="polaroid-frame small">
-                <img id="viewer-img" alt="memory" />
-              </div>
+  <div id="viewer" class="viewer hidden" role="dialog" aria-modal="true">
+    <button id="viewer-close" class="viewer-close" type="button" aria-label="閉じる">✕</button>
+    <div id="viewer-locked" class="locked-card hidden">
+      <p class="locked-title">まだ近づいていない</p>
+      <p class="locked-sub">半径20mまで近づくと解放されます</p>
+      <p id="viewer-distance" class="dim"></p>
+    </div>
+    <div id="viewer-open" class="hidden">
+      <div class="polaroid-flip" id="polaroid-flip">
+        <div class="flip-inner">
+          <div class="flip-face flip-front">
+            <div class="polaroid-frame small">
+              <img id="viewer-img" alt="memory" />
             </div>
-            <div class="flip-face flip-back">
-              <div class="polaroid-frame small back">
-                <p id="viewer-note" class="handwritten"></p>
-              </div>
+          </div>
+          <div class="flip-face flip-back">
+            <div class="polaroid-frame small back">
+              <p id="viewer-note" class="handwritten"></p>
+              <span id="viewer-meta" class="viewer-meta"></span>
             </div>
           </div>
         </div>
-        <p class="hint-flip dim small">タップで裏返す</p>
-        <p id="viewer-meta" class="dim small"></p>
-      </div>
-      <div class="actions">
-        <button id="viewer-delete" type="button" class="ghost danger hidden">回収する</button>
-        <button id="viewer-close" type="button" class="primary">閉じる</button>
       </div>
     </div>
   </div>

@@ -452,9 +452,58 @@ html, body {
   color: var(--ink);
 }
 .modal-card h3 { margin: 0 0 12px; font-weight: 400; letter-spacing: 0.1em; }
-.locked { text-align: center; padding: 24px 0; }
 .locked-title { font-size: 16px; letter-spacing: 0.1em; margin: 0 0 6px; }
 .locked-sub { font-size: 12px; color: var(--dim); margin: 0 0 12px; }
+
+/* ---------- 記憶詳細ビューア（カードレス） ---------- */
+.viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(17, 17, 17, 0.55);
+  padding: 20px;
+}
+.viewer.hidden { display: none; }
+.viewer-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+.viewer-close:active { background: rgba(255, 255, 255, 1); }
+.locked-card {
+  background: #fff;
+  border-radius: 4px;
+  padding: 24px 28px;
+  text-align: center;
+  max-width: 320px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+.viewer-meta {
+  position: absolute;
+  right: 14px;
+  bottom: 10px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--dim);
+  font-family: "Klee One", "Hiragino Kaku Gothic ProN", sans-serif;
+}
+.polaroid-flip .polaroid-frame.small.back {
+  position: relative;
+}
 
 .actions {
   display: flex;
@@ -704,14 +753,39 @@ button.primary { background: var(--ink); color: #fff; border: 1px solid var(--in
   flex: 1;
   -webkit-overflow-scrolling: touch;
 }
+.history-row {
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(17, 17, 17, 0.06);
+}
+.history-delete {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 96px;
+  border: none;
+  background: var(--danger);
+  color: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  letter-spacing: 0.15em;
+  cursor: pointer;
+}
 .history-item {
+  position: relative;
+  background: #fff;
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 10px 8px;
-  border-bottom: 1px solid rgba(17, 17, 17, 0.06);
   cursor: pointer;
+  transform: translateX(0);
+  transition: transform 0.25s cubic-bezier(0.2, 0.7, 0.2, 1);
+  touch-action: pan-y;
 }
+.history-item.swiping { transition: none; }
+.history-item.revealed { transform: translateX(-96px); }
 .history-item:active { background: rgba(17, 17, 17, 0.04); }
 .history-thumb {
   width: 56px;
