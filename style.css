@@ -455,16 +455,20 @@ button.primary { background: var(--ink); color: #fff; border: 1px solid var(--in
 }
 .ar-face {
   width: 100%;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  -webkit-transform: translateZ(0.5px);
+  transform: translateZ(0.5px);
 }
 .ar-face.ar-back {
   position: absolute;
   inset: 0;
-  -webkit-transform: rotateY(180deg);
-  transform: rotateY(180deg);
+  -webkit-transform: rotateY(180deg) translateZ(0.5px);
+  transform: rotateY(180deg) translateZ(0.5px);
 }
 .ar-item .polaroid-frame {
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
-  padding: 8px 8px 28px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+  padding: 8% 8% 22%;
   min-width: 0;
   min-height: 0;
   width: 100%;
@@ -521,18 +525,15 @@ button.primary { background: var(--ink); color: #fff; border: 1px solid var(--in
 .ar-item.ar-near {
   cursor: pointer;
 }
-
-.ar-dist-tag {
+/* 20pxのポラロイドはタップ領域が小さすぎるので、透明なヒットエリアを広げる */
+.ar-item.ar-near::before {
+  content: "";
   position: absolute;
-  bottom: 4px;
-  left: 0;
-  right: 0;
-  text-align: center;
-  font-size: 10px;
-  color: var(--ink);
-  font-family: "Klee One", cursive;
-  letter-spacing: 0.05em;
+  inset: -22px;
+  z-index: -1;
 }
+
+.ar-dist-tag { display: none; }
 
 .ar-error {
   position: absolute;
