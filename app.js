@@ -353,9 +353,6 @@ function renderRadar() {
     edge.appendChild(tri);
   }
 
-  // カウント表示
-  const inRange = clusters.reduce((sum, c) => sum + c.memories.length, 0);
-  $("hud-count").textContent = `記憶: ${inRange} / 全 ${memories.length}`;
 }
 
 function clusterPoints(points, threshold) {
