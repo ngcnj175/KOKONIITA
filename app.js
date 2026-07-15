@@ -831,13 +831,11 @@ function renderArFrame() {
       if (stage === "ar-near") {
         frontSlot.innerHTML = `<img alt="" />`;
         frontSlot.querySelector("img").src = m.image;
-        const msg = (m.note || "").trim();
-        backSlot.innerHTML = `<p class="handwritten"></p>`;
-        backSlot.querySelector("p").textContent = msg || "（メッセージなし）";
       } else {
         frontSlot.innerHTML = `<div class="ar-placeholder"></div>`;
-        backSlot.innerHTML = `<div class="ar-placeholder blank"></div>`;
       }
+      // 裏面はAR中は常に無地（メッセージは詳細ビューアで見せる）
+      backSlot.innerHTML = `<div class="ar-placeholder blank"></div>`;
       el.dataset.stage = stage;
     }
 
