@@ -204,7 +204,7 @@ function decodeJwtPayload(jwt) {
 // レーダー用: 全公開記憶（LIMIT付き）
 app.get("/api/memories", async (c) => {
   const { results } = await c.env.DB.prepare(
-    `SELECT id, user_id, lat, lng, accuracy, note, image_key, created_at
+    `SELECT id, user_id, lat, lng, accuracy, note, created_at
      FROM memories ORDER BY created_at DESC LIMIT 1000`
   ).all();
   return c.json({ memories: results.map(toMemoryRow) });
@@ -215,7 +215,7 @@ app.get("/api/me/memories", async (c) => {
   const s = await requireSession(c);
   if (!s) return c.json({ error: "unauthorized" }, 401);
   const { results } = await c.env.DB.prepare(
-    `SELECT id, user_id, lat, lng, accuracy, note, image_key, created_at
+    `SELECT id, user_id, lat, lng, accuracy, note, created_at
      FROM memories WHERE user_id = ? ORDER BY created_at DESC`
   ).bind(s.userId).all();
   return c.json({ memories: results.map(toMemoryRow) });
