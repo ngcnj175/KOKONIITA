@@ -1,7 +1,6 @@
 // ココニイタ。— レーダー / AR / 記憶投稿
 // KOKONIITA_CONFIG.API_BASE が設定されているとAPIモードで動作する。
 
-const STORAGE_KEY = "kokoniita.memories.v1";
 const UNLOCK_RADIUS_M = 20;
 const GPS_ACCURACY_THRESHOLD_M = 20;
 const MAX_IMAGE_DIM = 1600;      // クロップ前の作業用最大寸法
@@ -24,15 +23,14 @@ let myPos = null;      // {lat, lng, accuracy}
 let gpsError = null;   // 位置情報エラー
 let heading = 0;       // 度、0=北、時計回り
 
-// ---------- API / ストレージ ----------
+// ---------- API ----------
 const API_BASE = (window.KOKONIITA_CONFIG?.API_BASE || "").replace(/\/$/, "");
-const API_MODE = !!API_BASE;
-
-let _publicCache = null;   // API_MODE: 全公開記憶
-let _myCache = null;       // API_MODE: 自分の記憶
-let _currentUser = null;   // {id, name, email} | null
-
 const TOKEN_STORAGE_KEY = "kokoniita.token.v1";
+
+let _publicCache = [];    // 全公開記憶
+let _myCache = [];        // 自分の記憶
+let _currentUser = null;  // {id, name, email, picture} | null
+
 function getStoredToken() {
   try { return localStorage.getItem(TOKEN_STORAGE_KEY) || null; }
   catch { return null; }
@@ -52,23 +50,10 @@ function normalizeApiMemory(m) {
   return { ...m, image: apiUrl(m.imageUrl) };
 }
 
-// 同期取得（レンダリング用）
-function loadMemories() {
-  if (API_MODE) return _publicCache || [];
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); }
-  catch { return []; }
-}
-function loadMyMemories() {
-  if (API_MODE) return _myCache || [];
-  return loadMemories();
-}
-function saveMemories(list) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-}
+function loadMemories() { return _publicCache; }
+function loadMyMemories() { return _myCache; }
 
-// リフレッシュ
 async function refreshMemories() {
-  if (!API_MODE) return;
   try {
     const r = await apiFetch("/api/memories");
     if (!r.ok) return;
@@ -77,18 +62,16 @@ async function refreshMemories() {
   } catch (e) { console.warn("refreshMemories", e); }
 }
 async function refreshMyMemories() {
-  if (!API_MODE) { _myCache = null; return; }
-  if (!_currentUser) { _myCache = null; return; }
+  if (!_currentUser) { _myCache = []; return; }
   try {
     const r = await apiFetch("/api/me/memories");
-    if (r.status === 401) { _currentUser = null; _myCache = null; updateUserChip(); return; }
+    if (r.status === 401) { _currentUser = null; _myCache = []; updateUserChip(); return; }
     if (!r.ok) return;
     const j = await r.json();
     _myCache = (j.memories || []).map(normalizeApiMemory);
   } catch (e) { console.warn("refreshMyMemories", e); }
 }
 async function refreshMe() {
-  if (!API_MODE) return;
   try {
     const r = await apiFetch("/api/me");
     if (!r.ok) return;
@@ -98,7 +81,6 @@ async function refreshMe() {
   } catch (e) { console.warn("refreshMe", e); }
 }
 
-// 追加・削除
 async function postMemoryToApi({ blob, lat, lng, accuracy, note }) {
   const fd = new FormData();
   fd.append("image", blob, "memory.jpg");
@@ -111,29 +93,21 @@ async function postMemoryToApi({ blob, lat, lng, accuracy, note }) {
   if (!r.ok) throw new Error("post failed: " + r.status);
   return r.json();
 }
-function addMemoryLocal(m) {
-  const list = loadMemories(); list.push(m); saveMemories(list);
-}
+
 async function removeMemory(id) {
-  if (API_MODE) {
-    const r = await apiFetch(`/api/memories/${id}`, { method: "DELETE" });
-    if (r.status === 401) throw new Error("unauthorized");
-    if (r.status === 403) throw new Error("forbidden");
-    if (!r.ok && r.status !== 404) throw new Error("delete failed");
-    await Promise.all([refreshMemories(), refreshMyMemories()]);
-    return;
-  }
-  saveMemories(loadMemories().filter(m => m.id !== id));
+  const r = await apiFetch(`/api/memories/${id}`, { method: "DELETE" });
+  if (r.status === 401) throw new Error("unauthorized");
+  if (r.status === 403) throw new Error("forbidden");
+  if (!r.ok && r.status !== 404) throw new Error("delete failed");
+  await Promise.all([refreshMemories(), refreshMyMemories()]);
 }
 
-// ログイン導線
 function goToLogin() { window.location.href = apiUrl("/api/auth/google"); }
 function updateUserChip() {
   const chip = document.getElementById("user-chip");
   const avatar = document.getElementById("user-avatar");
   const label = document.getElementById("user-label");
   if (!chip || !avatar || !label) return;
-  if (!API_MODE) { chip.classList.add("hidden"); return; }
   chip.classList.remove("hidden");
   if (_currentUser) {
     chip.dataset.state = "in";
@@ -401,7 +375,7 @@ function showScreen(id) {
 // ---------- 記憶を置く ----------
 // ＋記憶を置くボタン押下：GPS精度チェック→OKなら写真選択起動
 function onPlaceButtonTap() {
-  if (API_MODE && !_currentUser) {
+  if (!_currentUser) {
     if (confirm("記憶を置くにはGoogleでログインが必要です。ログインしますか？")) goToLogin();
     return;
   }
@@ -627,7 +601,7 @@ async function savePlaced() {
     showToast("位置精度が低くなったため置けませんでした");
     return;
   }
-  if (API_MODE && !_currentUser) {
+  if (!_currentUser) {
     closeComposeSheet();
     if (confirm("記憶を置くにはGoogleでログインが必要です。ログインしますか？")) goToLogin();
     return;
@@ -635,36 +609,24 @@ async function savePlaced() {
   const image = cropToDataUrl();
   const note = $("note-input").value.trim();
 
-  if (API_MODE) {
-    try {
-      const blob = await (await fetch(image)).blob();
-      await postMemoryToApi({
-        blob,
-        lat: myPos.lat, lng: myPos.lng, accuracy: myPos.accuracy, note,
-      });
-      await Promise.all([refreshMemories(), refreshMyMemories()]);
-      renderRadar();
+  try {
+    const blob = await (await fetch(image)).blob();
+    await postMemoryToApi({
+      blob,
+      lat: myPos.lat, lng: myPos.lng, accuracy: myPos.accuracy, note,
+    });
+    await Promise.all([refreshMemories(), refreshMyMemories()]);
+    renderRadar();
+    closeComposeSheet();
+    showToast("記憶を置きました");
+  } catch (e) {
+    if (e.message === "unauthorized") {
       closeComposeSheet();
-      showToast("記憶を置きました");
-    } catch (e) {
-      if (e.message === "unauthorized") {
-        closeComposeSheet();
-        if (confirm("ログインが必要です。ログインしますか？")) goToLogin();
-      } else {
-        showToast("投稿に失敗しました");
-      }
+      if (confirm("ログインが必要です。ログインしますか？")) goToLogin();
+    } else {
+      showToast("投稿に失敗しました");
     }
-    return;
   }
-
-  addMemoryLocal({
-    id: crypto.randomUUID(),
-    lat: myPos.lat, lng: myPos.lng, accuracy: myPos.accuracy,
-    note, image, createdAt: Date.now(),
-  });
-  renderRadar();
-  closeComposeSheet();
-  showToast("記憶を置きました");
 }
 
 // ---------- トースト ----------
@@ -863,13 +825,11 @@ function onArItemTap(m, dist) {
 
 // ---------- 履歴（ボトムシート） ----------
 async function openHistory() {
-  if (API_MODE) {
-    if (!_currentUser) {
-      if (confirm("履歴を見るにはGoogleでログインが必要です。ログインしますか？")) goToLogin();
-      return;
-    }
-    await refreshMyMemories();
+  if (!_currentUser) {
+    if (confirm("履歴を見るにはGoogleでログインが必要です。ログインしますか？")) goToLogin();
+    return;
   }
+  await refreshMyMemories();
   renderHistoryList();
   const sheet = $("history-sheet");
   sheet.classList.remove("hidden");
@@ -1042,27 +1002,24 @@ document.addEventListener("DOMContentLoaded", () => {
   updatePlaceButtonState();
   updateUserChip();
 
-  if (API_MODE) {
-    // OAuthコールバックから戻ってきた場合、URLフラグメントのトークンを保存
-    if (location.hash.startsWith("#kk_token=")) {
-      const t = decodeURIComponent(location.hash.slice("#kk_token=".length));
-      setStoredToken(t);
-      history.replaceState(null, "", location.pathname + location.search);
-    }
-    refreshMe().then(() => {
-      if (_currentUser) refreshMyMemories();
-    });
-    refreshMemories().then(renderRadar);
-    setInterval(() => refreshMemories().then(renderRadar), 60000);
+  // OAuthコールバックから戻ってきた場合、URLフラグメントのトークンを保存
+  if (location.hash.startsWith("#kk_token=")) {
+    const t = decodeURIComponent(location.hash.slice("#kk_token=".length));
+    setStoredToken(t);
+    history.replaceState(null, "", location.pathname + location.search);
   }
+  refreshMe().then(() => {
+    if (_currentUser) refreshMyMemories();
+  });
+  refreshMemories().then(renderRadar);
+  setInterval(() => refreshMemories().then(renderRadar), 60000);
 
-  document.getElementById("user-chip").addEventListener("click", async () => {
-    if (!API_MODE) return;
+  $("user-chip").addEventListener("click", async () => {
     if (_currentUser) {
       if (!confirm(`${_currentUser.name || "アカウント"} からログアウトしますか？`)) return;
       try { await apiFetch("/api/auth/logout", { method: "POST" }); } catch {}
       setStoredToken(null);
-      _currentUser = null; _myCache = null;
+      _currentUser = null; _myCache = [];
       updateUserChip();
       showToast("ログアウトしました");
     } else {
