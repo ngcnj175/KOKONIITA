@@ -40,8 +40,19 @@ html, body {
   align-items: center;
 }
 #user-chip[data-state="in"] {
-  opacity: 0.75;
+  opacity: 0.85;
+  padding: 3px;
+  border: 1px solid var(--line);
 }
+.user-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: block;
+  object-fit: cover;
+}
+.user-avatar.hidden { display: none; }
+.user-label.hidden { display: none; }
 .topbar {
   position: relative;
   display: flex;
@@ -133,6 +144,7 @@ html, body {
   height: min(88vw, 88vh);
   max-width: 500px;
   max-height: 500px;
+  overflow: visible;
 }
 .ring {
   fill: none;
@@ -608,6 +620,7 @@ button.primary { background: var(--ink); color: #fff; border: 1px solid var(--in
 .ar-flipper {
   position: relative;
   width: 100%;
+  aspect-ratio: 100 / 114;
   transform-style: preserve-3d;
   -webkit-transform-style: preserve-3d;
   will-change: transform;
@@ -615,17 +628,23 @@ button.primary { background: var(--ink); color: #fff; border: 1px solid var(--in
   animation: ar-rotate-y 12s linear infinite;
 }
 .ar-face {
+  position: absolute;
+  inset: 0;
   width: 100%;
+  height: 100%;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
   -webkit-transform: translateZ(0.5px);
   transform: translateZ(0.5px);
 }
 .ar-face.ar-back {
-  position: absolute;
-  inset: 0;
   -webkit-transform: rotateY(180deg) translateZ(0.5px);
   transform: rotateY(180deg) translateZ(0.5px);
+}
+.ar-face > .polaroid-frame {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
 }
 .ar-item .polaroid-frame {
   box-shadow: 0 6px 14px rgba(0, 0, 0, 0.5);

@@ -131,15 +131,27 @@ async function removeMemory(id) {
 function goToLogin() { window.location.href = apiUrl("/api/auth/google"); }
 function updateUserChip() {
   const chip = document.getElementById("user-chip");
-  if (!chip) return;
+  const avatar = document.getElementById("user-avatar");
+  const label = document.getElementById("user-label");
+  if (!chip || !avatar || !label) return;
   if (!API_MODE) { chip.classList.add("hidden"); return; }
   chip.classList.remove("hidden");
   if (_currentUser) {
-    chip.textContent = _currentUser.name || "アカウント";
     chip.dataset.state = "in";
+    if (_currentUser.picture) {
+      avatar.src = _currentUser.picture;
+      avatar.classList.remove("hidden");
+      label.classList.add("hidden");
+    } else {
+      avatar.classList.add("hidden");
+      label.classList.remove("hidden");
+      label.textContent = _currentUser.name || "アカウント";
+    }
   } else {
-    chip.textContent = "サインイン";
     chip.dataset.state = "out";
+    avatar.classList.add("hidden");
+    label.classList.remove("hidden");
+    label.textContent = "サインイン";
   }
 }
 
@@ -267,9 +279,9 @@ function renderRadar() {
     if (d <= range) {
       points.push({ x, y, d, memories: [m] });
     } else {
-      // 圏外：縁の方向インジケータ
-      const ex = Math.sin(rad) * 92;
-      const ey = -Math.cos(rad) * 92;
+      // 圏外：外周のさらに外側に方向インジケータ
+      const ex = Math.sin(rad) * 103;
+      const ey = -Math.cos(rad) * 103;
       edges.push({ x: ex, y: ey, angle: b, d });
     }
   }
@@ -388,6 +400,10 @@ function showScreen(id) {
 // ---------- 記憶を置く ----------
 // ＋記憶を置くボタン押下：GPS精度チェック→OKなら写真選択起動
 function onPlaceButtonTap() {
+  if (API_MODE && !_currentUser) {
+    if (confirm("記憶を置くにはGoogleでログインが必要です。ログインしますか？")) goToLogin();
+    return;
+  }
   if (!myPos) {
     showToast(gpsError
       ? `位置情報エラー：${gpsError}`

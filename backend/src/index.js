@@ -111,7 +111,7 @@ app.get("/api/me", async (c) => {
   const s = await getSession(c);
   if (!s) return c.json({ user: null });
   return c.json({
-    user: { id: s.userId, email: s.email, name: s.name },
+    user: { id: s.userId, email: s.email, name: s.name, picture: s.picture || null },
   });
 });
 
@@ -161,6 +161,7 @@ app.get("/api/auth/google/callback", async (c) => {
   const userId = payload.sub;
   const email = payload.email || null;
   const name = payload.name || email || "";
+  const picture = payload.picture || null;
 
   await c.env.DB.prepare(
     `INSERT INTO users(id, email, name, created_at) VALUES(?, ?, ?, ?)
@@ -171,7 +172,7 @@ app.get("/api/auth/google/callback", async (c) => {
                 crypto.randomUUID().replace(/-/g, "");
   await c.env.SESSIONS.put(
     `sess:${token}`,
-    JSON.stringify({ userId, email, name }),
+    JSON.stringify({ userId, email, name, picture }),
     { expirationTtl: SESSION_TTL_SEC }
   );
   setCookie(c, SESSION_COOKIE, token, cookieOpts(SESSION_TTL_SEC));

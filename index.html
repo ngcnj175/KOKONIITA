@@ -17,7 +17,10 @@
     <header class="topbar">
       <h1 class="brand">KOKONI-ITA</h1>
       <div class="topbar-right">
-        <button id="user-chip" class="chip hidden" type="button">サインイン</button>
+        <button id="user-chip" class="chip user-chip hidden" type="button">
+          <img id="user-avatar" class="user-avatar hidden" alt="" />
+          <span id="user-label" class="user-label">サインイン</span>
+        </button>
         <button id="range-btn" class="chip" type="button">500m</button>
       </div>
     </header>
@@ -51,9 +54,9 @@
     </div>
 
     <footer class="bottombar">
-      <button id="history-btn" class="ghost-btn" type="button">履歴</button>
       <button id="ar-btn" class="ghost-btn" type="button">AR</button>
       <button id="place-btn" class="place-btn" type="button">＋ 記憶を置く</button>
+      <button id="history-btn" class="ghost-btn" type="button">履歴</button>
     </footer>
   </section>
 
