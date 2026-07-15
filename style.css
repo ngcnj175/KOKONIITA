@@ -100,12 +100,14 @@ html, body {
   background: transparent;
   color: var(--ink);
   border: 1px solid var(--ink);
-  padding: 12px 20px;
+  padding: 12px 0;
+  min-width: 72px;
   border-radius: 999px;
   font-family: inherit;
   font-size: 13px;
   letter-spacing: 0.15em;
   cursor: pointer;
+  text-align: center;
 }
 .ghost-btn:active { background: rgba(17, 17, 17, 0.06); }
 .ghost-btn.wide { width: 100%; padding: 12px; margin-top: 4px; }
@@ -158,11 +160,13 @@ html, body {
   top: 50%;
   left: 50%;
   /* レーダー半径 = min(44vw, 44vh, 250px) の分だけ上にずらす */
-  transform: translate(-50%, calc(max(-44vw, -44vh, -250px) - 18px));
+  transform: translate(-50%, calc(max(-44vw, -44vh, -250px) - 34px));
   z-index: 2;
   background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
+  min-width: 62px;
+  text-align: center;
 }
 
 .compass-n {
