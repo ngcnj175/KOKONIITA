@@ -228,11 +228,24 @@ app.get("/api/memories/:id/image", async (c) => {
     "SELECT image_blob, image_type FROM memories WHERE id = ?"
   ).bind(id).first();
   if (!row) return c.text("not found", 404);
-  // D1のBLOBはArrayBuffer相当で返る
-  return new Response(row.image_blob, {
+
+  // D1のBLOBは環境により ArrayBuffer / Uint8Array / Array<number> のいずれかで返る
+  const raw = row.image_blob;
+  let bytes;
+  if (raw instanceof Uint8Array) bytes = raw;
+  else if (raw instanceof ArrayBuffer) bytes = new Uint8Array(raw);
+  else if (Array.isArray(raw)) bytes = new Uint8Array(raw);
+  else if (raw && typeof raw === "object" && typeof raw.byteLength === "number") {
+    bytes = new Uint8Array(raw);
+  } else {
+    return c.text("invalid blob", 500);
+  }
+
+  return new Response(bytes, {
     headers: {
       "Content-Type": row.image_type || "image/jpeg",
       "Cache-Control": "public, max-age=31536000, immutable",
+      "Content-Length": String(bytes.byteLength),
     },
   });
 });
@@ -275,7 +288,7 @@ app.post("/api/memories", async (c) => {
   }
 
   const id = crypto.randomUUID();
-  const buf = await image.arrayBuffer();
+  const bytes = new Uint8Array(await image.arrayBuffer());
   const gh = geohash(lat, lng, 6);
   const now = Date.now();
 
@@ -284,7 +297,7 @@ app.post("/api/memories", async (c) => {
      VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(
     id, s.userId, lat, lng, accuracy, note,
-    buf, image.type || "image/jpeg", image.size, gh, now
+    bytes, image.type || "image/jpeg", image.size, gh, now
   ).run();
 
   return c.json({
