@@ -15,7 +15,7 @@ app.use("/api/*", (c, next) => {
     origin,
     credentials: true,
     allowMethods: ["GET", "POST", "DELETE", "OPTIONS"],
-    allowHeaders: ["Content-Type"],
+    allowHeaders: ["Content-Type", "Authorization"],
   })(c, next);
 });
 
