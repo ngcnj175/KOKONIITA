@@ -24,7 +24,10 @@ app.use("/api/*", (c, next) => {
 app.use("/api/*", async (c, next) => {
   const method = c.req.method;
   if (method === "GET" || method === "HEAD" || method === "OPTIONS") return next();
-  // OAuthコールバック等の /api/auth/* は例外扱いは不要（POSTなし）
+  // Bearerトークン付きリクエストはCSRF自動送信の対象外なので許可
+  const auth = c.req.header("Authorization") || "";
+  if (/^Bearer\s+\S+$/.test(auth)) return next();
+  // それ以外はOriginを厳密照合（CSRF対策）
   const origin = c.req.header("Origin");
   if (origin !== c.env.FRONTEND_ORIGIN) {
     return c.json({ error: "forbidden origin" }, 403);
@@ -47,7 +50,13 @@ function cookieOpts(maxAge) {
 }
 
 async function getSession(c) {
-  const token = getCookie(c, SESSION_COOKIE);
+  // Cookieを優先、なければAuthorizationヘッダのBearerを見る（クロスサイトCookieブロック対策）
+  let token = getCookie(c, SESSION_COOKIE);
+  if (!token) {
+    const auth = c.req.header("Authorization") || "";
+    const m = auth.match(/^Bearer\s+(\S+)$/);
+    if (m) token = m[1];
+  }
   if (!token) return null;
   const data = await c.env.SESSIONS.get(`sess:${token}`, { type: "json" });
   if (!data) return null;
@@ -167,7 +176,9 @@ app.get("/api/auth/google/callback", async (c) => {
   );
   setCookie(c, SESSION_COOKIE, token, cookieOpts(SESSION_TTL_SEC));
 
-  return c.redirect(c.env.FRONTEND_ORIGIN + "/");
+  // 3rd-party Cookieがブロックされる環境向けに、URLフラグメント経由でトークンも渡す
+  const base = c.env.FRONTEND_URL || (c.env.FRONTEND_ORIGIN + "/");
+  return c.redirect(`${base}#kk_token=${encodeURIComponent(token)}`);
 });
 
 app.post("/api/auth/logout", async (c) => {

@@ -6,6 +6,7 @@ workers_dev = true
 # フロントエンドのオリジン（GitHub Pagesなど）
 [vars]
 FRONTEND_ORIGIN = "https://ngcnj175.github.io"
+FRONTEND_URL = "https://ngcnj175.github.io/KOKONIITA/"
 # 例: https://kokoniita-api.<your-subdomain>.workers.dev/api/auth/google/callback
 GOOGLE_REDIRECT_URI = "https://kokoniita-api.ngcnj175.workers.dev/api/auth/google/callback"
 COOKIE_DOMAIN = ""  # 空でOK（Workerの発行ドメインを使う）

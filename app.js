@@ -33,9 +33,21 @@ let _publicCache = null;   // API_MODE: 全公開記憶
 let _myCache = null;       // API_MODE: 自分の記憶
 let _currentUser = null;   // {id, name, email} | null
 
+const TOKEN_STORAGE_KEY = "kokoniita.token.v1";
+function getStoredToken() {
+  try { return localStorage.getItem(TOKEN_STORAGE_KEY) || null; }
+  catch { return null; }
+}
+function setStoredToken(t) {
+  try { t ? localStorage.setItem(TOKEN_STORAGE_KEY, t) : localStorage.removeItem(TOKEN_STORAGE_KEY); }
+  catch {}
+}
 function apiUrl(p) { return API_BASE + p; }
 function apiFetch(path, opts = {}) {
-  return fetch(apiUrl(path), { credentials: "include", ...opts });
+  const headers = new Headers(opts.headers || {});
+  const token = getStoredToken();
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  return fetch(apiUrl(path), { credentials: "include", ...opts, headers });
 }
 function normalizeApiMemory(m) {
   return { ...m, image: apiUrl(m.imageUrl) };
@@ -993,6 +1005,12 @@ document.addEventListener("DOMContentLoaded", () => {
   updateUserChip();
 
   if (API_MODE) {
+    // OAuthコールバックから戻ってきた場合、URLフラグメントのトークンを保存
+    if (location.hash.startsWith("#kk_token=")) {
+      const t = decodeURIComponent(location.hash.slice("#kk_token=".length));
+      setStoredToken(t);
+      history.replaceState(null, "", location.pathname + location.search);
+    }
     refreshMe().then(() => {
       if (_currentUser) refreshMyMemories();
     });
@@ -1005,6 +1023,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (_currentUser) {
       if (!confirm(`${_currentUser.name || "アカウント"} からログアウトしますか？`)) return;
       try { await apiFetch("/api/auth/logout", { method: "POST" }); } catch {}
+      setStoredToken(null);
       _currentUser = null; _myCache = null;
       updateUserChip();
       showToast("ログアウトしました");
