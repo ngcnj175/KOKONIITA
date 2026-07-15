@@ -20,11 +20,15 @@
   - 遠い時は「距離: 約○m」のみ表示
   - 「回収する」（削除）
 
+### 実装済み（バックエンド）
+- Cloudflare Workers + D1 + R2 + KV による API
+- Google OAuth ログイン（投稿・履歴・回収時に必須）
+- 全ユーザーの記憶をレーダーに表示、履歴は自分のみ
+- セットアップ手順は [backend/README.md](backend/README.md)
+
 ### 未実装（次フェーズ）
-- Googleログイン（投稿時のみ要求）
-- AR画面（カメラ起動＋ポラロイドのオーバーレイ）
 - 音声メディア（カセット風UI）
-- Cloudflareバックエンド（Workers + R2 + D1）
+- geohashによる近傍クエリ最適化
 
 ## 動かし方
 

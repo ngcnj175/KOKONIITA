@@ -1,0 +1,28 @@
+name = "kokoniita-api"
+main = "src/index.js"
+compatibility_date = "2025-01-15"
+workers_dev = true
+
+# フロントエンドのオリジン（GitHub Pagesなど）
+[vars]
+FRONTEND_ORIGIN = "https://ngcnj175.github.io"
+# 例: https://kokoniita-api.<your-subdomain>.workers.dev/api/auth/google/callback
+GOOGLE_REDIRECT_URI = "https://kokoniita-api.ngcnj175.workers.dev/api/auth/google/callback"
+COOKIE_DOMAIN = ""  # 空でOK（Workerの発行ドメインを使う）
+
+# --- D1 (SQLite) ---
+# `wrangler d1 create kokoniita` で作成後、出力の database_id を貼る
+[[d1_databases]]
+binding = "DB"
+database_name = "kokoniita"
+database_id = "530c2cb8-9514-4342-9c65-e242c211f332"
+
+# --- KV (セッション) ---
+# `wrangler kv namespace create kokoniita-sessions` で作成後、id を貼る
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "99151ed09b87466283db9fe9e19bcf0e"
+
+# シークレット（wrangler secret put で設定）:
+#   GOOGLE_CLIENT_ID
+#   GOOGLE_CLIENT_SECRET

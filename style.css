@@ -34,6 +34,14 @@ html, body {
 .invisible { visibility: hidden; }
 
 /* ---------- 共通ヘッダ／フッタ ---------- */
+.topbar-right {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+#user-chip[data-state="in"] {
+  opacity: 0.75;
+}
 .topbar {
   position: relative;
   display: flex;

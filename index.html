@@ -16,7 +16,10 @@
   <section id="radar-screen" class="screen">
     <header class="topbar">
       <h1 class="brand">KOKONI-ITA</h1>
-      <button id="range-btn" class="chip" type="button">500m</button>
+      <div class="topbar-right">
+        <button id="user-chip" class="chip hidden" type="button">サインイン</button>
+        <button id="range-btn" class="chip" type="button">500m</button>
+      </div>
     </header>
 
     <div class="radar-wrap">
@@ -158,6 +161,7 @@
     </div>
   </div>
 
+  <script src="config.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

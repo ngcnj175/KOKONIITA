@@ -25,19 +25,110 @@ let gpsError = null;   // 位置情報エラー
 let heading = 0;       // 度、0=北、時計回り
 let orientReady = false;
 
-// ---------- ストレージ ----------
+// ---------- API / ストレージ ----------
+const API_BASE = (window.KOKONIITA_CONFIG?.API_BASE || "").replace(/\/$/, "");
+const API_MODE = !!API_BASE;
+
+let _publicCache = null;   // API_MODE: 全公開記憶
+let _myCache = null;       // API_MODE: 自分の記憶
+let _currentUser = null;   // {id, name, email} | null
+
+function apiUrl(p) { return API_BASE + p; }
+function apiFetch(path, opts = {}) {
+  return fetch(apiUrl(path), { credentials: "include", ...opts });
+}
+function normalizeApiMemory(m) {
+  return { ...m, image: apiUrl(m.imageUrl) };
+}
+
+// 同期取得（レンダリング用）
 function loadMemories() {
+  if (API_MODE) return _publicCache || [];
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); }
   catch { return []; }
+}
+function loadMyMemories() {
+  if (API_MODE) return _myCache || [];
+  return loadMemories();
 }
 function saveMemories(list) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
 }
-function addMemory(m) {
+
+// リフレッシュ
+async function refreshMemories() {
+  if (!API_MODE) return;
+  try {
+    const r = await apiFetch("/api/memories");
+    if (!r.ok) return;
+    const j = await r.json();
+    _publicCache = (j.memories || []).map(normalizeApiMemory);
+  } catch (e) { console.warn("refreshMemories", e); }
+}
+async function refreshMyMemories() {
+  if (!API_MODE) { _myCache = null; return; }
+  if (!_currentUser) { _myCache = null; return; }
+  try {
+    const r = await apiFetch("/api/me/memories");
+    if (r.status === 401) { _currentUser = null; _myCache = null; updateUserChip(); return; }
+    if (!r.ok) return;
+    const j = await r.json();
+    _myCache = (j.memories || []).map(normalizeApiMemory);
+  } catch (e) { console.warn("refreshMyMemories", e); }
+}
+async function refreshMe() {
+  if (!API_MODE) return;
+  try {
+    const r = await apiFetch("/api/me");
+    if (!r.ok) return;
+    const j = await r.json();
+    _currentUser = j.user || null;
+    updateUserChip();
+  } catch (e) { console.warn("refreshMe", e); }
+}
+
+// 追加・削除
+async function postMemoryToApi({ blob, lat, lng, accuracy, note }) {
+  const fd = new FormData();
+  fd.append("image", blob, "memory.jpg");
+  fd.append("lat", String(lat));
+  fd.append("lng", String(lng));
+  fd.append("accuracy", String(accuracy));
+  fd.append("note", note || "");
+  const r = await apiFetch("/api/memories", { method: "POST", body: fd });
+  if (r.status === 401) throw new Error("unauthorized");
+  if (!r.ok) throw new Error("post failed: " + r.status);
+  return r.json();
+}
+function addMemoryLocal(m) {
   const list = loadMemories(); list.push(m); saveMemories(list);
 }
-function removeMemory(id) {
+async function removeMemory(id) {
+  if (API_MODE) {
+    const r = await apiFetch(`/api/memories/${id}`, { method: "DELETE" });
+    if (r.status === 401) throw new Error("unauthorized");
+    if (r.status === 403) throw new Error("forbidden");
+    if (!r.ok && r.status !== 404) throw new Error("delete failed");
+    await Promise.all([refreshMemories(), refreshMyMemories()]);
+    return;
+  }
   saveMemories(loadMemories().filter(m => m.id !== id));
+}
+
+// ログイン導線
+function goToLogin() { window.location.href = apiUrl("/api/auth/google"); }
+function updateUserChip() {
+  const chip = document.getElementById("user-chip");
+  if (!chip) return;
+  if (!API_MODE) { chip.classList.add("hidden"); return; }
+  chip.classList.remove("hidden");
+  if (_currentUser) {
+    chip.textContent = _currentUser.name || "アカウント";
+    chip.dataset.state = "in";
+  } else {
+    chip.textContent = "サインイン";
+    chip.dataset.state = "out";
+  }
 }
 
 // ---------- 幾何 ----------
@@ -478,23 +569,47 @@ function cropToDataUrl(size = OUTPUT_SIZE, quality = JPEG_QUALITY) {
   return canvas.toDataURL("image/jpeg", quality);
 }
 
-function savePlaced() {
+async function savePlaced() {
   if (!cropper.ready || !myPos) return;
   if (myPos.accuracy > GPS_ACCURACY_THRESHOLD_M) {
     showToast("位置精度が低くなったため置けませんでした");
     return;
   }
+  if (API_MODE && !_currentUser) {
+    closeComposeSheet();
+    if (confirm("記憶を置くにはGoogleでログインが必要です。ログインしますか？")) goToLogin();
+    return;
+  }
   const image = cropToDataUrl();
-  const memory = {
+  const note = $("note-input").value.trim();
+
+  if (API_MODE) {
+    try {
+      const blob = await (await fetch(image)).blob();
+      await postMemoryToApi({
+        blob,
+        lat: myPos.lat, lng: myPos.lng, accuracy: myPos.accuracy, note,
+      });
+      await Promise.all([refreshMemories(), refreshMyMemories()]);
+      renderRadar();
+      closeComposeSheet();
+      showToast("記憶を置きました");
+    } catch (e) {
+      if (e.message === "unauthorized") {
+        closeComposeSheet();
+        if (confirm("ログインが必要です。ログインしますか？")) goToLogin();
+      } else {
+        showToast("投稿に失敗しました");
+      }
+    }
+    return;
+  }
+
+  addMemoryLocal({
     id: crypto.randomUUID(),
-    lat: myPos.lat,
-    lng: myPos.lng,
-    accuracy: myPos.accuracy,
-    note: $("note-input").value.trim(),
-    image,
-    createdAt: Date.now(),
-  };
-  addMemory(memory);
+    lat: myPos.lat, lng: myPos.lng, accuracy: myPos.accuracy,
+    note, image, createdAt: Date.now(),
+  });
   renderRadar();
   closeComposeSheet();
   showToast("記憶を置きました");
@@ -697,7 +812,14 @@ function onArItemTap(m, dist) {
 }
 
 // ---------- 履歴（ボトムシート） ----------
-function openHistory() {
+async function openHistory() {
+  if (API_MODE) {
+    if (!_currentUser) {
+      if (confirm("履歴を見るにはGoogleでログインが必要です。ログインしますか？")) goToLogin();
+      return;
+    }
+    await refreshMyMemories();
+  }
   renderHistoryList();
   const sheet = $("history-sheet");
   sheet.classList.remove("hidden");
@@ -712,7 +834,7 @@ function closeHistory() {
 function renderHistoryList() {
   const list = $("history-list");
   const empty = $("history-empty");
-  const memories = loadMemories().sort((a, b) => b.createdAt - a.createdAt);
+  const memories = loadMyMemories().sort((a, b) => b.createdAt - a.createdAt);
   list.innerHTML = "";
   if (memories.length === 0) {
     empty.classList.remove("hidden");
@@ -772,9 +894,18 @@ function renderHistoryList() {
         item.classList.remove("revealed");
         return;
       }
-      removeMemory(m.id);
-      renderHistoryList();
-      renderRadar();
+      (async () => {
+        try {
+          await removeMemory(m.id);
+          renderHistoryList();
+          renderRadar();
+        } catch (e) {
+          if (e.message === "forbidden") showToast("この記憶は削除できません");
+          else if (e.message === "unauthorized") {
+            if (confirm("ログインが必要です。ログインしますか？")) goToLogin();
+          } else showToast("削除に失敗しました");
+        }
+      })();
     }, () => {
       closeHistory();
       setTimeout(() => openViewer(m), 320);
@@ -859,6 +990,28 @@ document.addEventListener("DOMContentLoaded", () => {
   setupOrientation();
   renderRadar();
   updatePlaceButtonState();
+  updateUserChip();
+
+  if (API_MODE) {
+    refreshMe().then(() => {
+      if (_currentUser) refreshMyMemories();
+    });
+    refreshMemories().then(renderRadar);
+    setInterval(() => refreshMemories().then(renderRadar), 60000);
+  }
+
+  document.getElementById("user-chip").addEventListener("click", async () => {
+    if (!API_MODE) return;
+    if (_currentUser) {
+      if (!confirm(`${_currentUser.name || "アカウント"} からログアウトしますか？`)) return;
+      try { await apiFetch("/api/auth/logout", { method: "POST" }); } catch {}
+      _currentUser = null; _myCache = null;
+      updateUserChip();
+      showToast("ログアウトしました");
+    } else {
+      goToLogin();
+    }
+  });
 
   $("range-btn").addEventListener("click", cycleRange);
   $("place-btn").addEventListener("click", onPlaceButtonTap);
