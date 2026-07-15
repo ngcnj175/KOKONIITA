@@ -110,7 +110,6 @@ html, body {
   text-align: center;
 }
 .ghost-btn:active { background: rgba(17, 17, 17, 0.06); }
-.ghost-btn.wide { width: 100%; padding: 12px; margin-top: 4px; }
 .place-btn {
   background: var(--ink);
   color: #fff;
@@ -263,16 +262,6 @@ html, body {
   letter-spacing: 0.08em;
 }
 #accuracy-current { margin: 0 0 16px; }
-
-/* ---------- アップロード画面 ---------- */
-.upload-body {
-  flex: 1;
-  padding: 20px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
 
 .polaroid-frame {
   background: #fbf8f0;

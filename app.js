@@ -1,5 +1,5 @@
-// ココニイタ。— レーダー & アップロード プロトタイプ
-// ローカル保存のみ（localStorage）。バックエンド／ログインは次フェーズ。
+// ココニイタ。— レーダー / AR / 記憶投稿
+// KOKONIITA_CONFIG.API_BASE が設定されているとAPIモードで動作する。
 
 const STORAGE_KEY = "kokoniita.memories.v1";
 const UNLOCK_RADIUS_M = 20;
@@ -23,7 +23,6 @@ const $ = (id) => document.getElementById(id);
 let myPos = null;      // {lat, lng, accuracy}
 let gpsError = null;   // 位置情報エラー
 let heading = 0;       // 度、0=北、時計回り
-let orientReady = false;
 
 // ---------- API / ストレージ ----------
 const API_BASE = (window.KOKONIITA_CONFIG?.API_BASE || "").replace(/\/$/, "");
@@ -216,11 +215,9 @@ function setupOrientation() {
         if (res === "granted") attachOrientationListener();
       } catch (e) { /* 拒否時は無回転で継続 */ }
       $("orient-prompt").classList.add("hidden");
-      orientReady = true;
     }, { once: true });
   } else {
     attachOrientationListener();
-    orientReady = true;
   }
 }
 
@@ -288,7 +285,7 @@ function renderRadar() {
       // 圏外：外周のさらに外側に方向インジケータ
       const ex = Math.sin(rad) * 103;
       const ey = -Math.cos(rad) * 103;
-      edges.push({ x: ex, y: ey, angle: b, d });
+      edges.push({ x: ex, y: ey });
     }
   }
 
