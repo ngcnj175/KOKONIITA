@@ -247,6 +247,12 @@ function attachOrientationListener() {
 function applyRadarRotation() {
   // レーダー回転レイヤーを -heading 度回転（自分の向きが常に上）
   $("radar-rotate").setAttribute("transform", `rotate(${-heading})`);
+  // クラスタ数字は逆回転させて常に直立
+  document.querySelectorAll(".cluster-num").forEach(el => {
+    const cx = el.getAttribute("x");
+    const cy = el.getAttribute("y");
+    el.setAttribute("transform", `rotate(${heading}, ${cx}, ${cy})`);
+  });
 }
 
 // ---------- レーダー描画 ----------
@@ -329,6 +335,7 @@ function renderRadar() {
       text.setAttribute("x", c.x.toFixed(2));
       text.setAttribute("y", c.y.toFixed(2));
       text.setAttribute("class", "cluster-num");
+      text.setAttribute("transform", `rotate(${heading}, ${c.x.toFixed(2)}, ${c.y.toFixed(2)})`);
       text.textContent = String(count);
       g.appendChild(text);
     }
