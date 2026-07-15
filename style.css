@@ -207,6 +207,35 @@ html, body {
 }
 .hud-line.dim { color: var(--dim); opacity: 0.7; }
 
+.hud-hint {
+  margin: 8px 0 0;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: var(--dim);
+  opacity: 0;
+  transition: opacity 800ms ease;
+  font-family: "Klee One", serif;
+}
+.hud-hint.visible { opacity: 0.75; }
+.hud-hint.hidden { display: none; }
+
+.accuracy-card { text-align: center; }
+.accuracy-title {
+  font-family: "Klee One", serif;
+  font-size: 16px;
+  letter-spacing: 0.12em;
+  margin: 4px 0 10px;
+  color: #333;
+}
+.accuracy-sub {
+  font-family: "Klee One", serif;
+  font-size: 13px;
+  color: var(--dim);
+  margin: 0 0 14px;
+  letter-spacing: 0.08em;
+}
+#accuracy-current { margin: 0 0 16px; }
+
 /* ---------- アップロード画面 ---------- */
 .upload-body {
   flex: 1;

@@ -395,10 +395,20 @@ function onPlaceButtonTap() {
     return;
   }
   if (myPos.accuracy > GPS_ACCURACY_THRESHOLD_M) {
-    showToast(`位置精度が低いため置けません（±${Math.round(myPos.accuracy)}m）`);
+    openAccuracyPrompt();
     return;
   }
   $("media-input").click();
+}
+
+function openAccuracyPrompt() {
+  const el = $("accuracy-prompt");
+  const cur = $("accuracy-current");
+  if (cur && myPos) cur.textContent = `現在の精度: ±${Math.round(myPos.accuracy)}m`;
+  el.classList.remove("hidden");
+}
+function closeAccuracyPrompt() {
+  $("accuracy-prompt").classList.add("hidden");
 }
 
 async function handleMediaPick(e) {
@@ -438,6 +448,19 @@ function updatePlaceButtonState() {
   if (!btn) return;
   const disabled = !myPos || myPos.accuracy > GPS_ACCURACY_THRESHOLD_M;
   btn.classList.toggle("looks-disabled", disabled);
+  updateHudHint(disabled);
+}
+
+function updateHudHint(show) {
+  const hint = $("hud-hint");
+  if (!hint) return;
+  if (show) {
+    hint.classList.remove("hidden");
+    requestAnimationFrame(() => hint.classList.add("visible"));
+  } else {
+    hint.classList.remove("visible");
+    setTimeout(() => hint.classList.add("hidden"), 800);
+  }
 }
 
 async function downscaleImage(file, maxDim) {
@@ -1034,6 +1057,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   $("range-btn").addEventListener("click", cycleRange);
   $("place-btn").addEventListener("click", onPlaceButtonTap);
+  $("accuracy-close").addEventListener("click", closeAccuracyPrompt);
+  $("accuracy-prompt").addEventListener("click", (e) => {
+    if (e.target === $("accuracy-prompt")) closeAccuracyPrompt();
+  });
   $("history-btn").addEventListener("click", openHistory);
   $("history-close").addEventListener("click", closeHistory);
   $("history-backdrop").addEventListener("click", closeHistory);
