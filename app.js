@@ -685,7 +685,9 @@ function cropToDataUrl(size = OUTPUT_SIZE, quality = JPEG_QUALITY) {
   return canvas.toDataURL("image/jpeg", quality);
 }
 
+let _saving = false;
 async function savePlaced() {
+  if (_saving) return;
   if (!cropper.ready || !myPos) return;
   if (myPos.accuracy > GPS_ACCURACY_THRESHOLD_M) {
     showToast("位置精度が低くなったため置けませんでした");
@@ -696,6 +698,9 @@ async function savePlaced() {
     if (confirm("記憶を置くにはGoogleでログインが必要です。ログインしますか？")) goToLogin();
     return;
   }
+  _saving = true;
+  const btn = $("save-btn");
+  if (btn) btn.disabled = true;
   const image = cropToDataUrl();
   const note = $("note-input").value.trim();
 
@@ -716,6 +721,9 @@ async function savePlaced() {
     } else {
       showToast("投稿に失敗しました");
     }
+  } finally {
+    _saving = false;
+    if (btn) btn.disabled = false;
   }
 }
 
