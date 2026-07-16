@@ -146,7 +146,28 @@ html, body {
   max-width: 500px;
   max-height: 500px;
   overflow: visible;
+  position: relative;
+  z-index: 1;
 }
+.radar-map {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(88vw, 88vh);
+  height: min(88vw, 88vh);
+  max-width: 500px;
+  max-height: 500px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  overflow: hidden;
+  opacity: 1;
+  filter: grayscale(1) contrast(1);
+  pointer-events: none;
+  z-index: 0;
+}
+.radar-map .maplibregl-canvas { outline: none; }
+.radar-map .maplibregl-ctrl-attrib,
+.radar-map .maplibregl-ctrl-logo { display: none !important; }
 .ring {
   fill: none;
   stroke: var(--line);

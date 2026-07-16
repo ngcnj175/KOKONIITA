@@ -164,6 +164,8 @@ function watchLocation() {
       gpsError = null;
       updateHud();
       renderRadar();
+      syncMapCenter();
+      syncMapZoom();
       updatePlaceButtonState();
     },
     (err) => {
@@ -224,6 +226,92 @@ function applyRadarRotation() {
     const cy = el.getAttribute("y");
     el.setAttribute("transform", `rotate(${heading}, ${cx}, ${cy})`);
   });
+  syncMapBearing();
+}
+
+// ---------- 背景マップ (MapLibre + OpenFreeMap positron) ----------
+let _map = null;
+let _mapReady = false;
+const MAP_KEEP_PREFIXES = [
+  "background", "landcover", "landuse", "park",
+  "water", "waterway",
+  "tunnel", "bridge", "road", "highway", "transportation",
+];
+function shouldKeepMapLayer(id) {
+  if (!id) return false;
+  const lid = id.toLowerCase();
+  if (lid.includes("label") || lid.includes("name") || lid.includes("text")) return false;
+  if (lid.includes("building") || lid.includes("poi") ||
+      lid.includes("place") || lid.includes("boundary") ||
+      lid.includes("aeroway") || lid.includes("housenumber")) return false;
+  return MAP_KEEP_PREFIXES.some(p => lid.startsWith(p) || lid.includes("_" + p) || lid.includes("-" + p));
+}
+function initRadarMap() {
+  const el = document.getElementById("radar-map");
+  if (!el || typeof maplibregl === "undefined") return;
+  _map = new maplibregl.Map({
+    container: el,
+    style: "https://tiles.openfreemap.org/styles/positron",
+    center: [139.767, 35.681], // 仮: 東京駅
+    zoom: 15,
+    interactive: false,
+    attributionControl: false,
+    pitchWithRotate: false,
+    dragRotate: false,
+    fadeDuration: 0,
+  });
+  _map.on("load", () => {
+    // 陸・道・川以外のレイヤを非表示、水は白に
+    const layers = _map.getStyle().layers || [];
+    for (const l of layers) {
+      const lidLower = l.id.toLowerCase();
+      if (!shouldKeepMapLayer(l.id)) {
+        try { _map.setLayoutProperty(l.id, "visibility", "none"); } catch {}
+        continue;
+      }
+      if (l.type === "symbol") {
+        try { _map.setLayoutProperty(l.id, "visibility", "none"); } catch {}
+        continue;
+      }
+      if (lidLower.includes("casing") || lidLower.includes("outline")) {
+        try { _map.setLayoutProperty(l.id, "visibility", "none"); } catch {}
+        continue;
+      }
+      const lid = l.id.toLowerCase();
+      const isWater = lid.includes("water") || lid.includes("waterway");
+      const isRoad = lid.startsWith("road") || lid.startsWith("highway") ||
+                     lid.startsWith("tunnel") || lid.startsWith("bridge") ||
+                     lid.startsWith("transportation");
+      if (isWater || isRoad) {
+        try {
+          if (l.type === "fill") _map.setPaintProperty(l.id, "fill-color", "#ffffff");
+          if (l.type === "line") _map.setPaintProperty(l.id, "line-color", "#ffffff");
+        } catch {}
+      }
+    }
+    _mapReady = true;
+    syncMapCenter(); syncMapZoom(); syncMapBearing();
+  });
+}
+function rangeToZoom(rangeMeters) {
+  if (!_map) return 15;
+  const lat = (myPos?.lat ?? 35.681) * Math.PI / 180;
+  const halfPx = _map.getContainer().clientHeight / 2;
+  if (!halfPx || !rangeMeters) return 15;
+  const metersPerPx = rangeMeters / halfPx;
+  return Math.log2(156543.03392 * Math.cos(lat) / metersPerPx);
+}
+function syncMapCenter() {
+  if (!_mapReady || !myPos) return;
+  _map.jumpTo({ center: [myPos.lng, myPos.lat] });
+}
+function syncMapZoom() {
+  if (!_mapReady) return;
+  _map.setZoom(rangeToZoom(currentRange()));
+}
+function syncMapBearing() {
+  if (!_mapReady) return;
+  _map.setBearing(heading);
 }
 
 // ---------- レーダー描画 ----------
@@ -364,6 +452,7 @@ function cycleRange() {
   const r = RANGE_STEPS[rangeIndex];
   $("range-btn").textContent = r >= 1000 ? `${r / 1000}km` : `${r}m`;
   renderRadar();
+  syncMapZoom();
 }
 
 // ---------- 画面遷移 ----------
@@ -996,6 +1085,7 @@ function closeViewer() { $("viewer").classList.add("hidden"); }
 
 // ---------- 起動 ----------
 document.addEventListener("DOMContentLoaded", () => {
+  initRadarMap();
   watchLocation();
   setupOrientation();
   renderRadar();
