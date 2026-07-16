@@ -11,6 +11,10 @@ const JPEG_QUALITY = 0.72;
 const RANGE_STEPS = [100, 500, 1000, 5000];
 const RANGE_DOT_R = { 100: 4.0, 500: 3.0, 1000: 2.3, 5000: 1.4 };
 const RANGE_CLUSTER_R = { 100: 6.0, 500: 4.8, 1000: 4.0, 5000: 3.0 };
+// 自分マーカーのスケール倍率（100m=1.0 を基準に、広範囲ほど縮小）
+const RANGE_ME_SCALE = { 100: 1.0, 500: 0.85, 1000: 0.75, 5000: 0.6 };
+const ME_BASE_SX = 0.75;
+const ME_BASE_SY = 1.25;
 let rangeIndex = 1; // 初期 500m
 
 // クラスタリング閾値（レーダー座標系での距離。viewBox=200 → 半径100）
@@ -217,14 +221,17 @@ function attachOrientationListener() {
   window.addEventListener("deviceorientation", handler, true);
 }
 
+// 記憶ラッパー用: 位置(cx,cy)に配置しつつ、
+// 親の rotate(-heading) と CSS scaleY(0.6) を打ち消してドット・文字を正立・非扁平に保つ
+function memWrapTransform(cx, cy) {
+  return `translate(${(+cx).toFixed(2)},${(+cy).toFixed(2)}) rotate(${heading}) scale(1,1.6667)`;
+}
 function applyRadarRotation() {
   // レーダー回転レイヤーを -heading 度回転（自分の向きが常に上）
   $("radar-rotate").setAttribute("transform", `rotate(${-heading})`);
-  // クラスタ数字は逆回転させて常に直立
-  document.querySelectorAll(".cluster-num").forEach(el => {
-    const cx = el.getAttribute("x");
-    const cy = el.getAttribute("y");
-    el.setAttribute("transform", `rotate(${heading}, ${cx}, ${cy})`);
+  // 各記憶ラッパーの counter-rotation を更新
+  document.querySelectorAll(".mem-wrap").forEach(el => {
+    el.setAttribute("transform", memWrapTransform(el.dataset.cx, el.dataset.cy));
   });
   syncMapBearing();
 }
@@ -368,10 +375,14 @@ function renderRadar() {
     const r = isCluster ? clusterR : dotR;
 
     const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.setAttribute("class", "mem-wrap");
+    g.dataset.cx = c.x.toFixed(2);
+    g.dataset.cy = c.y.toFixed(2);
+    g.setAttribute("transform", memWrapTransform(c.x, c.y));
 
     const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-    dot.setAttribute("cx", c.x.toFixed(2));
-    dot.setAttribute("cy", c.y.toFixed(2));
+    dot.setAttribute("cx", 0);
+    dot.setAttribute("cy", 0);
     dot.setAttribute("r", r);
     const classes = ["memory-dot"];
     if (isCluster) classes.push("cluster");
@@ -392,10 +403,9 @@ function renderRadar() {
 
     if (isCluster) {
       const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-      text.setAttribute("x", c.x.toFixed(2));
-      text.setAttribute("y", c.y.toFixed(2));
+      text.setAttribute("x", 0);
+      text.setAttribute("y", 0);
       text.setAttribute("class", "cluster-num");
-      text.setAttribute("transform", `rotate(${heading}, ${c.x.toFixed(2)}, ${c.y.toFixed(2)})`);
       text.textContent = String(count);
       g.appendChild(text);
     }
@@ -405,12 +415,18 @@ function renderRadar() {
 
   // 圏外インジケータ（縁の小三角）
   for (const e of edges) {
+    const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.setAttribute("class", "mem-wrap");
+    g.dataset.cx = e.x.toFixed(2);
+    g.dataset.cy = e.y.toFixed(2);
+    g.setAttribute("transform", memWrapTransform(e.x, e.y));
     const tri = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-    tri.setAttribute("cx", e.x.toFixed(2));
-    tri.setAttribute("cy", e.y.toFixed(2));
+    tri.setAttribute("cx", 0);
+    tri.setAttribute("cy", 0);
     tri.setAttribute("r", 1.2);
     tri.setAttribute("class", "edge-arrow");
-    edge.appendChild(tri);
+    g.appendChild(tri);
+    edge.appendChild(g);
   }
 
 }
@@ -456,8 +472,15 @@ function setRange(idx) {
   const label = $("range-label");
   if (label) label.textContent = r >= 1000 ? `${r / 1000}km` : `${r}m`;
   updateRangeZoomButtons();
+  updateMeMarkerScale();
   renderRadar();
   syncMapZoom();
+}
+function updateMeMarkerScale() {
+  const el = document.getElementById("me-marker");
+  if (!el) return;
+  const f = RANGE_ME_SCALE[currentRange()] ?? 1;
+  el.setAttribute("transform", `scale(${(ME_BASE_SX * f).toFixed(4)},${(ME_BASE_SY * f).toFixed(4)})`);
 }
 function updateRangeZoomButtons() {
   const up = $("range-up"), down = $("range-down");
@@ -1140,6 +1163,7 @@ document.addEventListener("DOMContentLoaded", () => {
   $("range-up").addEventListener("click", rangeUp);
   $("range-down").addEventListener("click", rangeDown);
   updateRangeZoomButtons();
+  updateMeMarkerScale();
   $("place-btn").addEventListener("click", onPlaceButtonTap);
   $("accuracy-close").addEventListener("click", closeAccuracyPrompt);
   $("accuracy-prompt").addEventListener("click", (e) => {
