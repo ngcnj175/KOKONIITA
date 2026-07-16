@@ -154,17 +154,18 @@ html, body {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: min(88vw, 88vh);
-  height: min(88vw, 88vh);
-  max-width: 500px;
-  max-height: 500px;
+  width: min(97vw, 97vh);
+  height: min(97vw, 97vh);
+  max-width: 550px;
+  max-height: 550px;
   transform: translate(-50%, -50%) scaleY(0.6);
-  border-radius: 50%;
   overflow: hidden;
   opacity: 1;
   filter: grayscale(1) contrast(1);
   pointer-events: none;
   z-index: 0;
+  -webkit-mask-image: radial-gradient(circle closest-side at center, #000 80%, rgba(0,0,0,0.4) 90%, transparent 100%);
+  mask-image: radial-gradient(circle closest-side at center, #000 80%, rgba(0,0,0,0.4) 90%, transparent 100%);
 }
 .radar-map .maplibregl-canvas { outline: none; }
 .radar-map .maplibregl-ctrl-attrib,
@@ -193,7 +194,7 @@ html, body {
   pointer-events: none;
   cursor: default;
   font-size: 13px;
-  color: var(--ink);
+  color: #2F8F3D;
   font-weight: 500;
 }
 
