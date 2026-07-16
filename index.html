@@ -27,14 +27,16 @@
     </header>
 
     <div class="radar-wrap">
-      <button id="range-btn" class="chip range-chip" type="button">500m</button>
+      <div id="range-label" class="range-chip" aria-live="polite">500m</div>
+      <div class="range-zoom" role="group" aria-label="表示範囲">
+        <button id="range-up" class="range-zoom-btn" type="button" aria-label="広く表示">▲</button>
+        <button id="range-down" class="range-zoom-btn" type="button" aria-label="狭く表示">▼</button>
+      </div>
       <div id="radar-map" class="radar-map" aria-hidden="true"></div>
       <svg id="radar" viewBox="-100 -100 200 200" preserveAspectRatio="xMidYMid meet">
         <!-- 同心円 -->
         <g class="radar-rings">
           <circle r="98" class="ring outer" />
-          <circle r="66" class="ring" />
-          <circle r="33" class="ring" />
         </g>
         <!-- 方位に合わせて回転するレイヤー -->
         <g id="radar-rotate">
@@ -44,6 +46,17 @@
           <g id="memory-layer"></g>
           <!-- 圏外方向インジケータ -->
           <g id="edge-layer"></g>
+        </g>
+        <!-- 自分の位置マーカー（親SVGの scaleY(0.6) を打ち消す） -->
+        <g id="me-marker" transform="scale(0.5,0.8333)">
+          <!-- 接地影 -->
+          <ellipse cx="0" cy="3" rx="7" ry="1.4" fill="#000" opacity="0.18"/>
+          <!-- 胴：左面（明）／右面（暗） -->
+          <polygon points="0,-18 0,2 -6,-8" fill="#F59547"/>
+          <polygon points="0,-18 6,-8 0,2" fill="#C55A15"/>
+          <!-- 頭：左半（明）／右半（暗） -->
+          <path d="M0,-29 A5,5 0 0,0 0,-19 Z" fill="#F59547"/>
+          <path d="M0,-29 A5,5 0 0,1 0,-19 Z" fill="#C55A15"/>
         </g>
       </svg>
 

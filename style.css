@@ -180,14 +180,50 @@ html, body {
   position: absolute;
   top: 50%;
   left: 50%;
-  /* レーダー半径 = min(44vw, 44vh, 250px) の分だけ上にずらす */
-  transform: translate(-50%, calc(max(-44vw, -44vh, -250px) - 34px));
+  /* 外周リング(視覚的に約 65% の位置)のさらに少し上に */
+  transform: translate(-50%, calc(max(-44vw, -44vh, -250px) * 0.65 - 30px));
   z-index: 2;
+  min-width: 62px;
+  text-align: center;
+  pointer-events: none;
+  cursor: default;
+  font-size: 13px;
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.range-zoom {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(calc(min(44vw, 44vh, 250px) - 44px), calc(min(26vw, 26vh, 140px)));
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.range-zoom-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--line, rgba(0,0,0,0.2));
   background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
-  min-width: 62px;
-  text-align: center;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: transform 0.08s, opacity 0.15s;
+}
+.range-zoom-btn:active:not(:disabled) { transform: scale(0.92); }
+.range-zoom-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 
 .compass-n {

@@ -448,13 +448,24 @@ function updateHud() {
 }
 
 // ---------- レーダー範囲切替 ----------
-function cycleRange() {
-  rangeIndex = (rangeIndex + 1) % RANGE_STEPS.length;
+function setRange(idx) {
+  const clamped = Math.max(0, Math.min(RANGE_STEPS.length - 1, idx));
+  if (clamped === rangeIndex) return;
+  rangeIndex = clamped;
   const r = RANGE_STEPS[rangeIndex];
-  $("range-btn").textContent = r >= 1000 ? `${r / 1000}km` : `${r}m`;
+  const label = $("range-label");
+  if (label) label.textContent = r >= 1000 ? `${r / 1000}km` : `${r}m`;
+  updateRangeZoomButtons();
   renderRadar();
   syncMapZoom();
 }
+function updateRangeZoomButtons() {
+  const up = $("range-up"), down = $("range-down");
+  if (up) up.disabled = rangeIndex >= RANGE_STEPS.length - 1;
+  if (down) down.disabled = rangeIndex <= 0;
+}
+function rangeUp() { setRange(rangeIndex + 1); }
+function rangeDown() { setRange(rangeIndex - 1); }
 
 // ---------- 画面遷移 ----------
 function showScreen(id) {
@@ -1126,7 +1137,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  $("range-btn").addEventListener("click", cycleRange);
+  $("range-up").addEventListener("click", rangeUp);
+  $("range-down").addEventListener("click", rangeDown);
+  updateRangeZoomButtons();
   $("place-btn").addEventListener("click", onPlaceButtonTap);
   $("accuracy-close").addEventListener("click", closeAccuracyPrompt);
   $("accuracy-prompt").addEventListener("click", (e) => {
