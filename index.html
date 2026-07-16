@@ -34,9 +34,16 @@
       </div>
       <div id="radar-map" class="radar-map" aria-hidden="true"></div>
       <svg id="radar" viewBox="-100 -100 200 200" preserveAspectRatio="xMidYMid meet">
-        <!-- 同心円 -->
+        <defs>
+          <linearGradient id="ring-depth" x1="0" y1="-98" x2="0" y2="98" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#111" stop-opacity="0.08" />
+            <stop offset="0.45" stop-color="#111" stop-opacity="0.35" />
+            <stop offset="1" stop-color="#111" stop-opacity="1" />
+          </linearGradient>
+        </defs>
+        <!-- 外周リング（奥ほど薄く=細く見える） -->
         <g class="radar-rings">
-          <circle r="98" class="ring outer" />
+          <circle r="98" class="ring outer-depth" />
         </g>
         <!-- 方位に合わせて回転するレイヤー -->
         <g id="radar-rotate">

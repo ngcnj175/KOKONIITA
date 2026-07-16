@@ -175,6 +175,11 @@ html, body {
   stroke-width: 0.5;
 }
 .ring.outer { stroke-width: 1; }
+.ring.outer-depth {
+  fill: none;
+  stroke: url(#ring-depth);
+  stroke-width: 0.6;
+}
 .ring.cross { stroke-width: 0.3; opacity: 0.4; }
 .range-chip {
   position: absolute;
