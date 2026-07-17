@@ -85,13 +85,14 @@ async function refreshMe() {
   } catch (e) { console.warn("refreshMe", e); }
 }
 
-async function postMemoryToApi({ blob, lat, lng, accuracy, note }) {
+async function postMemoryToApi({ blob, lat, lng, accuracy, note, visibility }) {
   const fd = new FormData();
   fd.append("image", blob, "memory.jpg");
   fd.append("lat", String(lat));
   fd.append("lng", String(lng));
   fd.append("accuracy", String(accuracy));
   fd.append("note", note || "");
+  fd.append("visibility", visibility === "private" ? "private" : "public");
   const r = await apiFetch("/api/memories", { method: "POST", body: fd });
   if (r.status === 401) throw new Error("unauthorized");
   if (!r.ok) throw new Error("post failed: " + r.status);
@@ -104,6 +105,24 @@ async function removeMemory(id) {
   if (r.status === 403) throw new Error("forbidden");
   if (!r.ok && r.status !== 404) throw new Error("delete failed");
   await Promise.all([refreshMemories(), refreshMyMemories()]);
+}
+
+async function updateMemoryVisibility(id, visibility) {
+  const r = await apiFetch(`/api/memories/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ visibility }),
+  });
+  if (r.status === 401) throw new Error("unauthorized");
+  if (r.status === 403) throw new Error("forbidden");
+  if (!r.ok) throw new Error("update failed");
+  // ローカルキャッシュを即時反映
+  for (const arr of [_publicCache, _myCache]) {
+    const m = arr.find(x => x.id === id);
+    if (m) m.visibility = visibility;
+  }
+  // private→public でレーダー上に足りない場合があるため再取得
+  await refreshMemories();
 }
 
 function goToLogin() { window.location.href = apiUrl("/api/auth/google"); }
@@ -372,6 +391,9 @@ function renderRadar() {
     const hasNear = c.memories.some(m =>
       distanceMeters(myPos, { lat: m.lat, lng: m.lng }) <= UNLOCK_RADIUS_M
     );
+    const allPrivateMine = _currentUser && c.memories.every(m =>
+      m.visibility === "private" && m.userId === _currentUser.id
+    );
     const r = isCluster ? clusterR : dotR;
 
     const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
@@ -387,6 +409,7 @@ function renderRadar() {
     const classes = ["memory-dot"];
     if (isCluster) classes.push("cluster");
     if (hasNear) classes.push("near");
+    if (allPrivateMine) classes.push("private");
     dot.setAttribute("class", classes.join(" "));
     if (hasNear) {
       dot.addEventListener("click", (ev) => {
@@ -537,6 +560,8 @@ async function handleMediaPick(e) {
   }
   const dataUrl = await downscaleImage(file, MAX_IMAGE_DIM);
   $("note-input").value = "";
+  const pt = $("private-toggle");
+  if (pt) pt.checked = false;
   openComposeSheet();
   // シートが開ききってから cropper サイズを測る
   requestAnimationFrame(() => requestAnimationFrame(() => loadCropper(dataUrl)));
@@ -737,12 +762,13 @@ async function savePlaced() {
   if (btn) btn.disabled = true;
   const image = cropToDataUrl();
   const note = $("note-input").value.trim();
+  const visibility = $("private-toggle")?.checked ? "private" : "public";
 
   try {
     const blob = await (await fetch(image)).blob();
     await postMemoryToApi({
       blob,
-      lat: myPos.lat, lng: myPos.lng, accuracy: myPos.accuracy, note,
+      lat: myPos.lat, lng: myPos.lng, accuracy: myPos.accuracy, note, visibility,
     });
     await Promise.all([refreshMemories(), refreshMyMemories()]);
     renderRadar();
@@ -987,6 +1013,7 @@ function renderHistoryList() {
   for (const m of memories) {
     const row = document.createElement("div");
     row.className = "history-row";
+    if (m.visibility === "private") row.classList.add("is-private");
 
     const delBtn = document.createElement("button");
     delBtn.className = "history-delete";
@@ -1010,9 +1037,49 @@ function renderHistoryList() {
     const meta = document.createElement("p");
     meta.className = "history-meta";
     const d = new Date(m.createdAt);
-    meta.textContent = `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()}`;
+    const dateStr = `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()}`;
+    meta.textContent = m.visibility === "private" ? `${dateStr}・自分だけ` : dateStr;
     body.appendChild(msg);
     body.appendChild(meta);
+
+    // 可視性トグル（スワイプ・タップと干渉しないよう pointerdown を止める）
+    const visLabel = document.createElement("label");
+    visLabel.className = "history-visibility";
+    visLabel.title = "自分だけに表示";
+    const visInput = document.createElement("input");
+    visInput.type = "checkbox";
+    visInput.checked = m.visibility === "private";
+    const visIcon = document.createElement("span");
+    visIcon.className = "history-visibility-icon";
+    visIcon.setAttribute("aria-hidden", "true");
+    visIcon.textContent = visInput.checked ? "🔒" : "🌐";
+    visLabel.appendChild(visInput);
+    visLabel.appendChild(visIcon);
+    const stopBubble = (e) => e.stopPropagation();
+    visLabel.addEventListener("pointerdown", stopBubble);
+    visLabel.addEventListener("click", stopBubble);
+    visInput.addEventListener("change", async (e) => {
+      e.stopPropagation();
+      const next = visInput.checked ? "private" : "public";
+      visInput.disabled = true;
+      try {
+        await updateMemoryVisibility(m.id, next);
+        m.visibility = next;
+        visIcon.textContent = next === "private" ? "🔒" : "🌐";
+        row.classList.toggle("is-private", next === "private");
+        meta.textContent = next === "private" ? `${dateStr}・自分だけ` : dateStr;
+        renderRadar();
+      } catch (err) {
+        visInput.checked = !visInput.checked;
+        if (err.message === "unauthorized") {
+          if (confirm("ログインが必要です。ログインしますか？")) goToLogin();
+        } else {
+          showToast("変更に失敗しました");
+        }
+      } finally {
+        visInput.disabled = false;
+      }
+    });
 
     const dist = document.createElement("div");
     dist.className = "history-dist";
@@ -1027,6 +1094,7 @@ function renderHistoryList() {
 
     item.appendChild(img);
     item.appendChild(body);
+    item.appendChild(visLabel);
     item.appendChild(dist);
     row.appendChild(delBtn);
     row.appendChild(item);

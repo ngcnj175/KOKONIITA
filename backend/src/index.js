@@ -14,7 +14,7 @@ app.use("/api/*", (c, next) => {
   return cors({
     origin,
     credentials: true,
-    allowMethods: ["GET", "POST", "DELETE", "OPTIONS"],
+    allowMethods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
   })(c, next);
 });
@@ -100,6 +100,7 @@ function toMemoryRow(r) {
     imageUrl: `/api/memories/${r.id}/image`,
     createdAt: r.created_at,
     userId: r.user_id,
+    visibility: r.visibility || "public",
   };
 }
 
@@ -202,12 +203,23 @@ function decodeJwtPayload(jwt) {
 // Memories
 // ==========================================================
 
-// レーダー用: 全公開記憶（LIMIT付き）
+// レーダー用: public な記憶 + ログイン中なら自分の private も
 app.get("/api/memories", async (c) => {
-  const { results } = await c.env.DB.prepare(
-    `SELECT id, user_id, lat, lng, accuracy, note, created_at
-     FROM memories ORDER BY created_at DESC LIMIT 1000`
-  ).all();
+  const s = await getSession(c);
+  const stmt = s
+    ? c.env.DB.prepare(
+        `SELECT id, user_id, lat, lng, accuracy, note, visibility, created_at
+         FROM memories
+         WHERE visibility = 'public' OR user_id = ?
+         ORDER BY created_at DESC LIMIT 1000`
+      ).bind(s.userId)
+    : c.env.DB.prepare(
+        `SELECT id, user_id, lat, lng, accuracy, note, visibility, created_at
+         FROM memories
+         WHERE visibility = 'public'
+         ORDER BY created_at DESC LIMIT 1000`
+      );
+  const { results } = await stmt.all();
   return c.json({ memories: results.map(toMemoryRow) });
 });
 
@@ -216,7 +228,7 @@ app.get("/api/me/memories", async (c) => {
   const s = await requireSession(c);
   if (!s) return c.json({ error: "unauthorized" }, 401);
   const { results } = await c.env.DB.prepare(
-    `SELECT id, user_id, lat, lng, accuracy, note, created_at
+    `SELECT id, user_id, lat, lng, accuracy, note, visibility, created_at
      FROM memories WHERE user_id = ? ORDER BY created_at DESC`
   ).bind(s.userId).all();
   return c.json({ memories: results.map(toMemoryRow) });
@@ -226,9 +238,15 @@ app.get("/api/me/memories", async (c) => {
 app.get("/api/memories/:id/image", async (c) => {
   const id = c.req.param("id");
   const row = await c.env.DB.prepare(
-    "SELECT image_blob, image_type FROM memories WHERE id = ?"
+    "SELECT image_blob, image_type, visibility, user_id FROM memories WHERE id = ?"
   ).bind(id).first();
   if (!row) return c.text("not found", 404);
+
+  // private の画像は所有者のみ取得可
+  if (row.visibility === "private") {
+    const s = await getSession(c);
+    if (!s || s.userId !== row.user_id) return c.text("not found", 404);
+  }
 
   // D1のBLOBは環境により ArrayBuffer / Uint8Array / Array<number> のいずれかで返る
   const raw = row.image_blob;
@@ -242,10 +260,13 @@ app.get("/api/memories/:id/image", async (c) => {
     return c.text("invalid blob", 500);
   }
 
+  const isPrivate = row.visibility === "private";
   return new Response(bytes, {
     headers: {
       "Content-Type": row.image_type || "image/jpeg",
-      "Cache-Control": "public, max-age=31536000, immutable",
+      "Cache-Control": isPrivate
+        ? "private, max-age=0, no-store"
+        : "public, max-age=31536000, immutable",
       "Content-Length": String(bytes.byteLength),
     },
   });
@@ -275,6 +296,7 @@ app.post("/api/memories", async (c) => {
   const lng = parseFloat(form.get("lng"));
   const accuracy = parseFloat(form.get("accuracy") || "0");
   const note = (form.get("note") || "").toString().slice(0, 200);
+  const visibility = form.get("visibility") === "private" ? "private" : "public";
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
     return c.json({ error: "bad coords" }, 400);
   }
@@ -294,19 +316,42 @@ app.post("/api/memories", async (c) => {
   const now = Date.now();
 
   await c.env.DB.prepare(
-    `INSERT INTO memories(id, user_id, lat, lng, accuracy, note, image_blob, image_type, image_size, geohash, created_at)
-     VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO memories(id, user_id, lat, lng, accuracy, note, image_blob, image_type, image_size, geohash, visibility, created_at)
+     VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(
     id, s.userId, lat, lng, accuracy, note,
-    bytes, image.type || "image/jpeg", image.size, gh, now
+    bytes, image.type || "image/jpeg", image.size, gh, visibility, now
   ).run();
 
   return c.json({
-    id, lat, lng, accuracy, note,
+    id, lat, lng, accuracy, note, visibility,
     imageUrl: `/api/memories/${id}/image`,
     createdAt: now,
     userId: s.userId,
   });
+});
+
+// 可視性の変更（所有者のみ）
+app.patch("/api/memories/:id", async (c) => {
+  const s = await requireSession(c);
+  if (!s) return c.json({ error: "unauthorized" }, 401);
+  const id = c.req.param("id");
+  let body;
+  try { body = await c.req.json(); } catch { return c.json({ error: "bad json" }, 400); }
+  const nextVisibility = body?.visibility === "private" ? "private"
+    : body?.visibility === "public" ? "public" : null;
+  if (!nextVisibility) return c.json({ error: "visibility required" }, 400);
+
+  const row = await c.env.DB.prepare(
+    "SELECT user_id FROM memories WHERE id = ?"
+  ).bind(id).first();
+  if (!row) return c.json({ error: "not found" }, 404);
+  if (row.user_id !== s.userId) return c.json({ error: "forbidden" }, 403);
+
+  await c.env.DB.prepare(
+    "UPDATE memories SET visibility = ? WHERE id = ?"
+  ).bind(nextVisibility, id).run();
+  return c.json({ ok: true, visibility: nextVisibility });
 });
 
 // 削除（所有者のみ）

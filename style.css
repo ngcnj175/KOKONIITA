@@ -269,6 +269,22 @@ html, body {
   fill: #ff7a1a;
   stroke: #ff7a1a;
 }
+/* 自分だけに表示中の記憶（レーダー上は青） */
+.memory-dot.private {
+  fill: #3d7ee6;
+}
+.memory-dot.private.cluster {
+  fill: #3d7ee6;
+  stroke: #3d7ee6;
+}
+.memory-dot.private.near {
+  fill: #3d7ee6;
+  filter: drop-shadow(0 0 3px rgba(61, 126, 230, 0.7));
+}
+.memory-dot.private.cluster.near {
+  fill: #3d7ee6;
+  stroke: #3d7ee6;
+}
 .cluster-num {
   fill: #fff;
   font-size: 4px;
@@ -517,6 +533,30 @@ html, body {
   outline: none;
 }
 .field input:focus, .field textarea:focus { border-color: var(--ink); }
+
+/* チェックボックス型 field（自分だけに表示 など） */
+.field.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+.field.check input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: #3d7ee6;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.field.check .check-label {
+  display: inline;
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink);
+  letter-spacing: 0;
+}
 
 .gps-panel {
   display: flex;
@@ -932,6 +972,40 @@ button.primary { background: var(--ink); color: #fff; border: 1px solid var(--in
   flex-shrink: 0;
   text-align: right;
 }
+/* 履歴の公開/非公開トグル */
+.history-visibility {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  border-radius: 50%;
+}
+.history-visibility:active { background: rgba(17, 17, 17, 0.06); }
+.history-visibility input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.history-visibility-icon {
+  font-size: 16px;
+  line-height: 1;
+  filter: grayscale(0.3);
+  opacity: 0.7;
+}
+.history-row.is-private .history-visibility-icon {
+  filter: none;
+  opacity: 1;
+}
+.history-row.is-private .history-thumb {
+  outline: 2px solid #3d7ee6;
+  outline-offset: -2px;
+}
+.history-row.is-private .history-msg { color: #2a5db0; }
 .history-empty {
   text-align: center;
   padding: 40px 20px;

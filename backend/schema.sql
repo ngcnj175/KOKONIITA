@@ -18,10 +18,12 @@ CREATE TABLE IF NOT EXISTS memories (
   image_type   TEXT NOT NULL DEFAULT 'image/jpeg',
   image_size   INTEGER NOT NULL,       -- バイト数（容量管理用）
   geohash      TEXT NOT NULL,          -- 近傍クエリ用（precision 6）
+  visibility   TEXT NOT NULL DEFAULT 'public',  -- 'public' | 'private'
   created_at   INTEGER NOT NULL,
   FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_memories_geohash ON memories(geohash);
-CREATE INDEX IF NOT EXISTS idx_memories_user    ON memories(user_id);
-CREATE INDEX IF NOT EXISTS idx_memories_created ON memories(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_memories_geohash    ON memories(geohash);
+CREATE INDEX IF NOT EXISTS idx_memories_user       ON memories(user_id);
+CREATE INDEX IF NOT EXISTS idx_memories_created    ON memories(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_memories_visibility ON memories(visibility);
