@@ -197,7 +197,33 @@ async function updateMemoryVisibility(id, visibility) {
   await refreshMemories();
 }
 
-function goToLogin() { window.location.href = apiUrl("/api/auth/google"); }
+function goToLogin() {
+  // ポップアップで開けば、メイン画面の位置情報／方位センサー許可が保持される
+  const url = apiUrl("/api/auth/google");
+  const w = window.open(url, "kk_oauth", "width=480,height=640,menubar=no,toolbar=no");
+  if (!w || w.closed || typeof w.closed === "undefined") {
+    // ポップアップブロック等：従来のフルリダイレクトにフォールバック
+    window.location.href = url;
+  }
+}
+function onLoginMessage(e) {
+  if (e.origin !== location.origin) return;
+  if (e.data?.type !== "kk_login" || !e.data.token) return;
+  setStoredToken(e.data.token);
+  refreshMe().then(() => {
+    if (_currentUser) {
+      refreshMyMemories().then(() => {
+        if (!_radarToggles.mine) {
+          _radarToggles.mine = true;
+          saveRadarToggles();
+          updateToggleButtons();
+        }
+        renderRadar();
+      });
+      showToast("ログインしました");
+    }
+  });
+}
 function updateUserChip() {
   const chip = document.getElementById("user-chip");
   const avatar = document.getElementById("user-avatar");
@@ -1515,6 +1541,19 @@ function closeViewer() { $("viewer").classList.add("hidden"); }
 
 // ---------- 起動 ----------
 document.addEventListener("DOMContentLoaded", () => {
+  // 自分が OAuth ポップアップとして開かれ、トークン付きで戻ってきたケース。
+  // すぐに親へトークンを渡して閉じる（初期化処理はスキップ）。
+  if (window.opener && window.opener !== window && location.hash.startsWith("#kk_token=")) {
+    const t = decodeURIComponent(location.hash.slice("#kk_token=".length));
+    try {
+      window.opener.postMessage({ type: "kk_login", token: t }, location.origin);
+    } catch {}
+    // 数百msだけ待ってから閉じる（postMessage 到達の保険）
+    setTimeout(() => { try { window.close(); } catch {} }, 200);
+    return;
+  }
+  window.addEventListener("message", onLoginMessage);
+
   initRadarMap();
   watchLocation();
   setupOrientation();
