@@ -36,11 +36,11 @@ let _myCache = [];        // 自分の記憶
 let _keyedCache = [];     // 合言葉モードで取得した記憶
 let _currentUser = null;  // {id, name, email, picture} | null
 
-// レーダー表示モード: 'normal' | 'mine' | 'keyed'
-let _radarMode = "normal";
-let _radarKey = "";       // keyed モードの合言葉（小文字）
+// レーダーの表示レイヤー（複数ON可）。デフォルトは public のみ ON。
+let _radarToggles = { public: true, mine: false, keyed: false };
+let _radarKey = "";       // keyed レイヤーの合言葉（小文字）
 const RADAR_KEY_STORAGE = "kokoniita.radar.key.v1";
-const RADAR_MODE_STORAGE = "kokoniita.radar.mode.v1";
+const RADAR_TOGGLES_STORAGE = "kokoniita.radar.toggles.v1";
 
 // 投稿時の可視性: 'public' | 'private' | 'keyed'
 let _composeVisibility = "public";
@@ -91,9 +91,12 @@ function setImageSrc(imgEl, memory) {
 }
 
 function loadMemories() {
-  if (_radarMode === "mine") return _myCache;
-  if (_radarMode === "keyed") return _keyedCache;
-  return _publicCache;
+  // ON になっているソースをマージ（id で重複除去）
+  const seen = new Map();
+  if (_radarToggles.public) for (const m of _publicCache) seen.set(m.id, m);
+  if (_radarToggles.mine)   for (const m of _myCache)     seen.set(m.id, m);
+  if (_radarToggles.keyed)  for (const m of _keyedCache)  seen.set(m.id, m);
+  return [...seen.values()];
 }
 function loadMyMemories() { return _myCache; }
 
@@ -607,47 +610,69 @@ function clusterPoints(points, threshold) {
   return result;
 }
 
-// ---------- レーダー表示モード ----------
-async function setRadarMode(mode, opts = {}) {
-  const next = (mode === "mine" || mode === "keyed") ? mode : "normal";
-  _radarMode = next;
-  try { localStorage.setItem(RADAR_MODE_STORAGE, next); } catch {}
+// ---------- レーダーの表示レイヤー（複数ON可） ----------
+function saveRadarToggles() {
+  try { localStorage.setItem(RADAR_TOGGLES_STORAGE, JSON.stringify(_radarToggles)); } catch {}
+}
+function loadRadarToggles() {
+  try {
+    const raw = localStorage.getItem(RADAR_TOGGLES_STORAGE);
+    if (!raw) return;
+    const j = JSON.parse(raw);
+    _radarToggles = {
+      public: !!j.public,
+      mine:   !!j.mine,
+      keyed:  !!j.keyed,
+    };
+  } catch {}
+}
+function updateToggleButtons() {
   document.querySelectorAll(".radar-mode-btn").forEach(btn => {
-    const on = btn.dataset.mode === next;
-    btn.classList.toggle("is-active", on);
-    btn.setAttribute("aria-selected", on ? "true" : "false");
+    const on = !!_radarToggles[btn.dataset.toggle];
+    btn.classList.toggle("is-on", on);
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
   });
   const keyBar = $("key-bar");
-  if (keyBar) keyBar.classList.toggle("hidden", next !== "keyed");
+  if (keyBar) keyBar.classList.toggle("hidden", !_radarToggles.keyed);
+}
 
-  if (next === "mine") {
-    if (!_currentUser) {
-      showToast("自分の記憶を見るにはログインが必要です");
-      // フォールバック
-      _radarMode = "normal";
-      setRadarMode("normal");
-      return;
-    }
-    await refreshMyMemories();
-    renderRadar();
-  } else if (next === "keyed") {
-    // 前回のキーを復元
-    if (!_radarKey && !opts.skipRestoreKey) {
-      try { _radarKey = localStorage.getItem(RADAR_KEY_STORAGE) || ""; } catch {}
-      const inp = $("key-input");
-      if (inp) inp.value = _radarKey;
-    }
-    if (_radarKey) {
-      await refreshKeyedMemories(_radarKey);
-      renderRadar();
-      if (_keyedCache.length === 0) showToast("この合言葉の記憶はありません");
-    } else {
-      _keyedCache = [];
-      renderRadar();
-    }
-  } else {
-    renderRadar();
+async function setRadarToggle(kind, on) {
+  if (!(kind in _radarToggles)) return;
+  // 「自分」ON はログイン必須
+  if (kind === "mine" && on && !_currentUser) {
+    showToast("自分の記憶を見るにはログインしてください");
+    // 少し待って自動的にログイン誘導
+    setTimeout(() => {
+      if (confirm("Googleでログインしますか？")) goToLogin();
+    }, 400);
+    return;
   }
+  _radarToggles[kind] = on;
+  saveRadarToggles();
+  updateToggleButtons();
+
+  if (on) {
+    if (kind === "public") await refreshMemories();
+    else if (kind === "mine") await refreshMyMemories();
+    else if (kind === "keyed") {
+      // キーを復元
+      if (!_radarKey) {
+        try { _radarKey = localStorage.getItem(RADAR_KEY_STORAGE) || ""; } catch {}
+        const inp = $("key-input");
+        if (inp) inp.value = _radarKey;
+      }
+      if (_radarKey) {
+        await refreshKeyedMemories(_radarKey);
+        if (_keyedCache.length === 0) showToast("この合言葉の記憶はありません");
+      } else {
+        _keyedCache = [];
+      }
+    }
+  } else if (kind === "keyed") {
+    // OFF にしたら合言葉の光点は消す（キャッシュは残しても良いが分かりやすさ優先）
+    _keyedCache = [];
+  }
+  renderRadar();
 }
 
 async function applyRadarKey() {
@@ -1498,13 +1523,24 @@ document.addEventListener("DOMContentLoaded", () => {
   updateUserChip();
 
   // OAuthコールバックから戻ってきた場合、URLフラグメントのトークンを保存
+  let justLoggedIn = false;
   if (location.hash.startsWith("#kk_token=")) {
     const t = decodeURIComponent(location.hash.slice("#kk_token=".length));
     setStoredToken(t);
     history.replaceState(null, "", location.pathname + location.search);
+    justLoggedIn = true;
   }
   refreshMe().then(() => {
-    if (_currentUser) refreshMyMemories();
+    if (_currentUser) {
+      refreshMyMemories();
+      // ログイン直後だけ「自分」レイヤーを自動ON
+      if (justLoggedIn && !_radarToggles.mine) {
+        _radarToggles.mine = true;
+        saveRadarToggles();
+        updateToggleButtons();
+        refreshMyMemories().then(renderRadar);
+      }
+    }
   });
   refreshMemories().then(renderRadar);
   setInterval(() => refreshMemories().then(renderRadar), 60000);
@@ -1515,7 +1551,14 @@ document.addEventListener("DOMContentLoaded", () => {
       try { await apiFetch("/api/auth/logout", { method: "POST" }); } catch {}
       setStoredToken(null);
       _currentUser = null; _myCache = [];
+      // 「自分」レイヤーは意味を失うので自動OFF
+      if (_radarToggles.mine) {
+        _radarToggles.mine = false;
+        saveRadarToggles();
+        updateToggleButtons();
+      }
       updateUserChip();
+      renderRadar();
       showToast("ログアウトしました");
     } else {
       goToLogin();
@@ -1555,18 +1598,22 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   setComposeVisibility("public");
 
-  // レーダー表示モード切替
+  // レーダーの表示レイヤー（トグル）
+  loadRadarToggles();
+  updateToggleButtons();
   document.querySelectorAll(".radar-mode-btn").forEach(btn => {
-    btn.addEventListener("click", () => setRadarMode(btn.dataset.mode));
+    btn.addEventListener("click", () => {
+      const kind = btn.dataset.toggle;
+      setRadarToggle(kind, !_radarToggles[kind]);
+    });
   });
-  // 前回のモードを復元（keyed は明示的に切替時のみ）
-  try {
-    const saved = localStorage.getItem(RADAR_MODE_STORAGE);
-    if (saved === "mine" || saved === "keyed") {
-      // 'mine' はログイン確認後に切替させる
-      if (saved === "keyed") setRadarMode("keyed");
-    }
-  } catch {}
+  // 復元した keyed が ON のままなら、キー入力バーを表示しつつデータ取得
+  if (_radarToggles.keyed) {
+    try { _radarKey = localStorage.getItem(RADAR_KEY_STORAGE) || ""; } catch {}
+    const inp = $("key-input");
+    if (inp) inp.value = _radarKey;
+    if (_radarKey) refreshKeyedMemories(_radarKey).then(renderRadar);
+  }
 
   // 合言葉入力
   const keyInput = $("key-input");
