@@ -64,6 +64,32 @@ function normalizeApiMemory(m) {
   return { ...m, image: apiUrl(m.imageUrl) };
 }
 
+// private 画像は <img src> だと Authorization ヘッダが付けられず 401 になるため、
+// apiFetch で取得して blob URL に変換する。id ごとに一度だけ取得してキャッシュ。
+const _blobUrlCache = new Map();
+async function resolveImageSrc(memory) {
+  if (!memory) return "";
+  if (memory.visibility !== "private") return memory.image;
+  if (_blobUrlCache.has(memory.id)) return _blobUrlCache.get(memory.id);
+  try {
+    const r = await apiFetch(`/api/memories/${memory.id}/image`);
+    if (!r.ok) return "";
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    _blobUrlCache.set(memory.id, url);
+    return url;
+  } catch { return ""; }
+}
+function releaseImageCache(id) {
+  const url = _blobUrlCache.get(id);
+  if (url) { URL.revokeObjectURL(url); _blobUrlCache.delete(id); }
+}
+function setImageSrc(imgEl, memory) {
+  if (!imgEl || !memory) return;
+  if (memory.visibility !== "private") { imgEl.src = memory.image; return; }
+  resolveImageSrc(memory).then(src => { if (src) imgEl.src = src; });
+}
+
 function loadMemories() {
   if (_radarMode === "mine") return _myCache;
   if (_radarMode === "keyed") return _keyedCache;
@@ -146,6 +172,7 @@ async function removeMemory(id) {
   if (r.status === 401) throw new Error("unauthorized");
   if (r.status === 403) throw new Error("forbidden");
   if (!r.ok && r.status !== 404) throw new Error("delete failed");
+  releaseImageCache(id);
   await Promise.all([refreshMemories(), refreshMyMemories()]);
 }
 
@@ -1280,8 +1307,8 @@ function renderHistoryList() {
 
     const img = document.createElement("img");
     img.className = "history-thumb";
-    img.src = m.image;
     img.alt = "";
+    setImageSrc(img, m);
 
     const body = document.createElement("div");
     body.className = "history-body";
@@ -1450,7 +1477,7 @@ function openViewer(m) {
   $("viewer-open").classList.toggle("hidden", !unlocked);
 
   if (unlocked) {
-    $("viewer-img").src = m.image;
+    setImageSrc($("viewer-img"), m);
     $("viewer-note").textContent = m.note || "";
     $("polaroid-flip").classList.remove("flipped");
     const d = new Date(m.createdAt);

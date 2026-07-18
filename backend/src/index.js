@@ -254,26 +254,14 @@ app.get("/api/memories", async (c) => {
     ).bind(key).all();
     return c.json({ memories: results.map(r => toMemoryRow(r)) });
   }
-  const s = await getSession(c);
-  const stmt = s
-    ? c.env.DB.prepare(
-        `SELECT id, user_id, lat, lng, accuracy, note, visibility, access_key, created_at
-         FROM memories
-         WHERE visibility = 'public' OR user_id = ?
-         ORDER BY created_at DESC LIMIT 1000`
-      ).bind(s.userId)
-    : c.env.DB.prepare(
-        `SELECT id, user_id, lat, lng, accuracy, note, visibility, access_key, created_at
-         FROM memories
-         WHERE visibility = 'public'
-         ORDER BY created_at DESC LIMIT 1000`
-      );
-  const { results } = await stmt.all();
-  return c.json({
-    memories: results.map(r =>
-      toMemoryRow(r, { includeKey: !!(s && r.user_id === s.userId) })
-    ),
-  });
+  // 「全体」モードは public のみ。自分の private / keyed は「自分だけ」モードから見る
+  const { results } = await c.env.DB.prepare(
+    `SELECT id, user_id, lat, lng, accuracy, note, visibility, access_key, created_at
+     FROM memories
+     WHERE visibility = 'public'
+     ORDER BY created_at DESC LIMIT 1000`
+  ).all();
+  return c.json({ memories: results.map(r => toMemoryRow(r)) });
 });
 
 // 履歴（本人のみ）
