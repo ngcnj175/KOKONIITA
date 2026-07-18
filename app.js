@@ -295,9 +295,13 @@ function updateRadarPositions() {
     let x, y;
     const p = (Number.isFinite(lat) && Number.isFinite(lng)) ? projectRadar(lng, lat) : null;
     if (p) {
+      const len = Math.hypot(p.x, p.y);
       if (edge) {
-        const len = Math.hypot(p.x, p.y) || 1;
-        x = p.x / len * 103; y = p.y / len * 103;
+        const n = len || 1;
+        x = p.x / n * 103; y = p.y / n * 103;
+      } else if (len > 98) {
+        // 回転で境界を跨いだ点は外周にクランプして飛び出しを防ぐ
+        x = p.x / len * 98; y = p.y / len * 98;
       } else {
         x = p.x; y = p.y;
       }
@@ -411,22 +415,34 @@ function renderRadar() {
   const memories = loadMemories();
 
   // 位置ごとに座標を計算
+  // 「範囲内 / 圏外」の判定は投影後の座標(半径98)で行う。
+  // pitch のあるマップ投影は等距離ではないため、実距離が range 内でも
+  // 投影後にレーダー外周を超える点は edge 扱いにする。
   const points = [];
   const edges = [];
+  const INNER_R = 98;
+  const EDGE_R = 103;
   for (const m of memories) {
     const d = distanceMeters(myPos, { lat: m.lat, lng: m.lng });
     const b = bearingDeg(myPos, { lat: m.lat, lng: m.lng });
     // フォールバック用の azimuth 座標 (map 未 ready のとき使う)
     const scaled = (d / range) * 95;
     const rad = b * Math.PI / 180;
-    const x = Math.sin(rad) * scaled;
-    const y = -Math.cos(rad) * scaled;
+    const ax = Math.sin(rad) * scaled;
+    const ay = -Math.cos(rad) * scaled;
 
-    if (d <= range) {
-      points.push({ x, y, d, memories: [m] });
+    const proj = projectRadar(m.lng, m.lat);
+    const px = proj ? proj.x : ax;
+    const py = proj ? proj.y : ay;
+    const len = Math.hypot(px, py);
+    const inRange = proj ? (len <= INNER_R) : (d <= range);
+
+    if (inRange) {
+      points.push({ x: px, y: py, d, memories: [m] });
     } else {
-      const ex = Math.sin(rad) * 103;
-      const ey = -Math.cos(rad) * 103;
+      const nlen = len || 1;
+      const ex = px / nlen * EDGE_R;
+      const ey = py / nlen * EDGE_R;
       edges.push({ x: ex, y: ey, m });
     }
   }
@@ -459,10 +475,7 @@ function renderRadar() {
     g.dataset.lng = cLng;
     g.dataset.cx = c.x.toFixed(2);
     g.dataset.cy = c.y.toFixed(2);
-    const proj = projectRadar(cLng, cLat);
-    const px = proj ? proj.x : c.x;
-    const py = proj ? proj.y : c.y;
-    g.setAttribute("transform", memWrapTransform(px, py));
+    g.setAttribute("transform", memWrapTransform(c.x, c.y));
 
     const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
     dot.setAttribute("cx", 0);
