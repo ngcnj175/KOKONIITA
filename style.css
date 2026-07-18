@@ -970,7 +970,7 @@ button.primary { background: var(--ink); color: #fff; border: 1px solid var(--in
   margin: 0;
   font-size: 12px;
   line-height: 1.2;
-  color: var(--ink);
+  color: var(--dim);
 }
 .history-meta {
   margin: 0;

@@ -1073,12 +1073,7 @@ function renderHistoryList() {
     const msg = document.createElement("p");
     msg.className = "history-msg";
     const noteText = m.note || "";
-    if (noteText) {
-      msg.textContent = noteText.length > 8 ? noteText.slice(0, 8) + "…" : noteText;
-    } else {
-      msg.textContent = "（メッセージなし）";
-      msg.classList.add("dim");
-    }
+    msg.textContent = noteText.length > 8 ? noteText.slice(0, 8) + "…" : noteText;
     const dist = document.createElement("p");
     dist.className = "history-dist";
     if (myPos) {
