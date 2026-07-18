@@ -281,8 +281,8 @@ function updateRadarPositions() {
 function applyRadarRotation() {
   // レーダー回転レイヤー(N コンパスのみ)を -heading 度回転
   $("radar-rotate").setAttribute("transform", `rotate(${-heading})`);
+  // syncMapBearing が map "move" を発火し、そのハンドラで updateRadarPositions が走る
   syncMapBearing();
-  updateRadarPositions();
 }
 
 // ---------- 背景マップ (MapLibre + OpenFreeMap positron) ----------
@@ -320,21 +320,15 @@ function initRadarMap() {
   _map.on("load", () => {
     // 陸・道・川以外のレイヤを非表示、水は白に
     const layers = _map.getStyle().layers || [];
+    const hide = (id) => { try { _map.setLayoutProperty(id, "visibility", "none"); } catch {} };
     for (const l of layers) {
-      const lidLower = l.id.toLowerCase();
-      if (!shouldKeepMapLayer(l.id)) {
-        try { _map.setLayoutProperty(l.id, "visibility", "none"); } catch {}
-        continue;
-      }
-      if (l.type === "symbol") {
-        try { _map.setLayoutProperty(l.id, "visibility", "none"); } catch {}
-        continue;
-      }
-      if (lidLower.includes("casing") || lidLower.includes("outline")) {
-        try { _map.setLayoutProperty(l.id, "visibility", "none"); } catch {}
-        continue;
-      }
       const lid = l.id.toLowerCase();
+      if (!shouldKeepMapLayer(l.id) ||
+          l.type === "symbol" ||
+          lid.includes("casing") || lid.includes("outline")) {
+        hide(l.id);
+        continue;
+      }
       const isWater = lid.includes("water") || lid.includes("waterway");
       const isRoad = lid.startsWith("road") || lid.startsWith("highway") ||
                      lid.startsWith("tunnel") || lid.startsWith("bridge") ||
@@ -778,17 +772,17 @@ function setupCropperEvents() {
   });
 }
 
-function cropToDataUrl(size = OUTPUT_SIZE, quality = JPEG_QUALITY) {
+function cropToBlob() {
   const canvas = document.createElement("canvas");
-  canvas.width = size;
-  canvas.height = size;
+  canvas.width = OUTPUT_SIZE;
+  canvas.height = OUTPUT_SIZE;
   const ctx = canvas.getContext("2d");
   const sx = -cropper.x / cropper.scale;
   const sy = -cropper.y / cropper.scale;
   const sw = cropper.cw / cropper.scale;
   const sh = cropper.ch / cropper.scale;
-  ctx.drawImage($("cropper-img"), sx, sy, sw, sh, 0, 0, size, size);
-  return canvas.toDataURL("image/jpeg", quality);
+  ctx.drawImage($("cropper-img"), sx, sy, sw, sh, 0, 0, OUTPUT_SIZE, OUTPUT_SIZE);
+  return new Promise((res) => canvas.toBlob(res, "image/jpeg", JPEG_QUALITY));
 }
 
 let _saving = false;
@@ -807,12 +801,11 @@ async function savePlaced() {
   _saving = true;
   const btn = $("save-btn");
   if (btn) btn.disabled = true;
-  const image = cropToDataUrl();
   const note = $("note-input").value.trim();
   const visibility = $("private-toggle")?.checked ? "private" : "public";
 
   try {
-    const blob = await (await fetch(image)).blob();
+    const blob = await cropToBlob();
     await postMemoryToApi({
       blob,
       lat: myPos.lat, lng: myPos.lng, accuracy: myPos.accuracy, note, visibility,
@@ -1216,8 +1209,8 @@ function attachHistorySwipe(item, onDelete, onTap) {
     onTap();
   });
 
-  item.parentElement && item.parentElement.querySelector(".history-delete")
-    ?.addEventListener("click", (e) => { e.stopPropagation(); onDelete(); });
+  item.parentElement.querySelector(".history-delete")
+    .addEventListener("click", (e) => { e.stopPropagation(); onDelete(); });
 }
 
 // ---------- 記憶詳細 ----------
