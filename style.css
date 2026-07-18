@@ -1068,3 +1068,192 @@ button.primary { background: var(--ink); color: #fff; border: 1px solid var(--in
 
 button.ghost { background: transparent; color: var(--dim); border: 1px solid rgba(17, 17, 17, 0.2); }
 button.ghost.danger { color: var(--danger); border-color: rgba(178, 58, 58, 0.4); }
+
+/* ---------- レーダーの表示モード切替 ---------- */
+.radar-mode {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  display: flex;
+  gap: 0;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(17, 17, 17, 0.15);
+  border-radius: 999px;
+  padding: 3px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.radar-mode-btn {
+  border: none;
+  background: transparent;
+  color: var(--dim);
+  width: 40px;
+  height: 30px;
+  border-radius: 999px;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  filter: grayscale(0.5);
+  opacity: 0.65;
+  transition: background 0.15s, opacity 0.15s, filter 0.15s;
+}
+.radar-mode-btn.is-active {
+  background: var(--ink);
+  color: #fff;
+  filter: none;
+  opacity: 1;
+}
+.radar-mode-btn:active { transform: scale(0.94); }
+
+.key-bar {
+  position: absolute;
+  top: 48px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(17, 17, 17, 0.15);
+  border-radius: 999px;
+  padding: 4px 6px 4px 12px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.key-bar.hidden { display: none; }
+#key-input {
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 14px;
+  letter-spacing: 0.2em;
+  width: 8em;
+  text-transform: lowercase;
+}
+#key-input::placeholder {
+  color: var(--dim);
+  letter-spacing: 0.05em;
+  text-transform: none;
+}
+.key-btn {
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  border-radius: 999px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.key-btn.primary { background: var(--ink); color: #fff; }
+.key-btn:active { opacity: 0.7; }
+
+/* keyed 記憶（レーダー上の点） */
+.memory-dot.keyed {
+  fill: #6a4dcc;
+}
+.memory-dot.keyed.cluster {
+  fill: #6a4dcc;
+  stroke: #6a4dcc;
+}
+.memory-dot.keyed.near {
+  fill: #6a4dcc;
+  filter: drop-shadow(0 0 3px rgba(106, 77, 204, 0.7));
+}
+
+/* ---------- 投稿UI：公開範囲セグメント ---------- */
+.vis-seg {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+.vis-seg-btn {
+  flex: 1;
+  border: 1px solid rgba(17, 17, 17, 0.2);
+  background: #fff;
+  border-radius: 6px;
+  padding: 8px 4px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-family: inherit;
+  color: var(--dim);
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.vis-seg-btn .vis-ico { font-size: 18px; line-height: 1; filter: grayscale(0.4); }
+.vis-seg-btn .vis-lbl { font-size: 11px; letter-spacing: 0.05em; }
+.vis-seg-btn.is-active {
+  border-color: var(--ink);
+  background: rgba(17, 17, 17, 0.04);
+  color: var(--ink);
+}
+.vis-seg-btn.is-active .vis-ico { filter: none; }
+.vis-hint { margin: 6px 0 0; }
+
+/* ---------- 合言葉発行モーダル ---------- */
+.key-issued-card { text-align: center; }
+.key-issued-title {
+  font-size: 15px;
+  letter-spacing: 0.1em;
+  margin: 4px 0 8px;
+}
+.key-code {
+  margin: 16px auto;
+  padding: 14px 20px;
+  font-family: "Yu Mincho", "Hiragino Mincho ProN", serif;
+  font-size: 28px;
+  letter-spacing: 0.35em;
+  text-indent: 0.35em;
+  background: #faf7ec;
+  border: 1px dashed rgba(17, 17, 17, 0.3);
+  color: var(--ink);
+  user-select: all;
+}
+.key-actions { justify-content: center; margin-top: 8px; }
+.text-btn {
+  display: block;
+  margin: 12px auto 0;
+  background: transparent;
+  border: none;
+  color: var(--dim);
+  font-family: inherit;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  padding: 6px 10px;
+}
+.text-btn:active { opacity: 0.6; }
+
+/* 履歴の合言葉バッジ */
+.history-row.is-keyed .history-thumb {
+  outline: 2px solid #6a4dcc;
+  outline-offset: -2px;
+}
+.history-key {
+  font-family: "Yu Mincho", "Hiragino Mincho ProN", serif;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  color: #6a4dcc;
+  margin: 0;
+  position: absolute;
+  top: 40px;
+  left: 0;
+  right: 0;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.history-row.is-keyed .history-meta { display: none; }

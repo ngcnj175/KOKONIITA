@@ -27,6 +27,17 @@
     </header>
 
     <div class="radar-wrap">
+      <div class="radar-mode" role="tablist" aria-label="表示モード">
+        <button class="radar-mode-btn is-active" data-mode="normal" type="button" role="tab" aria-selected="true" title="全体">🌐</button>
+        <button class="radar-mode-btn" data-mode="mine" type="button" role="tab" aria-selected="false" title="自分だけ">🔒</button>
+        <button class="radar-mode-btn" data-mode="keyed" type="button" role="tab" aria-selected="false" title="合言葉">👥</button>
+      </div>
+      <div id="key-bar" class="key-bar hidden">
+        <input id="key-input" type="text" inputmode="latin" autocomplete="off" spellcheck="false"
+               maxlength="6" placeholder="合言葉（6文字）" aria-label="合言葉" />
+        <button id="key-apply" class="key-btn primary" type="button">表示</button>
+        <button id="key-clear" class="key-btn" type="button" aria-label="クリア">×</button>
+      </div>
       <div id="range-label" class="range-chip" aria-live="polite">500m</div>
       <div class="range-zoom" role="group" aria-label="表示範囲">
         <button id="range-up" class="range-zoom-btn" type="button" aria-label="広く表示">▲</button>
@@ -108,10 +119,21 @@
           <span>メッセージ（任意）</span>
           <textarea id="note-input" maxlength="140" rows="3" placeholder="ここに残す言葉"></textarea>
         </label>
-        <label class="field check">
-          <input id="private-toggle" type="checkbox" />
-          <span class="check-label">自分だけに表示（マップにも出さない）</span>
-        </label>
+        <div class="field vis-field">
+          <span>だれに見せる？</span>
+          <div class="vis-seg" role="radiogroup" aria-label="公開範囲">
+            <button type="button" class="vis-seg-btn is-active" data-vis="public" role="radio" aria-checked="true">
+              <span class="vis-ico">🌐</span><span class="vis-lbl">全体</span>
+            </button>
+            <button type="button" class="vis-seg-btn" data-vis="private" role="radio" aria-checked="false">
+              <span class="vis-ico">🔒</span><span class="vis-lbl">自分だけ</span>
+            </button>
+            <button type="button" class="vis-seg-btn" data-vis="keyed" role="radio" aria-checked="false">
+              <span class="vis-ico">👥</span><span class="vis-lbl">合言葉</span>
+            </button>
+          </div>
+          <p id="vis-hint" class="vis-hint dim small">レーダーで全員に見える。</p>
+        </div>
         <button id="save-btn" class="place-btn wide" type="button">ここに置く</button>
       </div>
     </div>
@@ -174,6 +196,20 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- 合言葉の発行完了モーダル -->
+  <div id="key-issued" class="modal hidden">
+    <div class="modal-card key-issued-card">
+      <p class="key-issued-title">合言葉を発行しました</p>
+      <p class="dim small">この合言葉を知っている人だけが、この記憶を見つけられます。</p>
+      <div id="key-issued-code" class="key-code" aria-label="合言葉">------</div>
+      <div class="actions key-actions">
+        <button id="key-copy" class="ghost" type="button">コピー</button>
+        <button id="key-share" class="primary" type="button">共有</button>
+      </div>
+      <button id="key-issued-close" class="text-btn" type="button">閉じる</button>
     </div>
   </div>
 

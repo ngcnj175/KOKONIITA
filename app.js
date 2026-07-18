@@ -33,7 +33,17 @@ const TOKEN_STORAGE_KEY = "kokoniita.token.v1";
 
 let _publicCache = [];    // 全公開記憶
 let _myCache = [];        // 自分の記憶
+let _keyedCache = [];     // 合言葉モードで取得した記憶
 let _currentUser = null;  // {id, name, email, picture} | null
+
+// レーダー表示モード: 'normal' | 'mine' | 'keyed'
+let _radarMode = "normal";
+let _radarKey = "";       // keyed モードの合言葉（小文字）
+const RADAR_KEY_STORAGE = "kokoniita.radar.key.v1";
+const RADAR_MODE_STORAGE = "kokoniita.radar.mode.v1";
+
+// 投稿時の可視性: 'public' | 'private' | 'keyed'
+let _composeVisibility = "public";
 
 function getStoredToken() {
   try { return localStorage.getItem(TOKEN_STORAGE_KEY) || null; }
@@ -54,7 +64,11 @@ function normalizeApiMemory(m) {
   return { ...m, image: apiUrl(m.imageUrl) };
 }
 
-function loadMemories() { return _publicCache; }
+function loadMemories() {
+  if (_radarMode === "mine") return _myCache;
+  if (_radarMode === "keyed") return _keyedCache;
+  return _publicCache;
+}
 function loadMyMemories() { return _myCache; }
 
 async function refreshMemories() {
@@ -92,11 +106,26 @@ async function postMemoryToApi({ blob, lat, lng, accuracy, note, visibility }) {
   fd.append("lng", String(lng));
   fd.append("accuracy", String(accuracy));
   fd.append("note", note || "");
-  fd.append("visibility", visibility === "private" ? "private" : "public");
+  const v = visibility === "private" || visibility === "keyed" ? visibility : "public";
+  fd.append("visibility", v);
   const r = await apiFetch("/api/memories", { method: "POST", body: fd });
   if (r.status === 401) throw new Error("unauthorized");
   if (!r.ok) throw new Error("post failed: " + r.status);
   return r.json();
+}
+
+async function refreshKeyedMemories(key) {
+  const k = (key || "").trim().toLowerCase();
+  if (!k) { _keyedCache = []; return; }
+  try {
+    const r = await apiFetch(`/api/memories?key=${encodeURIComponent(k)}`);
+    if (!r.ok) { _keyedCache = []; return; }
+    const j = await r.json();
+    _keyedCache = (j.memories || []).map(normalizeApiMemory);
+  } catch (e) {
+    console.warn("refreshKeyedMemories", e);
+    _keyedCache = [];
+  }
 }
 
 async function removeMemory(id) {
@@ -418,6 +447,7 @@ function renderRadar() {
     const allPrivateMine = _currentUser && c.memories.every(m =>
       m.visibility === "private" && m.userId === _currentUser.id
     );
+    const allKeyed = c.memories.every(m => m.visibility === "keyed");
     const r = isCluster ? clusterR : dotR;
 
     const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
@@ -442,6 +472,7 @@ function renderRadar() {
     if (isCluster) classes.push("cluster");
     if (hasNear) classes.push("near");
     if (allPrivateMine) classes.push("private");
+    if (allKeyed) classes.push("keyed");
     dot.setAttribute("class", classes.join(" "));
     if (hasNear) {
       dot.addEventListener("click", (ev) => {
@@ -519,6 +550,69 @@ function clusterPoints(points, threshold) {
     result.push(group);
   }
   return result;
+}
+
+// ---------- レーダー表示モード ----------
+async function setRadarMode(mode, opts = {}) {
+  const next = (mode === "mine" || mode === "keyed") ? mode : "normal";
+  _radarMode = next;
+  try { localStorage.setItem(RADAR_MODE_STORAGE, next); } catch {}
+  document.querySelectorAll(".radar-mode-btn").forEach(btn => {
+    const on = btn.dataset.mode === next;
+    btn.classList.toggle("is-active", on);
+    btn.setAttribute("aria-selected", on ? "true" : "false");
+  });
+  const keyBar = $("key-bar");
+  if (keyBar) keyBar.classList.toggle("hidden", next !== "keyed");
+
+  if (next === "mine") {
+    if (!_currentUser) {
+      showToast("自分の記憶を見るにはログインが必要です");
+      // フォールバック
+      _radarMode = "normal";
+      setRadarMode("normal");
+      return;
+    }
+    await refreshMyMemories();
+    renderRadar();
+  } else if (next === "keyed") {
+    // 前回のキーを復元
+    if (!_radarKey && !opts.skipRestoreKey) {
+      try { _radarKey = localStorage.getItem(RADAR_KEY_STORAGE) || ""; } catch {}
+      const inp = $("key-input");
+      if (inp) inp.value = _radarKey;
+    }
+    if (_radarKey) {
+      await refreshKeyedMemories(_radarKey);
+      renderRadar();
+      if (_keyedCache.length === 0) showToast("この合言葉の記憶はありません");
+    } else {
+      _keyedCache = [];
+      renderRadar();
+    }
+  } else {
+    renderRadar();
+  }
+}
+
+async function applyRadarKey() {
+  const inp = $("key-input");
+  const k = (inp?.value || "").trim().toLowerCase();
+  if (!k) { showToast("合言葉を入力してください"); return; }
+  _radarKey = k;
+  try { localStorage.setItem(RADAR_KEY_STORAGE, k); } catch {}
+  await refreshKeyedMemories(k);
+  renderRadar();
+  if (_keyedCache.length === 0) showToast("この合言葉の記憶はありません");
+  else showToast(`${_keyedCache.length}件の記憶が見つかりました`);
+}
+function clearRadarKey() {
+  _radarKey = "";
+  _keyedCache = [];
+  try { localStorage.removeItem(RADAR_KEY_STORAGE); } catch {}
+  const inp = $("key-input");
+  if (inp) inp.value = "";
+  renderRadar();
 }
 
 function updateHud() {
@@ -601,8 +695,7 @@ async function handleMediaPick(e) {
   }
   const dataUrl = await downscaleImage(file, MAX_IMAGE_DIM);
   $("note-input").value = "";
-  const pt = $("private-toggle");
-  if (pt) pt.checked = false;
+  setComposeVisibility("public");
   openComposeSheet();
   // シートが開ききってから cropper サイズを測る
   requestAnimationFrame(() => requestAnimationFrame(() => loadCropper(dataUrl)));
@@ -622,6 +715,58 @@ function closeComposeSheet() {
     if (cimg) cimg.removeAttribute("src");
     cropper.ready = false;
   }, 320);
+}
+
+function setComposeVisibility(v) {
+  _composeVisibility = (v === "private" || v === "keyed") ? v : "public";
+  document.querySelectorAll(".vis-seg-btn").forEach(btn => {
+    const on = btn.dataset.vis === _composeVisibility;
+    btn.classList.toggle("is-active", on);
+    btn.setAttribute("aria-checked", on ? "true" : "false");
+  });
+  const hint = $("vis-hint");
+  if (hint) {
+    hint.textContent =
+      _composeVisibility === "private" ? "自分だけに表示。マップにも出しません。"
+      : _composeVisibility === "keyed"  ? "投稿後に合言葉が発行されます。伝えた人だけが見つけられます。"
+      : "レーダーで全員に見えます。";
+  }
+}
+
+function openKeyIssuedModal(key) {
+  const el = $("key-issued");
+  const code = $("key-issued-code");
+  if (code) code.textContent = key;
+  el.dataset.key = key;
+  el.classList.remove("hidden");
+}
+function closeKeyIssuedModal() {
+  $("key-issued").classList.add("hidden");
+}
+async function copyKey(key) {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(key);
+    } else {
+      const ta = document.createElement("textarea");
+      ta.value = key;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      ta.remove();
+    }
+    showToast("合言葉をコピーしました");
+  } catch {
+    showToast("コピーできませんでした");
+  }
+}
+async function shareKey(key) {
+  const text = `合言葉「${key}」を「ココニイタ。」の合言葉モードに入れると、置いた記憶を見つけられます。`;
+  if (navigator.share) {
+    try { await navigator.share({ text }); return; }
+    catch { /* キャンセル時は無視 */ }
+  }
+  copyKey(key);
 }
 
 function updatePlaceButtonState() {
@@ -802,18 +947,22 @@ async function savePlaced() {
   const btn = $("save-btn");
   if (btn) btn.disabled = true;
   const note = $("note-input").value.trim();
-  const visibility = $("private-toggle")?.checked ? "private" : "public";
+  const visibility = _composeVisibility;
 
   try {
     const blob = await cropToBlob();
-    await postMemoryToApi({
+    const result = await postMemoryToApi({
       blob,
       lat: myPos.lat, lng: myPos.lng, accuracy: myPos.accuracy, note, visibility,
     });
     await Promise.all([refreshMemories(), refreshMyMemories()]);
     renderRadar();
     closeComposeSheet();
-    showToast("記憶を置きました");
+    if (result?.accessKey) {
+      openKeyIssuedModal(result.accessKey);
+    } else {
+      showToast("記憶を置きました");
+    }
   } catch (e) {
     if (e.message === "unauthorized") {
       closeComposeSheet();
@@ -1054,6 +1203,7 @@ function renderHistoryList() {
     const row = document.createElement("div");
     row.className = "history-row";
     if (m.visibility === "private") row.classList.add("is-private");
+    if (m.visibility === "keyed") row.classList.add("is-keyed");
 
     const delBtn = document.createElement("button");
     delBtn.className = "history-delete";
@@ -1092,11 +1242,25 @@ function renderHistoryList() {
     body.appendChild(msg);
     body.appendChild(dist);
     body.appendChild(meta);
+    if (m.visibility === "keyed" && m.accessKey) {
+      const keyLine = document.createElement("p");
+      keyLine.className = "history-key";
+      keyLine.textContent = `👥 ${m.accessKey}`;
+      keyLine.title = "タップで合言葉を再共有";
+      keyLine.addEventListener("pointerdown", (e) => e.stopPropagation());
+      keyLine.addEventListener("click", (e) => {
+        e.stopPropagation();
+        shareKey(m.accessKey);
+      });
+      body.appendChild(keyLine);
+    }
 
     // 可視性トグル（スワイプ・タップと干渉しないよう pointerdown を止める）
+    // keyed 記憶はトグル対象外（合言葉つきのまま維持）
     const visLabel = document.createElement("label");
     visLabel.className = "history-visibility";
     visLabel.title = "自分だけに表示";
+    if (m.visibility === "keyed") visLabel.classList.add("invisible");
     const visInput = document.createElement("input");
     visInput.type = "checkbox";
     visInput.checked = m.visibility === "private";
@@ -1292,4 +1456,47 @@ document.addEventListener("DOMContentLoaded", () => {
     $("polaroid-flip").classList.toggle("flipped");
   });
   setupCropperEvents();
+
+  // 公開範囲セグメント
+  document.querySelectorAll(".vis-seg-btn").forEach(btn => {
+    btn.addEventListener("click", () => setComposeVisibility(btn.dataset.vis));
+  });
+  setComposeVisibility("public");
+
+  // レーダー表示モード切替
+  document.querySelectorAll(".radar-mode-btn").forEach(btn => {
+    btn.addEventListener("click", () => setRadarMode(btn.dataset.mode));
+  });
+  // 前回のモードを復元（keyed は明示的に切替時のみ）
+  try {
+    const saved = localStorage.getItem(RADAR_MODE_STORAGE);
+    if (saved === "mine" || saved === "keyed") {
+      // 'mine' はログイン確認後に切替させる
+      if (saved === "keyed") setRadarMode("keyed");
+    }
+  } catch {}
+
+  // 合言葉入力
+  const keyInput = $("key-input");
+  if (keyInput) {
+    keyInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); applyRadarKey(); }
+    });
+  }
+  $("key-apply").addEventListener("click", applyRadarKey);
+  $("key-clear").addEventListener("click", clearRadarKey);
+
+  // 合言葉モーダル
+  $("key-copy").addEventListener("click", () => {
+    const k = $("key-issued").dataset.key;
+    if (k) copyKey(k);
+  });
+  $("key-share").addEventListener("click", () => {
+    const k = $("key-issued").dataset.key;
+    if (k) shareKey(k);
+  });
+  $("key-issued-close").addEventListener("click", closeKeyIssuedModal);
+  $("key-issued").addEventListener("click", (e) => {
+    if (e.target === $("key-issued")) closeKeyIssuedModal();
+  });
 });
