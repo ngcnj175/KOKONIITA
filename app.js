@@ -435,8 +435,10 @@ function renderRadar() {
   const edges = [];
   const INNER_R = 98;
   const EDGE_R = 103;
+  const MAX_RANGE = RANGE_STEPS[RANGE_STEPS.length - 1];
   for (const m of memories) {
     const d = distanceMeters(myPos, { lat: m.lat, lng: m.lng });
+    if (d > MAX_RANGE) continue;
     const b = bearingDeg(myPos, { lat: m.lat, lng: m.lng });
     // フォールバック用の azimuth 座標 (map 未 ready のとき使う)
     const scaled = (d / range) * 95;
