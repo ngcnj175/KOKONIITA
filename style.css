@@ -951,31 +951,34 @@ button.primary { background: var(--ink); color: #fff; border: 1px solid var(--in
 .history-body {
   flex: 1;
   min-width: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
   align-self: stretch;
-  padding: 2px 0;
+  position: relative;
 }
-.history-msg {
+.history-msg,
+.history-dist,
+.history-meta {
   margin: 0;
-  font-size: 13px;
-  color: var(--ink);
+  position: absolute;
+  left: 0;
+  right: 0;
   line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.history-msg {
+  top: 2px;
+  font-size: 13px;
+  color: var(--ink);
+}
 .history-dist {
-  margin: 0;
+  top: 22px;
   font-size: 12px;
-  line-height: 1.2;
   color: var(--dim);
 }
 .history-meta {
-  margin: 0;
+  top: 40px;
   font-size: 11px;
-  line-height: 1.2;
   color: var(--dim);
 }
 /* 履歴の公開/非公開トグル */
