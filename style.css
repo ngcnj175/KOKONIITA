@@ -948,29 +948,35 @@ button.primary { background: var(--ink); color: #fff; border: 1px solid var(--in
   background: #f0f0f0;
   border: 1px solid rgba(17, 17, 17, 0.08);
 }
-.history-body { flex: 1; min-width: 0; }
+.history-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-self: stretch;
+  padding: 2px 0;
+}
 .history-msg {
-  margin: 0 0 3px;
+  margin: 0;
   font-size: 13px;
   color: var(--ink);
+  line-height: 1.2;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  word-break: break-word;
+}
+.history-dist {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.2;
+  color: var(--ink);
 }
 .history-meta {
   margin: 0;
   font-size: 11px;
+  line-height: 1.2;
   color: var(--dim);
-}
-.history-dist {
-  font-size: 11px;
-  color: var(--dim);
-  flex-shrink: 0;
-  text-align: right;
 }
 /* 履歴の公開/非公開トグル */
 .history-visibility {

@@ -1072,14 +1072,30 @@ function renderHistoryList() {
     body.className = "history-body";
     const msg = document.createElement("p");
     msg.className = "history-msg";
-    if (m.note) msg.textContent = m.note;
-    else { msg.textContent = ""; msg.classList.add("dim"); }
+    const noteText = m.note || "";
+    if (noteText) {
+      msg.textContent = noteText.length > 8 ? noteText.slice(0, 8) + "…" : noteText;
+    } else {
+      msg.textContent = "（メッセージなし）";
+      msg.classList.add("dim");
+    }
+    const dist = document.createElement("p");
+    dist.className = "history-dist";
+    if (myPos) {
+      const meters = distanceMeters(myPos, { lat: m.lat, lng: m.lng });
+      dist.textContent = meters < 1000
+        ? `${Math.round(meters)}m`
+        : `${(meters / 1000).toFixed(1)}km`;
+    } else {
+      dist.textContent = "—";
+    }
     const meta = document.createElement("p");
     meta.className = "history-meta";
     const d = new Date(m.createdAt);
     const dateStr = `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()}`;
-    meta.textContent = m.visibility === "private" ? `${dateStr}・自分だけ` : dateStr;
+    meta.textContent = dateStr;
     body.appendChild(msg);
+    body.appendChild(dist);
     body.appendChild(meta);
 
     // 可視性トグル（スワイプ・タップと干渉しないよう pointerdown を止める）
@@ -1107,7 +1123,6 @@ function renderHistoryList() {
         m.visibility = next;
         visIcon.textContent = next === "private" ? "🔒" : "🌐";
         row.classList.toggle("is-private", next === "private");
-        meta.textContent = next === "private" ? `${dateStr}・自分だけ` : dateStr;
         renderRadar();
       } catch (err) {
         visInput.checked = !visInput.checked;
@@ -1121,21 +1136,9 @@ function renderHistoryList() {
       }
     });
 
-    const dist = document.createElement("div");
-    dist.className = "history-dist";
-    if (myPos) {
-      const meters = distanceMeters(myPos, { lat: m.lat, lng: m.lng });
-      dist.textContent = meters < 1000
-        ? `${Math.round(meters)}m`
-        : `${(meters / 1000).toFixed(1)}km`;
-    } else {
-      dist.textContent = "—";
-    }
-
     item.appendChild(img);
     item.appendChild(body);
     item.appendChild(visLabel);
-    item.appendChild(dist);
     row.appendChild(delBtn);
     row.appendChild(item);
 
