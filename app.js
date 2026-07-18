@@ -1,6 +1,12 @@
 // ココニイタ。— レーダー / AR / 記憶投稿
 // KOKONIITA_CONFIG.API_BASE が設定されているとAPIモードで動作する。
 
+const VIS_ICON_SVG = {
+  public: '<svg viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round"><circle cx="12" cy="12" r="9.2"/><ellipse cx="12" cy="12" rx="4.2" ry="9.2"/><line x1="2.8" y1="12" x2="21.2" y2="12"/><line x1="12" y1="2.8" x2="12" y2="21.2"/><path d="M3.4 7.4h17.2M3.4 16.6h17.2"/></svg>',
+  private: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12.4a4.6 4.6 0 100-9.2 4.6 4.6 0 000 9.2zm0 1.8c-4.4 0-8 2.7-8 6v1.6c0 .4.3.7.7.7h14.6c.4 0 .7-.3.7-.7v-1.6c0-3.3-3.6-6-8-6z"/></svg>',
+  keyed: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><circle cx="17" cy="8.5" r="2.8"/><path d="M2 20c0-3.9 3.1-7 7-7s7 3.1 7 7v1H2v-1zm14 1v-1c0-1.7-.4-3.3-1.2-4.7.5-.1 1.1-.2 1.7-.2 3.1 0 5.5 2.5 5.5 5.5v.4H16z"/></svg>',
+};
+
 const UNLOCK_RADIUS_M = 20;
 const GPS_ACCURACY_THRESHOLD_M = 20;
 const MAX_IMAGE_DIM = 1600;      // クロップ前の作業用最大寸法
@@ -1388,7 +1394,10 @@ function renderHistoryList() {
     if (m.visibility === "keyed" && m.accessKey) {
       const keyLine = document.createElement("p");
       keyLine.className = "history-key";
-      keyLine.textContent = `👥 ${m.accessKey}`;
+      keyLine.innerHTML = VIS_ICON_SVG.keyed;
+      const keyText = document.createElement("span");
+      keyText.textContent = m.accessKey;
+      keyLine.appendChild(keyText);
       keyLine.title = "タップで合言葉を再共有";
       keyLine.addEventListener("pointerdown", (e) => e.stopPropagation());
       keyLine.addEventListener("click", (e) => {
@@ -1410,7 +1419,7 @@ function renderHistoryList() {
     const visIcon = document.createElement("span");
     visIcon.className = "history-visibility-icon";
     visIcon.setAttribute("aria-hidden", "true");
-    visIcon.textContent = visInput.checked ? "🔒" : "🌐";
+    visIcon.innerHTML = visInput.checked ? VIS_ICON_SVG.private : VIS_ICON_SVG.public;
     visLabel.appendChild(visInput);
     visLabel.appendChild(visIcon);
     const stopBubble = (e) => e.stopPropagation();
@@ -1423,7 +1432,7 @@ function renderHistoryList() {
       try {
         await updateMemoryVisibility(m.id, next);
         m.visibility = next;
-        visIcon.textContent = next === "private" ? "🔒" : "🌐";
+        visIcon.innerHTML = next === "private" ? VIS_ICON_SVG.private : VIS_ICON_SVG.public;
         row.classList.toggle("is-private", next === "private");
         renderRadar();
       } catch (err) {

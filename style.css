@@ -1001,15 +1001,15 @@ button.primary { background: var(--ink); color: #fff; border: 1px solid var(--in
   cursor: pointer;
 }
 .history-visibility-icon {
-  font-size: 16px;
-  line-height: 1;
-  filter: grayscale(0.3);
-  opacity: 0.7;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  opacity: 0.55;
 }
-.history-row.is-private .history-visibility-icon {
-  filter: none;
-  opacity: 1;
-}
+.history-visibility-icon svg { width: 100%; height: 100%; fill: currentColor; }
+.history-row.is-private .history-visibility-icon { opacity: 1; }
 .history-row.is-private .history-thumb {
   outline: 2px solid #3d7ee6;
   outline-offset: -2px;
@@ -1182,14 +1182,15 @@ button.ghost.danger { color: var(--danger); border-color: rgba(178, 58, 58, 0.4)
   color: var(--dim);
   transition: border-color 0.15s, background 0.15s, color 0.15s;
 }
-.vis-seg-btn .vis-ico { font-size: 18px; line-height: 1; filter: grayscale(0.4); }
+.vis-seg-btn .vis-ico { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; opacity: 0.55; }
+.vis-seg-btn .vis-ico svg { width: 100%; height: 100%; fill: currentColor; }
 .vis-seg-btn .vis-lbl { font-size: 11px; letter-spacing: 0.05em; }
 .vis-seg-btn.is-active {
   border-color: var(--ink);
   background: rgba(17, 17, 17, 0.04);
   color: var(--ink);
 }
-.vis-seg-btn.is-active .vis-ico { filter: none; }
+.vis-seg-btn.is-active .vis-ico { opacity: 1; }
 .vis-hint { margin: 6px 0 0; }
 
 .key-input-wrap {
@@ -1268,5 +1269,10 @@ button.ghost.danger { color: var(--danger); border-color: rgba(178, 58, 58, 0.4)
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
 }
+.history-key svg { width: 13px; height: 13px; fill: currentColor; flex-shrink: 0; }
 .history-row.is-keyed .history-meta { display: none; }
