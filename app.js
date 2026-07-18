@@ -240,19 +240,49 @@ function attachOrientationListener() {
   window.addEventListener("deviceorientation", handler, true);
 }
 
-// 記憶ラッパー用: 位置(cx,cy)に配置しつつ、
-// 親の rotate(-heading) と CSS scaleY(0.6) を打ち消してドット・文字を正立・非扁平に保つ
+// 記憶ラッパー用: 位置(cx,cy)に配置しつつ、CSS scaleY(0.6) を打ち消してドット・文字を正立・非扁平に保つ。
+// 位置は map の投影と同じ world 空間なので、追加の rotate は不要。
 function memWrapTransform(cx, cy) {
-  return `translate(${(+cx).toFixed(2)},${(+cy).toFixed(2)}) rotate(${heading}) scale(1,1.6667)`;
+  return `translate(${(+cx).toFixed(2)},${(+cy).toFixed(2)}) scale(1,1.6667)`;
+}
+// map の pitch/bearing を反映した投影で、lng/lat を SVG viewBox 単位に変換する。
+// map 未 ready のときは null を返し、呼び出し側で azimuth ベースにフォールバック。
+function projectRadar(lng, lat) {
+  if (!_mapReady || !_map || !myPos) return null;
+  const h = _map.getContainer().clientHeight;
+  if (!h) return null;
+  const p = _map.project([lng, lat]);
+  const c = _map.project([myPos.lng, myPos.lat]);
+  // 98 SVG単位 = range メートル、 map の縦半分ピクセル = range メートル
+  //   ⇒ SVG単位 / mapピクセル = 98 / (h/2) = 196 / h
+  const s = 196 / h;
+  return { x: (p.x - c.x) * s, y: (p.y - c.y) * s };
+}
+function updateRadarPositions() {
+  document.querySelectorAll(".mem-wrap").forEach(el => {
+    const lat = parseFloat(el.dataset.lat);
+    const lng = parseFloat(el.dataset.lng);
+    const edge = el.dataset.edge === "1";
+    let x, y;
+    const p = (Number.isFinite(lat) && Number.isFinite(lng)) ? projectRadar(lng, lat) : null;
+    if (p) {
+      if (edge) {
+        const len = Math.hypot(p.x, p.y) || 1;
+        x = p.x / len * 103; y = p.y / len * 103;
+      } else {
+        x = p.x; y = p.y;
+      }
+    } else {
+      x = parseFloat(el.dataset.cx); y = parseFloat(el.dataset.cy);
+    }
+    el.setAttribute("transform", memWrapTransform(x, y));
+  });
 }
 function applyRadarRotation() {
-  // レーダー回転レイヤーを -heading 度回転（自分の向きが常に上）
+  // レーダー回転レイヤー(N コンパスのみ)を -heading 度回転
   $("radar-rotate").setAttribute("transform", `rotate(${-heading})`);
-  // 各記憶ラッパーの counter-rotation を更新
-  document.querySelectorAll(".mem-wrap").forEach(el => {
-    el.setAttribute("transform", memWrapTransform(el.dataset.cx, el.dataset.cy));
-  });
   syncMapBearing();
+  updateRadarPositions();
 }
 
 // ---------- 背景マップ (MapLibre + OpenFreeMap positron) ----------
@@ -318,7 +348,9 @@ function initRadarMap() {
     }
     _mapReady = true;
     syncMapCenter(); syncMapZoom(); syncMapBearing();
+    updateRadarPositions();
   });
+  _map.on("move", updateRadarPositions);
 }
 function rangeToZoom(rangeMeters) {
   if (!_map) return 15;
@@ -361,20 +393,18 @@ function renderRadar() {
   for (const m of memories) {
     const d = distanceMeters(myPos, { lat: m.lat, lng: m.lng });
     const b = bearingDeg(myPos, { lat: m.lat, lng: m.lng });
-    // レーダーはビューポート (-100..100)、表示範囲=95px 相当（余白5）
+    // フォールバック用の azimuth 座標 (map 未 ready のとき使う)
     const scaled = (d / range) * 95;
     const rad = b * Math.PI / 180;
-    // SVG座標: 北(上) = -y、東(右) = +x、方位=時計回り
     const x = Math.sin(rad) * scaled;
     const y = -Math.cos(rad) * scaled;
 
     if (d <= range) {
       points.push({ x, y, d, memories: [m] });
     } else {
-      // 圏外：外周のさらに外側に方向インジケータ
       const ex = Math.sin(rad) * 103;
       const ey = -Math.cos(rad) * 103;
-      edges.push({ x: ex, y: ey });
+      edges.push({ x: ex, y: ey, m });
     }
   }
 
@@ -398,9 +428,17 @@ function renderRadar() {
 
     const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
     g.setAttribute("class", "mem-wrap");
+    // クラスタ重心の lat/lng (map 投影で使う)
+    const cLat = c.memories.reduce((s, m) => s + m.lat, 0) / c.memories.length;
+    const cLng = c.memories.reduce((s, m) => s + m.lng, 0) / c.memories.length;
+    g.dataset.lat = cLat;
+    g.dataset.lng = cLng;
     g.dataset.cx = c.x.toFixed(2);
     g.dataset.cy = c.y.toFixed(2);
-    g.setAttribute("transform", memWrapTransform(c.x, c.y));
+    const proj = projectRadar(cLng, cLat);
+    const px = proj ? proj.x : c.x;
+    const py = proj ? proj.y : c.y;
+    g.setAttribute("transform", memWrapTransform(px, py));
 
     const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
     dot.setAttribute("cx", 0);
@@ -440,9 +478,18 @@ function renderRadar() {
   for (const e of edges) {
     const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
     g.setAttribute("class", "mem-wrap");
+    g.dataset.edge = "1";
+    g.dataset.lat = e.m.lat;
+    g.dataset.lng = e.m.lng;
     g.dataset.cx = e.x.toFixed(2);
     g.dataset.cy = e.y.toFixed(2);
-    g.setAttribute("transform", memWrapTransform(e.x, e.y));
+    let ex = e.x, ey = e.y;
+    const p = projectRadar(e.m.lng, e.m.lat);
+    if (p) {
+      const len = Math.hypot(p.x, p.y) || 1;
+      ex = p.x / len * 103; ey = p.y / len * 103;
+    }
+    g.setAttribute("transform", memWrapTransform(ex, ey));
     const tri = document.createElementNS("http://www.w3.org/2000/svg", "circle");
     tri.setAttribute("cx", 0);
     tri.setAttribute("cy", 0);

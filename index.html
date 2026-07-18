@@ -45,15 +45,14 @@
         <g class="radar-rings">
           <circle r="98" class="ring outer-depth" />
         </g>
-        <!-- 方位に合わせて回転するレイヤー -->
+        <!-- 方位に合わせて回転するレイヤー（Nコンパスのみ） -->
         <g id="radar-rotate">
           <!-- 北マーカー（自分の向き基準、回転する） -->
           <text x="0" y="-90" class="compass-n" text-anchor="middle">N</text>
-          <!-- 記憶ピンはJSで動的追加 -->
-          <g id="memory-layer"></g>
-          <!-- 圏外方向インジケータ -->
-          <g id="edge-layer"></g>
         </g>
+        <!-- 記憶ピン / 圏外インジケータ：mapの投影と同じ world 空間に置く -->
+        <g id="memory-layer"></g>
+        <g id="edge-layer"></g>
         <!-- 自分の位置マーカー（親SVGの scaleY(0.6) を打ち消す） -->
         <g id="me-marker" transform="scale(0.75,1.25)">
           <!-- 接地影 -->
