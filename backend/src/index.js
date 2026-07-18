@@ -127,6 +127,19 @@ function generateAccessKey(len = 6) {
 function normalizeKey(k) {
   return (k || "").toString().trim().toLowerCase();
 }
+// 合言葉の妥当性: 6-20文字、英数字とハイフンのみ
+function isValidUserKey(k) {
+  return typeof k === "string" && /^[a-z0-9-]{6,20}$/.test(k);
+}
+// 指定キーの所有者（最古の keyed 投稿者）を返す。未使用キーなら null。
+async function findKeyOwner(db, key) {
+  const row = await db.prepare(
+    `SELECT user_id FROM memories
+     WHERE visibility = 'keyed' AND access_key = ?
+     ORDER BY created_at ASC LIMIT 1`
+  ).bind(key).first();
+  return row ? row.user_id : null;
+}
 
 // ==========================================================
 // 認証
@@ -349,7 +362,24 @@ app.post("/api/memories", async (c) => {
   const visibility = vRaw === "private" ? "private"
     : vRaw === "keyed" ? "keyed"
     : "public";
-  const accessKey = visibility === "keyed" ? generateAccessKey(6) : null;
+  let accessKey = null;
+  let accessKeyIssued = false; // 自動発行か既存キーへの追加か
+  if (visibility === "keyed") {
+    const userKeyRaw = normalizeKey(form.get("access_key"));
+    if (userKeyRaw) {
+      if (!isValidUserKey(userKeyRaw)) {
+        return c.json({ error: "invalid access_key (6-20 chars, a-z 0-9 -)" }, 400);
+      }
+      const owner = await findKeyOwner(c.env.DB, userKeyRaw);
+      if (owner && owner !== s.userId) {
+        return c.json({ error: "access_key already used by another user" }, 409);
+      }
+      accessKey = userKeyRaw;
+    } else {
+      accessKey = generateAccessKey(6);
+      accessKeyIssued = true;
+    }
+  }
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
     return c.json({ error: "bad coords" }, 400);
   }
@@ -382,10 +412,25 @@ app.post("/api/memories", async (c) => {
   return c.json({
     id, lat, lng, accuracy, note, visibility,
     accessKey: accessKey || undefined,
+    accessKeyIssued: accessKeyIssued || undefined,
     imageUrl,
     createdAt: now,
     userId: s.userId,
   });
+});
+
+// 自分が使ったことのある合言葉一覧（datalist 用）
+app.get("/api/me/keys", async (c) => {
+  const s = await requireSession(c);
+  if (!s) return c.json({ error: "unauthorized" }, 401);
+  const { results } = await c.env.DB.prepare(
+    `SELECT access_key AS key, COUNT(*) AS count, MAX(created_at) AS last_at
+     FROM memories
+     WHERE visibility = 'keyed' AND user_id = ? AND access_key IS NOT NULL
+     GROUP BY access_key
+     ORDER BY last_at DESC`
+  ).bind(s.userId).all();
+  return c.json({ keys: results });
 });
 
 // 可視性の変更（所有者のみ）

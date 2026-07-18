@@ -99,7 +99,7 @@ async function refreshMe() {
   } catch (e) { console.warn("refreshMe", e); }
 }
 
-async function postMemoryToApi({ blob, lat, lng, accuracy, note, visibility }) {
+async function postMemoryToApi({ blob, lat, lng, accuracy, note, visibility, accessKey }) {
   const fd = new FormData();
   fd.append("image", blob, "memory.jpg");
   fd.append("lat", String(lat));
@@ -108,10 +108,23 @@ async function postMemoryToApi({ blob, lat, lng, accuracy, note, visibility }) {
   fd.append("note", note || "");
   const v = visibility === "private" || visibility === "keyed" ? visibility : "public";
   fd.append("visibility", v);
+  if (v === "keyed" && accessKey) fd.append("access_key", accessKey);
   const r = await apiFetch("/api/memories", { method: "POST", body: fd });
   if (r.status === 401) throw new Error("unauthorized");
+  if (r.status === 409) throw new Error("key_conflict");
+  if (r.status === 400) throw new Error("key_invalid");
   if (!r.ok) throw new Error("post failed: " + r.status);
   return r.json();
+}
+
+async function refreshMyKeys() {
+  if (!_currentUser) return [];
+  try {
+    const r = await apiFetch("/api/me/keys");
+    if (!r.ok) return [];
+    const j = await r.json();
+    return j.keys || [];
+  } catch { return []; }
 }
 
 async function refreshKeyedMemories(key) {
@@ -708,6 +721,8 @@ async function handleMediaPick(e) {
   }
   const dataUrl = await downscaleImage(file, MAX_IMAGE_DIM);
   $("note-input").value = "";
+  const ck = $("compose-key");
+  if (ck) ck.value = "";
   setComposeVisibility("public");
   openComposeSheet();
   // シートが開ききってから cropper サイズを測る
@@ -741,8 +756,24 @@ function setComposeVisibility(v) {
   if (hint) {
     hint.textContent =
       _composeVisibility === "private" ? "自分だけに表示。マップにも出しません。"
-      : _composeVisibility === "keyed"  ? "投稿後に合言葉が発行されます。伝えた人だけが見つけられます。"
+      : _composeVisibility === "keyed"  ? "合言葉を伝えた人だけが見つけられます。"
       : "レーダーで全員に見えます。";
+  }
+  const keyWrap = $("key-input-wrap");
+  if (keyWrap) keyWrap.classList.toggle("hidden", _composeVisibility !== "keyed");
+  if (_composeVisibility === "keyed") populateMyKeysDatalist();
+}
+
+async function populateMyKeysDatalist() {
+  const list = $("my-keys-list");
+  if (!list) return;
+  const keys = await refreshMyKeys();
+  list.innerHTML = "";
+  for (const k of keys) {
+    const opt = document.createElement("option");
+    opt.value = k.key;
+    opt.label = `${k.count}件`;
+    list.appendChild(opt);
   }
 }
 
@@ -961,18 +992,33 @@ async function savePlaced() {
   if (btn) btn.disabled = true;
   const note = $("note-input").value.trim();
   const visibility = _composeVisibility;
+  const userKey = visibility === "keyed"
+    ? ($("compose-key")?.value || "").trim().toLowerCase()
+    : "";
+  // 事前バリデーション（サーバー側でも検証）
+  if (visibility === "keyed" && userKey && !/^[a-z0-9-]{6,20}$/.test(userKey)) {
+    showToast("合言葉は6〜20文字の英数字とハイフンのみです");
+    if (btn) btn.disabled = false;
+    _saving = false;
+    return;
+  }
 
   try {
     const blob = await cropToBlob();
     const result = await postMemoryToApi({
       blob,
       lat: myPos.lat, lng: myPos.lng, accuracy: myPos.accuracy, note, visibility,
+      accessKey: userKey || undefined,
     });
     await Promise.all([refreshMemories(), refreshMyMemories()]);
     renderRadar();
     closeComposeSheet();
-    if (result?.accessKey) {
+    if (result?.accessKey && result?.accessKeyIssued) {
+      // 自動発行：大きく表示
       openKeyIssuedModal(result.accessKey);
+    } else if (result?.accessKey) {
+      // 既存キーへの追加
+      showToast(`合言葉「${result.accessKey}」に追加しました`);
     } else {
       showToast("記憶を置きました");
     }
@@ -980,6 +1026,10 @@ async function savePlaced() {
     if (e.message === "unauthorized") {
       closeComposeSheet();
       if (confirm("ログインが必要です。ログインしますか？")) goToLogin();
+    } else if (e.message === "key_conflict") {
+      showToast("この合言葉は他の人が使用中です。別の合言葉にしてください");
+    } else if (e.message === "key_invalid") {
+      showToast("合言葉の形式が正しくありません");
     } else {
       showToast("投稿に失敗しました");
     }

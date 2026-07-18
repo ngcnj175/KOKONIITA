@@ -1202,6 +1202,29 @@ button.ghost.danger { color: var(--danger); border-color: rgba(178, 58, 58, 0.4)
 .vis-seg-btn.is-active .vis-ico { filter: none; }
 .vis-hint { margin: 6px 0 0; }
 
+.key-input-wrap {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.key-input-wrap.hidden { display: none; }
+#compose-key {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid rgba(17, 17, 17, 0.25);
+  background: #fff;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 14px;
+  letter-spacing: 0.05em;
+  border-radius: 4px;
+  outline: none;
+  text-transform: lowercase;
+}
+#compose-key:focus { border-color: var(--ink); }
+.key-input-hint { margin: 0; }
+
 /* ---------- 合言葉発行モーダル ---------- */
 .key-issued-card { text-align: center; }
 .key-issued-title {

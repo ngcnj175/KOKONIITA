@@ -133,6 +133,14 @@
             </button>
           </div>
           <p id="vis-hint" class="vis-hint dim small">レーダーで全員に見える。</p>
+          <div id="key-input-wrap" class="key-input-wrap hidden">
+            <input id="compose-key" type="text" inputmode="latin" autocomplete="off"
+                   spellcheck="false" maxlength="20"
+                   list="my-keys-list"
+                   placeholder="合言葉（空欄なら自動発行）" />
+            <datalist id="my-keys-list"></datalist>
+            <p class="dim small key-input-hint">同じ合言葉で複数の記憶をまとめられます（6〜20文字、英数字とハイフン）</p>
+          </div>
         </div>
         <button id="save-btn" class="place-btn wide" type="button">ここに置く</button>
       </div>
