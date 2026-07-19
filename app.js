@@ -39,9 +39,7 @@ const TOKEN_STORAGE_KEY = "kokoniita.token.v1";
 
 let _publicCache = [];    // 全公開記憶
 let _myCache = [];        // 自分の記憶
-let _keyedCache = [];     // 合言葉モードで取得した記憶
-let _keyedOwnerId = null; // 現 keyed キーのオーナー user_id
-let _keyedMode = null;    // 現 keyed キーの mode ('owner_only' | 'open')
+let _keyedCache = [];     // グループキーモードで取得した記憶
 let _currentUser = null;  // {id, name, email, picture} | null
 
 // レーダーの表示レイヤー（複数ON可）。デフォルトは public のみ ON。
@@ -165,27 +163,26 @@ async function refreshMyKeys() {
   } catch { return []; }
 }
 
+const KEY_FORMAT = /^[a-z0-9-]{6,20}$/;
+function isValidUserKey(k) { return typeof k === "string" && KEY_FORMAT.test(k); }
+
 async function refreshKeyedMemories(key) {
   const k = (key || "").trim().toLowerCase();
-  if (!k) { _keyedCache = []; _keyedOwnerId = null; _keyedMode = null; return; }
+  if (!k) { _keyedCache = []; return; }
   try {
     const r = await apiFetch(`/api/memories?key=${encodeURIComponent(k)}`);
-    if (!r.ok) { _keyedCache = []; _keyedOwnerId = null; _keyedMode = null; return; }
+    if (!r.ok) { _keyedCache = []; return; }
     const j = await r.json();
     _keyedCache = (j.memories || []).map(normalizeApiMemory);
-    _keyedOwnerId = j.keyOwnerId || null;
-    _keyedMode = j.keyMode || null;
   } catch (e) {
     console.warn("refreshKeyedMemories", e);
     _keyedCache = [];
-    _keyedOwnerId = null;
-    _keyedMode = null;
   }
 }
 
 async function lookupKey(key) {
   const k = (key || "").trim().toLowerCase();
-  if (!/^[a-z0-9-]{6,20}$/.test(k)) return null;
+  if (!isValidUserKey(k)) return null;
   try {
     const r = await apiFetch(`/api/keys/${encodeURIComponent(k)}`);
     if (!r.ok) return null;
@@ -744,7 +741,7 @@ function onRadarKeyInput() {
   const raw = (inp?.value || "").trim().toLowerCase();
   if (_radarKeyDebounce) clearTimeout(_radarKeyDebounce);
   if (!raw) { clearRadarKey(); return; }
-  if (!/^[a-z0-9-]{6,20}$/.test(raw)) return;
+  if (!isValidUserKey(raw)) return;
   if (raw === _radarKey) return;
   _radarKeyDebounce = setTimeout(() => applyRadarKey(raw), 350);
 }
@@ -831,7 +828,7 @@ async function handleMediaPick(e) {
   $("note-input").value = "";
   const ck = $("compose-key");
   if (ck) ck.value = "";
-  _composeKeyMode = null;
+  // 新規投稿は毎回「自分だけが投稿」に戻す（前回の選択を持ち越さない）
   const ownerRadio = document.querySelector('input[name="key-mode"][value="owner_only"]');
   if (ownerRadio) ownerRadio.checked = true;
   setComposeVisibility("public");
@@ -910,14 +907,7 @@ async function refreshComposeKeyMode() {
     status.classList.toggle("err", err);
   };
 
-  if (!raw) {
-    _composeKeyMode = null;
-    wrap.classList.remove("hidden");
-    setRadiosEnabled(true);
-    showStatus("");
-    return;
-  }
-  if (!/^[a-z0-9-]{6,20}$/.test(raw)) {
+  if (!raw || !isValidUserKey(raw)) {
     _composeKeyMode = null;
     wrap.classList.remove("hidden");
     setRadiosEnabled(true);
@@ -1187,7 +1177,7 @@ async function savePlaced() {
     ? ($("compose-key")?.value || "").trim().toLowerCase()
     : "";
   // 事前バリデーション（サーバー側でも検証）
-  if (visibility === "keyed" && userKey && !/^[a-z0-9-]{6,20}$/.test(userKey)) {
+  if (visibility === "keyed" && userKey && !isValidUserKey(userKey)) {
     showToast("グループキーは6〜20文字の英数字とハイフンのみです");
     if (btn) btn.disabled = false;
     _saving = false;
@@ -1568,18 +1558,9 @@ function renderHistoryList() {
         swipe.classList.remove("revealed");
         return;
       }
-      (async () => {
-        try {
-          await removeMemory(m.id);
-          renderHistoryList();
-          renderRadar();
-        } catch (e) {
-          if (e.message === "forbidden") showToast("この記憶は削除できません");
-          else if (e.message === "unauthorized") {
-            if (confirm("ログインが必要です。ログインしますか？")) goToLogin();
-          } else showToast("削除に失敗しました");
-        }
-      })();
+      deleteMemoryWithFeedback(m.id, {
+        onSuccess: () => { renderHistoryList(); renderRadar(); },
+      });
     }, () => {
       closeHistory();
       setTimeout(() => openViewer(m), 320);
@@ -1640,20 +1621,27 @@ function attachHistorySwipe(item, swipe, onDelete, onTap) {
 // ---------- 記憶詳細 ----------
 let _viewerMemory = null;
 
-function canDeleteAsOwner(m) {
-  if (!_currentUser || !m) return false;
-  if (m.visibility !== "keyed") return false;
-  // keyed レイヤーで見つけた記憶なら _keyedOwnerId と照合
-  return _keyedOwnerId && _keyedOwnerId === _currentUser.id;
+// 削除処理の共通ハンドラ（swipe と viewer で共有）
+async function deleteMemoryWithFeedback(id, { onSuccess } = {}) {
+  try {
+    await removeMemory(id);
+    if (onSuccess) onSuccess();
+    showToast("回収しました");
+    return true;
+  } catch (e) {
+    if (e.message === "forbidden") showToast("この記憶は回収できません");
+    else if (e.message === "unauthorized") {
+      if (confirm("ログインが必要です。ログインしますか？")) goToLogin();
+    } else showToast("回収に失敗しました");
+    return false;
+  }
 }
 
 function updateViewerDeleteButton(m) {
   const btn = $("viewer-delete");
   if (!btn) return;
-  if (!_currentUser || !m) { btn.classList.add("hidden"); return; }
+  if (!_currentUser || !m || !m.canDelete) { btn.classList.add("hidden"); return; }
   const isPoster = m.userId === _currentUser.id;
-  const isOwner = canDeleteAsOwner(m);
-  if (!isPoster && !isOwner) { btn.classList.add("hidden"); return; }
   btn.classList.remove("hidden");
   btn.textContent = isPoster ? "回収" : "回収（オーナー削除）";
   btn.dataset.mode = isPoster ? "self" : "owner";
@@ -1695,22 +1683,15 @@ async function onViewerDelete() {
     ? "この記憶をオーナー権限で回収しますか？（投稿者には通知されません）"
     : "この記憶を回収しますか？";
   if (!confirm(msg)) return;
-  btn.disabled = true;
-  try {
-    await removeMemory(m.id);
-    // keyed キャッシュからも除去
-    _keyedCache = _keyedCache.filter(x => x.id !== m.id);
-    closeViewer();
-    renderRadar();
-    showToast("回収しました");
-  } catch (e) {
-    if (e.message === "forbidden") showToast("この記憶は回収できません");
-    else if (e.message === "unauthorized") {
-      if (confirm("ログインが必要です。ログインしますか？")) goToLogin();
-    } else showToast("回収に失敗しました");
-  } finally {
-    if (btn) btn.disabled = false;
-  }
+  if (btn) btn.disabled = true;
+  await deleteMemoryWithFeedback(m.id, {
+    onSuccess: () => {
+      _keyedCache = _keyedCache.filter(x => x.id !== m.id);
+      closeViewer();
+      renderRadar();
+    },
+  });
+  if (btn) btn.disabled = false;
 }
 
 // ---------- 起動 ----------

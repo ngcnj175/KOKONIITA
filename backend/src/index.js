@@ -112,6 +112,12 @@ function toMemoryRow(r, opts = {}) {
   if (opts.includeKey && visibility === "keyed") {
     row.accessKey = r.access_key || null;
   }
+  // 削除可否: 投稿者本人 or keyed 投稿ならキーオーナー
+  const uid = opts.sessionUserId;
+  if (uid) {
+    row.canDelete = r.user_id === uid ||
+      (visibility === "keyed" && opts.keyOwnerId && opts.keyOwnerId === uid);
+  }
   return row;
 }
 
@@ -242,6 +248,8 @@ function decodeJwtPayload(jwt) {
 //   なし             → public + ログイン中なら自分の private/keyed も
 app.get("/api/memories", async (c) => {
   const key = normalizeKey(c.req.query("key"));
+  const s = await getSession(c);
+  const uid = s?.userId;
   if (key) {
     const [{ results }, ak] = await Promise.all([
       c.env.DB.prepare(
@@ -252,20 +260,20 @@ app.get("/api/memories", async (c) => {
       ).bind(key).all(),
       getAccessKey(c.env.DB, key),
     ]);
+    const keyOwnerId = ak?.owner_id || null;
     return c.json({
-      memories: results.map(r => toMemoryRow(r)),
-      keyOwnerId: ak?.owner_id || null,
+      memories: results.map(r => toMemoryRow(r, { sessionUserId: uid, keyOwnerId })),
       keyMode: ak?.mode || null,
     });
   }
-  // 「全体」モードは public のみ。自分の private / keyed は「自分だけ」モードから見る
+  // 「公開」モードは public のみ。自分の private / keyed は「プライベート」モードから見る
   const { results } = await c.env.DB.prepare(
     `SELECT id, user_id, lat, lng, accuracy, note, visibility, access_key, created_at
      FROM memories
      WHERE visibility = 'public'
      ORDER BY created_at DESC LIMIT 1000`
   ).all();
-  return c.json({ memories: results.map(r => toMemoryRow(r)) });
+  return c.json({ memories: results.map(r => toMemoryRow(r, { sessionUserId: uid })) });
 });
 
 // 履歴（本人のみ）
@@ -276,7 +284,7 @@ app.get("/api/me/memories", async (c) => {
     `SELECT id, user_id, lat, lng, accuracy, note, visibility, access_key, created_at
      FROM memories WHERE user_id = ? ORDER BY created_at DESC`
   ).bind(s.userId).all();
-  return c.json({ memories: results.map(r => toMemoryRow(r, { includeKey: true })) });
+  return c.json({ memories: results.map(r => toMemoryRow(r, { includeKey: true, sessionUserId: s.userId })) });
 });
 
 // 画像配信（D1 BLOBから直接返す）
@@ -357,6 +365,7 @@ app.post("/api/memories", async (c) => {
   let accessKey = null;
   let accessKeyIssued = false; // 自動発行か既存キーへの追加か
   let accessKeyNew = false;    // access_keys 行を新規作成するか
+  let existingKey = null;      // 既存キー行（POST レスポンスの keyMode 用に保持）
   const keyModeReq = form.get("key_mode") === "open" ? "open" : "owner_only";
   if (visibility === "keyed") {
     const userKeyRaw = normalizeKey(form.get("access_key"));
@@ -364,10 +373,10 @@ app.post("/api/memories", async (c) => {
       if (!isValidUserKey(userKeyRaw)) {
         return c.json({ error: "invalid access_key (6-20 chars, a-z 0-9 -)" }, 400);
       }
-      const existing = await getAccessKey(c.env.DB, userKeyRaw);
-      if (existing) {
+      existingKey = await getAccessKey(c.env.DB, userKeyRaw);
+      if (existingKey) {
         // 既存キー: owner_only はオーナー以外を拒否、open は誰でも通す
-        if (existing.mode === "owner_only" && existing.owner_id !== s.userId) {
+        if (existingKey.mode === "owner_only" && existingKey.owner_id !== s.userId) {
           return c.json({ error: "access_key already used by another user" }, 409);
         }
       } else {
@@ -417,10 +426,9 @@ app.post("/api/memories", async (c) => {
   const imageUrl = accessKey
     ? `/api/memories/${id}/image?key=${encodeURIComponent(accessKey)}`
     : `/api/memories/${id}/image`;
-  let keyMode;
-  if (accessKey) {
-    keyMode = accessKeyNew ? keyModeReq : (await getAccessKey(c.env.DB, accessKey))?.mode;
-  }
+  const keyMode = accessKey
+    ? (accessKeyNew ? keyModeReq : existingKey?.mode)
+    : undefined;
   return c.json({
     id, lat, lng, accuracy, note, visibility,
     accessKey: accessKey || undefined,
