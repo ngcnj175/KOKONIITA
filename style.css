@@ -1010,11 +1010,6 @@ button.primary { background: var(--ink); color: #fff; border: 1px solid var(--in
 }
 .history-visibility-icon svg { width: 100%; height: 100%; fill: currentColor; }
 .history-row.is-private .history-visibility-icon { opacity: 1; }
-.history-row.is-private .history-thumb {
-  outline: 2px solid #3d7ee6;
-  outline-offset: -2px;
-}
-.history-row.is-private .history-msg { color: #2a5db0; }
 .history-empty {
   text-align: center;
   padding: 40px 20px;
@@ -1258,10 +1253,6 @@ button.ghost.danger { color: var(--danger); border-color: rgba(178, 58, 58, 0.4)
 .text-btn:active { opacity: 0.6; }
 
 /* 履歴の合言葉バッジ */
-.history-row.is-keyed .history-thumb {
-  outline: 2px solid #6a4dcc;
-  outline-offset: -2px;
-}
 .history-keybtn {
   position: relative;
   width: 32px;
