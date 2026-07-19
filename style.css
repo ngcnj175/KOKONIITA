@@ -86,6 +86,8 @@ html, body {
   cursor: pointer;
 }
 .chip:active { background: rgba(17, 17, 17, 0.08); }
+.chip:focus { outline: none; }
+.chip:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .chip.back { color: var(--dim); border-color: rgba(17, 17, 17, 0.25); }
 
 .bottombar {
