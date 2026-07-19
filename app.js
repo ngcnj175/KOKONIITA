@@ -1127,10 +1127,11 @@ async function savePlaced() {
 
 // ---------- トースト ----------
 let toastTimer = null;
-function showToast(msg, ms = 3000) {
+function showToast(msg, ms = 3000, variant = "") {
   const t = $("toast");
   t.textContent = msg;
-  t.classList.remove("hidden");
+  t.classList.remove("hidden", "toast-key");
+  if (variant) t.classList.add(variant);
   // 次の描画サイクルで .show を付与（RAFが背景タブで止まる問題を避けるため setTimeout を使用）
   setTimeout(() => t.classList.add("show"), 16);
   if (toastTimer) clearTimeout(toastTimer);
@@ -1404,7 +1405,7 @@ function renderHistoryList() {
       keyBtn.addEventListener("pointerdown", stopBubbleKey);
       keyBtn.addEventListener("click", (e) => {
         e.stopPropagation();
-        if (m.accessKey) showToast(`合言葉: ${m.accessKey}`);
+        if (m.accessKey) showToast(`合言葉: ${m.accessKey}`, 3000, "toast-key");
       });
       rightControl = keyBtn;
     }

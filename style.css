@@ -1043,9 +1043,9 @@ button.primary { background: var(--ink); color: #fff; border: 1px solid var(--in
 /* ---------- トースト ---------- */
 .toast {
   position: fixed;
-  top: 20px;
+  top: 50%;
   left: 50%;
-  transform: translateX(-50%) translateY(-8px);
+  transform: translate(-50%, calc(-50% + 8px));
   z-index: 2000;
   background: rgba(17, 17, 17, 0.9);
   color: #fff;
@@ -1062,7 +1062,14 @@ button.primary { background: var(--ink); color: #fff; border: 1px solid var(--in
 }
 .toast.show {
   opacity: 1;
-  transform: translateX(-50%) translateY(0);
+  transform: translate(-50%, -50%);
+}
+.toast.toast-key {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  letter-spacing: 0.15em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .toast.hidden { display: none; }
 
