@@ -2,7 +2,7 @@
 // KOKONIITA_CONFIG.API_BASE が設定されているとAPIモードで動作する。
 
 const VIS_ICON_SVG = {
-  public: '<svg viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round"><circle cx="12" cy="12" r="9.2"/><ellipse cx="12" cy="12" rx="4.2" ry="9.2"/><line x1="2.8" y1="12" x2="21.2" y2="12"/><line x1="12" y1="2.8" x2="12" y2="21.2"/><path d="M3.4 7.4h17.2M3.4 16.6h17.2"/></svg>',
+  public: '<svg viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round"><circle cx="12" cy="12" r="9.2"/><ellipse cx="12" cy="12" rx="4.2" ry="9.2"/><line x1="2.8" y1="12" x2="21.2" y2="12"/><line x1="12" y1="2.8" x2="12" y2="21.2"/><path d="M4.1 7.4h15.8M4.1 16.6h15.8"/></svg>',
   private: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12.4a4.6 4.6 0 100-9.2 4.6 4.6 0 000 9.2zm0 1.8c-4.4 0-8 2.7-8 6v1.6c0 .4.3.7.7.7h14.6c.4 0 .7-.3.7-.7v-1.6c0-3.3-3.6-6-8-6z"/></svg>',
   keyed: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><circle cx="17" cy="8.5" r="2.8"/><path d="M2 20c0-3.9 3.1-7 7-7s7 3.1 7 7v1H2v-1zm14 1v-1c0-1.7-.4-3.3-1.2-4.7.5-.1 1.1-.2 1.7-.2 3.1 0 5.5 2.5 5.5 5.5v.4H16z"/></svg>',
 };
@@ -1391,24 +1391,23 @@ function renderHistoryList() {
     body.appendChild(msg);
     body.appendChild(dist);
     body.appendChild(meta);
-    if (m.visibility === "keyed" && m.accessKey) {
-      const keyLine = document.createElement("p");
-      keyLine.className = "history-key";
-      keyLine.innerHTML = VIS_ICON_SVG.keyed;
-      const keyText = document.createElement("span");
-      keyText.textContent = m.accessKey;
-      keyLine.appendChild(keyText);
-      keyLine.title = "タップで合言葉を再共有";
-      keyLine.addEventListener("pointerdown", (e) => e.stopPropagation());
-      keyLine.addEventListener("click", (e) => {
+    // 可視性トグル / 合言葉表示ボタン（スワイプ・タップと干渉しないよう pointerdown を止める）
+    let rightControl;
+    if (m.visibility === "keyed") {
+      const keyBtn = document.createElement("button");
+      keyBtn.type = "button";
+      keyBtn.className = "history-keybtn";
+      keyBtn.title = "タップで合言葉を表示";
+      keyBtn.setAttribute("aria-label", "合言葉を表示");
+      keyBtn.innerHTML = `<span class="history-visibility-icon" aria-hidden="true">${VIS_ICON_SVG.keyed}</span>`;
+      const stopBubbleKey = (e) => e.stopPropagation();
+      keyBtn.addEventListener("pointerdown", stopBubbleKey);
+      keyBtn.addEventListener("click", (e) => {
         e.stopPropagation();
-        shareKey(m.accessKey);
+        if (m.accessKey) showToast(`合言葉: ${m.accessKey}`);
       });
-      body.appendChild(keyLine);
+      rightControl = keyBtn;
     }
-
-    // 可視性トグル（スワイプ・タップと干渉しないよう pointerdown を止める）
-    // keyed 記憶はトグル対象外（合言葉つきのまま維持）
     const visLabel = document.createElement("label");
     visLabel.className = "history-visibility";
     visLabel.title = "自分だけに表示";
@@ -1449,7 +1448,7 @@ function renderHistoryList() {
 
     item.appendChild(img);
     item.appendChild(body);
-    item.appendChild(visLabel);
+    item.appendChild(rightControl || visLabel);
     row.appendChild(delBtn);
     row.appendChild(item);
 
