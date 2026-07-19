@@ -707,10 +707,7 @@ async function setRadarToggle(kind, on) {
   renderRadar();
 }
 
-async function applyRadarKey() {
-  const inp = $("key-input");
-  const k = (inp?.value || "").trim().toLowerCase();
-  if (!k) { showToast("合言葉を入力してください"); return; }
+async function applyRadarKey(k) {
   _radarKey = k;
   try { localStorage.setItem(RADAR_KEY_STORAGE, k); } catch {}
   await refreshKeyedMemories(k);
@@ -722,9 +719,17 @@ function clearRadarKey() {
   _radarKey = "";
   _keyedCache = [];
   try { localStorage.removeItem(RADAR_KEY_STORAGE); } catch {}
-  const inp = $("key-input");
-  if (inp) inp.value = "";
   renderRadar();
+}
+let _radarKeyDebounce = null;
+function onRadarKeyInput() {
+  const inp = $("key-input");
+  const raw = (inp?.value || "").trim().toLowerCase();
+  if (_radarKeyDebounce) clearTimeout(_radarKeyDebounce);
+  if (!raw) { clearRadarKey(); return; }
+  if (!/^[a-z0-9-]{6,20}$/.test(raw)) return;
+  if (raw === _radarKey) return;
+  _radarKeyDebounce = setTimeout(() => applyRadarKey(raw), 350);
 }
 
 function updateHud() {
@@ -1666,15 +1671,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (_radarKey) refreshKeyedMemories(_radarKey).then(renderRadar);
   }
 
-  // 合言葉入力
+  // 合言葉入力（入力後デバウンスで自動反映）
   const keyInput = $("key-input");
   if (keyInput) {
-    keyInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") { e.preventDefault(); applyRadarKey(); }
-    });
+    keyInput.addEventListener("input", onRadarKeyInput);
   }
-  $("key-apply").addEventListener("click", applyRadarKey);
-  $("key-clear").addEventListener("click", clearRadarKey);
 
   // 合言葉モーダル
   $("key-copy").addEventListener("click", () => {
