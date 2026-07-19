@@ -150,6 +150,17 @@
                    placeholder="グループキー（空欄なら自動発行）" />
             <datalist id="my-keys-list"></datalist>
             <p class="dim small key-input-hint">同じグループキーで複数の記憶をまとめられます（6〜20文字、英数字とハイフン）</p>
+            <div id="key-mode-wrap" class="key-mode-wrap" role="radiogroup" aria-label="グループの投稿権限">
+              <label class="key-mode-opt">
+                <input type="radio" name="key-mode" value="owner_only" checked />
+                <span>🔒 自分だけが投稿できる</span>
+              </label>
+              <label class="key-mode-opt">
+                <input type="radio" name="key-mode" value="open" />
+                <span>🌐 誰でも投稿できる</span>
+              </label>
+            </div>
+            <p id="key-mode-status" class="dim small key-mode-status hidden"></p>
           </div>
         </div>
         <button id="save-btn" class="place-btn wide" type="button">ここに置く</button>
@@ -214,6 +225,7 @@
           </div>
         </div>
       </div>
+      <button id="viewer-delete" class="viewer-delete hidden" type="button"></button>
     </div>
   </div>
 
@@ -221,7 +233,7 @@
   <div id="key-issued" class="modal hidden">
     <div class="modal-card key-issued-card">
       <p class="key-issued-title">グループキーを発行しました</p>
-      <p class="dim small">このグループキーを知っている人だけが、この記憶を見つけられます。</p>
+      <p class="dim small key-issued-desc">このグループキーを知っている人だけが、この記憶を見つけられます。</p>
       <div id="key-issued-code" class="key-code" aria-label="グループキー">------</div>
       <div class="actions key-actions">
         <button id="key-copy" class="ghost" type="button">コピー</button>

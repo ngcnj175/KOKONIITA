@@ -131,14 +131,11 @@ function normalizeKey(k) {
 function isValidUserKey(k) {
   return typeof k === "string" && /^[a-z0-9-]{6,20}$/.test(k);
 }
-// 指定キーの所有者（最古の keyed 投稿者）を返す。未使用キーなら null。
-async function findKeyOwner(db, key) {
-  const row = await db.prepare(
-    `SELECT user_id FROM memories
-     WHERE visibility = 'keyed' AND access_key = ?
-     ORDER BY created_at ASC LIMIT 1`
+// access_keys テーブルからキー情報を取得。未登録なら null。
+async function getAccessKey(db, key) {
+  return db.prepare(
+    "SELECT key, owner_id, mode, created_at FROM access_keys WHERE key = ?"
   ).bind(key).first();
-  return row ? row.user_id : null;
 }
 
 // ==========================================================
@@ -246,13 +243,20 @@ function decodeJwtPayload(jwt) {
 app.get("/api/memories", async (c) => {
   const key = normalizeKey(c.req.query("key"));
   if (key) {
-    const { results } = await c.env.DB.prepare(
-      `SELECT id, user_id, lat, lng, accuracy, note, visibility, access_key, created_at
-       FROM memories
-       WHERE visibility = 'keyed' AND access_key = ?
-       ORDER BY created_at DESC LIMIT 1000`
-    ).bind(key).all();
-    return c.json({ memories: results.map(r => toMemoryRow(r)) });
+    const [{ results }, ak] = await Promise.all([
+      c.env.DB.prepare(
+        `SELECT id, user_id, lat, lng, accuracy, note, visibility, access_key, created_at
+         FROM memories
+         WHERE visibility = 'keyed' AND access_key = ?
+         ORDER BY created_at DESC LIMIT 1000`
+      ).bind(key).all(),
+      getAccessKey(c.env.DB, key),
+    ]);
+    return c.json({
+      memories: results.map(r => toMemoryRow(r)),
+      keyOwnerId: ak?.owner_id || null,
+      keyMode: ak?.mode || null,
+    });
   }
   // 「全体」モードは public のみ。自分の private / keyed は「自分だけ」モードから見る
   const { results } = await c.env.DB.prepare(
@@ -352,20 +356,28 @@ app.post("/api/memories", async (c) => {
     : "public";
   let accessKey = null;
   let accessKeyIssued = false; // 自動発行か既存キーへの追加か
+  let accessKeyNew = false;    // access_keys 行を新規作成するか
+  const keyModeReq = form.get("key_mode") === "open" ? "open" : "owner_only";
   if (visibility === "keyed") {
     const userKeyRaw = normalizeKey(form.get("access_key"));
     if (userKeyRaw) {
       if (!isValidUserKey(userKeyRaw)) {
         return c.json({ error: "invalid access_key (6-20 chars, a-z 0-9 -)" }, 400);
       }
-      const owner = await findKeyOwner(c.env.DB, userKeyRaw);
-      if (owner && owner !== s.userId) {
-        return c.json({ error: "access_key already used by another user" }, 409);
+      const existing = await getAccessKey(c.env.DB, userKeyRaw);
+      if (existing) {
+        // 既存キー: owner_only はオーナー以外を拒否、open は誰でも通す
+        if (existing.mode === "owner_only" && existing.owner_id !== s.userId) {
+          return c.json({ error: "access_key already used by another user" }, 409);
+        }
+      } else {
+        accessKeyNew = true;
       }
       accessKey = userKeyRaw;
     } else {
       accessKey = generateAccessKey(6);
       accessKeyIssued = true;
+      accessKeyNew = true;
     }
   }
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
@@ -394,31 +406,74 @@ app.post("/api/memories", async (c) => {
     bytes, image.type || "image/jpeg", image.size, gh, visibility, accessKey, now
   ).run();
 
+  // 新規キーなら access_keys 行を作る（所有者=投稿者, mode=リクエスト値）
+  if (accessKeyNew && accessKey) {
+    await c.env.DB.prepare(
+      `INSERT OR IGNORE INTO access_keys(key, owner_id, mode, created_at)
+       VALUES(?, ?, ?, ?)`
+    ).bind(accessKey, s.userId, keyModeReq, now).run();
+  }
+
   const imageUrl = accessKey
     ? `/api/memories/${id}/image?key=${encodeURIComponent(accessKey)}`
     : `/api/memories/${id}/image`;
+  let keyMode;
+  if (accessKey) {
+    keyMode = accessKeyNew ? keyModeReq : (await getAccessKey(c.env.DB, accessKey))?.mode;
+  }
   return c.json({
     id, lat, lng, accuracy, note, visibility,
     accessKey: accessKey || undefined,
     accessKeyIssued: accessKeyIssued || undefined,
+    keyMode: keyMode || undefined,
     imageUrl,
     createdAt: now,
     userId: s.userId,
   });
 });
 
-// 自分が使ったことのある合言葉一覧（datalist 用）
+// 自分が投稿した or 所有しているグループキー一覧（datalist 用）
 app.get("/api/me/keys", async (c) => {
   const s = await requireSession(c);
   if (!s) return c.json({ error: "unauthorized" }, 401);
   const { results } = await c.env.DB.prepare(
-    `SELECT access_key AS key, COUNT(*) AS count, MAX(created_at) AS last_at
-     FROM memories
-     WHERE visibility = 'keyed' AND user_id = ? AND access_key IS NOT NULL
-     GROUP BY access_key
+    `SELECT ak.key AS key,
+            ak.mode AS mode,
+            ak.owner_id AS owner_id,
+            COALESCE(m.cnt, 0) AS count,
+            COALESCE(m.last_at, ak.created_at) AS last_at
+     FROM access_keys ak
+     LEFT JOIN (
+       SELECT access_key, COUNT(*) AS cnt, MAX(created_at) AS last_at
+       FROM memories
+       WHERE visibility = 'keyed' AND access_key IS NOT NULL AND user_id = ?
+       GROUP BY access_key
+     ) m ON m.access_key = ak.key
+     WHERE ak.owner_id = ? OR m.cnt > 0
      ORDER BY last_at DESC`
-  ).bind(s.userId).all();
-  return c.json({ keys: results });
+  ).bind(s.userId, s.userId).all();
+  const keys = (results || []).map(r => ({
+    key: r.key,
+    mode: r.mode,
+    count: Number(r.count || 0),
+    last_at: r.last_at,
+    isOwner: r.owner_id === s.userId,
+  }));
+  return c.json({ keys });
+});
+
+// 単一グループキーの状態を返す（compose 時のモード確認用）
+app.get("/api/keys/:key", async (c) => {
+  const raw = normalizeKey(c.req.param("key"));
+  if (!isValidUserKey(raw)) return c.json({ exists: false }, 400);
+  const row = await getAccessKey(c.env.DB, raw);
+  if (!row) return c.json({ exists: false });
+  const s = await getSession(c);
+  return c.json({
+    exists: true,
+    mode: row.mode,
+    isOwner: !!(s && s.userId === row.owner_id),
+  });
 });
 
 // 可視性の変更（所有者のみ）
@@ -444,16 +499,21 @@ app.patch("/api/memories/:id", async (c) => {
   return c.json({ ok: true, visibility: nextVisibility });
 });
 
-// 削除（所有者のみ）
+// 削除（投稿者本人、または keyed 投稿ならグループキーのオーナー）
 app.delete("/api/memories/:id", async (c) => {
   const s = await requireSession(c);
   if (!s) return c.json({ error: "unauthorized" }, 401);
   const id = c.req.param("id");
   const row = await c.env.DB.prepare(
-    "SELECT user_id FROM memories WHERE id = ?"
+    "SELECT user_id, visibility, access_key FROM memories WHERE id = ?"
   ).bind(id).first();
   if (!row) return c.json({ error: "not found" }, 404);
-  if (row.user_id !== s.userId) return c.json({ error: "forbidden" }, 403);
+  let allowed = row.user_id === s.userId;
+  if (!allowed && row.visibility === "keyed" && row.access_key) {
+    const ak = await getAccessKey(c.env.DB, row.access_key);
+    if (ak && ak.owner_id === s.userId) allowed = true;
+  }
+  if (!allowed) return c.json({ error: "forbidden" }, 403);
 
   await c.env.DB.prepare("DELETE FROM memories WHERE id = ?").bind(id).run();
   return c.json({ ok: true });

@@ -29,3 +29,12 @@ CREATE INDEX IF NOT EXISTS idx_memories_user       ON memories(user_id);
 CREATE INDEX IF NOT EXISTS idx_memories_created    ON memories(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_memories_visibility ON memories(visibility);
 CREATE INDEX IF NOT EXISTS idx_memories_access_key ON memories(access_key);
+
+-- グループキーの所有者とモード（owner_only / open）
+CREATE TABLE IF NOT EXISTS access_keys (
+  key        TEXT PRIMARY KEY,
+  owner_id   TEXT NOT NULL,
+  mode       TEXT NOT NULL DEFAULT 'owner_only',  -- 'owner_only' | 'open'
+  created_at INTEGER NOT NULL,
+  FOREIGN KEY (owner_id) REFERENCES users(id)
+);

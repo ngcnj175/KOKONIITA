@@ -1222,6 +1222,42 @@ button.ghost.danger { color: var(--danger); border-color: rgba(178, 58, 58, 0.4)
 }
 #compose-key:focus { border-color: var(--ink); }
 .key-input-hint { margin: 0; }
+.key-mode-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+}
+.key-mode-wrap.hidden { display: none; }
+.key-mode-opt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ink);
+  cursor: pointer;
+}
+.key-mode-opt input[type="radio"] { accent-color: var(--ink); }
+.key-mode-opt input[type="radio"]:disabled + span { opacity: 0.5; }
+.key-mode-status { margin: 4px 0 0; }
+.key-mode-status.hidden { display: none; }
+.key-mode-status.err { color: #a33; }
+
+/* ビューア内の回収ボタン */
+.viewer-delete {
+  margin-top: 18px;
+  padding: 8px 22px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.viewer-delete:hover { background: rgba(0, 0, 0, 0.55); }
+.viewer-delete.hidden { display: none; }
 
 /* ---------- 合言葉発行モーダル ---------- */
 .key-issued-card { text-align: center; }

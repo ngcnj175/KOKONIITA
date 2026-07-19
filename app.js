@@ -40,6 +40,8 @@ const TOKEN_STORAGE_KEY = "kokoniita.token.v1";
 let _publicCache = [];    // 全公開記憶
 let _myCache = [];        // 自分の記憶
 let _keyedCache = [];     // 合言葉モードで取得した記憶
+let _keyedOwnerId = null; // 現 keyed キーのオーナー user_id
+let _keyedMode = null;    // 現 keyed キーの mode ('owner_only' | 'open')
 let _currentUser = null;  // {id, name, email, picture} | null
 
 // レーダーの表示レイヤー（複数ON可）。デフォルトは public のみ ON。
@@ -134,7 +136,7 @@ async function refreshMe() {
   } catch (e) { console.warn("refreshMe", e); }
 }
 
-async function postMemoryToApi({ blob, lat, lng, accuracy, note, visibility, accessKey }) {
+async function postMemoryToApi({ blob, lat, lng, accuracy, note, visibility, accessKey, keyMode }) {
   const fd = new FormData();
   fd.append("image", blob, "memory.jpg");
   fd.append("lat", String(lat));
@@ -144,6 +146,7 @@ async function postMemoryToApi({ blob, lat, lng, accuracy, note, visibility, acc
   const v = visibility === "private" || visibility === "keyed" ? visibility : "public";
   fd.append("visibility", v);
   if (v === "keyed" && accessKey) fd.append("access_key", accessKey);
+  if (v === "keyed") fd.append("key_mode", keyMode === "open" ? "open" : "owner_only");
   const r = await apiFetch("/api/memories", { method: "POST", body: fd });
   if (r.status === 401) throw new Error("unauthorized");
   if (r.status === 409) throw new Error("key_conflict");
@@ -164,16 +167,30 @@ async function refreshMyKeys() {
 
 async function refreshKeyedMemories(key) {
   const k = (key || "").trim().toLowerCase();
-  if (!k) { _keyedCache = []; return; }
+  if (!k) { _keyedCache = []; _keyedOwnerId = null; _keyedMode = null; return; }
   try {
     const r = await apiFetch(`/api/memories?key=${encodeURIComponent(k)}`);
-    if (!r.ok) { _keyedCache = []; return; }
+    if (!r.ok) { _keyedCache = []; _keyedOwnerId = null; _keyedMode = null; return; }
     const j = await r.json();
     _keyedCache = (j.memories || []).map(normalizeApiMemory);
+    _keyedOwnerId = j.keyOwnerId || null;
+    _keyedMode = j.keyMode || null;
   } catch (e) {
     console.warn("refreshKeyedMemories", e);
     _keyedCache = [];
+    _keyedOwnerId = null;
+    _keyedMode = null;
   }
+}
+
+async function lookupKey(key) {
+  const k = (key || "").trim().toLowerCase();
+  if (!/^[a-z0-9-]{6,20}$/.test(k)) return null;
+  try {
+    const r = await apiFetch(`/api/keys/${encodeURIComponent(k)}`);
+    if (!r.ok) return null;
+    return await r.json();
+  } catch { return null; }
 }
 
 async function removeMemory(id) {
@@ -814,6 +831,9 @@ async function handleMediaPick(e) {
   $("note-input").value = "";
   const ck = $("compose-key");
   if (ck) ck.value = "";
+  _composeKeyMode = null;
+  const ownerRadio = document.querySelector('input[name="key-mode"][value="owner_only"]');
+  if (ownerRadio) ownerRadio.checked = true;
   setComposeVisibility("public");
   openComposeSheet();
   // シートが開ききってから cropper サイズを測る
@@ -852,7 +872,10 @@ function setComposeVisibility(v) {
   }
   const keyWrap = $("key-input-wrap");
   if (keyWrap) keyWrap.classList.toggle("hidden", _composeVisibility !== "keyed");
-  if (_composeVisibility === "keyed") populateMyKeysDatalist();
+  if (_composeVisibility === "keyed") {
+    populateMyKeysDatalist();
+    refreshComposeKeyMode();
+  }
 }
 
 async function populateMyKeysDatalist() {
@@ -863,15 +886,92 @@ async function populateMyKeysDatalist() {
   for (const k of keys) {
     const opt = document.createElement("option");
     opt.value = k.key;
-    opt.label = `${k.count}件`;
+    const modeIco = k.mode === "open" ? "🌐" : "🔒";
+    const role = k.isOwner ? "オーナー" : "メンバー";
+    opt.label = `${modeIco} ${k.count}件・${role}`;
     list.appendChild(opt);
   }
 }
 
-function openKeyIssuedModal(key) {
+// compose-key 入力に応じてモードラジオの状態を更新
+let _keyLookupToken = 0;
+let _composeKeyMode = null; // 既存キー確定時のモード (null なら新規=ラジオ有効)
+async function refreshComposeKeyMode() {
+  const inp = $("compose-key");
+  const wrap = $("key-mode-wrap");
+  const status = $("key-mode-status");
+  if (!inp || !wrap || !status) return;
+  const raw = (inp.value || "").trim().toLowerCase();
+  const radios = wrap.querySelectorAll("input[type=radio]");
+  const setRadiosEnabled = (on) => radios.forEach(r => r.disabled = !on);
+  const showStatus = (text, err = false) => {
+    status.textContent = text;
+    status.classList.toggle("hidden", !text);
+    status.classList.toggle("err", err);
+  };
+
+  if (!raw) {
+    _composeKeyMode = null;
+    wrap.classList.remove("hidden");
+    setRadiosEnabled(true);
+    showStatus("");
+    return;
+  }
+  if (!/^[a-z0-9-]{6,20}$/.test(raw)) {
+    _composeKeyMode = null;
+    wrap.classList.remove("hidden");
+    setRadiosEnabled(true);
+    showStatus("");
+    return;
+  }
+  const token = ++_keyLookupToken;
+  const info = await lookupKey(raw);
+  if (token !== _keyLookupToken) return; // 途中で入力が変わっていたら破棄
+  if (!info || !info.exists) {
+    _composeKeyMode = null;
+    wrap.classList.remove("hidden");
+    setRadiosEnabled(true);
+    showStatus("新しいグループキーとして発行されます");
+    return;
+  }
+  // 既存キー
+  _composeKeyMode = info.mode;
+  wrap.classList.add("hidden");
+  setRadiosEnabled(false);
+  if (info.mode === "open") {
+    showStatus(info.isOwner
+      ? "🌐 誰でも投稿できるグループ（あなたがオーナー）"
+      : "🌐 誰でも投稿できるグループに追加されます");
+  } else {
+    showStatus(info.isOwner
+      ? "🔒 自分だけが投稿できるグループ（あなたがオーナー）"
+      : "🔒 このキーは他の人の非公開グループです（投稿できません）", !info.isOwner);
+  }
+}
+
+let _composeKeyDebounce = null;
+function onComposeKeyInput() {
+  if (_composeKeyDebounce) clearTimeout(_composeKeyDebounce);
+  _composeKeyDebounce = setTimeout(refreshComposeKeyMode, 300);
+}
+
+function getSelectedKeyMode() {
+  // 既存キー確定時は API 側のモードを優先
+  if (_composeKeyMode) return _composeKeyMode;
+  const checked = document.querySelector('input[name="key-mode"]:checked');
+  return checked?.value === "open" ? "open" : "owner_only";
+}
+
+function openKeyIssuedModal(key, mode) {
   const el = $("key-issued");
   const code = $("key-issued-code");
+  const desc = el.querySelector(".key-issued-desc");
   if (code) code.textContent = key;
+  if (desc) {
+    desc.textContent = mode === "open"
+      ? "このグループキーを知っている人は誰でも記憶を追加できます。"
+      : "このグループキーを知っている人だけが、この記憶を見つけられます。";
+  }
   el.dataset.key = key;
   el.classList.remove("hidden");
 }
@@ -1096,17 +1196,19 @@ async function savePlaced() {
 
   try {
     const blob = await cropToBlob();
+    const keyMode = visibility === "keyed" ? getSelectedKeyMode() : undefined;
     const result = await postMemoryToApi({
       blob,
       lat: myPos.lat, lng: myPos.lng, accuracy: myPos.accuracy, note, visibility,
       accessKey: userKey || undefined,
+      keyMode,
     });
     await Promise.all([refreshMemories(), refreshMyMemories()]);
     renderRadar();
     closeComposeSheet();
     if (result?.accessKey && result?.accessKeyIssued) {
       // 自動発行：大きく表示
-      openKeyIssuedModal(result.accessKey);
+      openKeyIssuedModal(result.accessKey, result.keyMode);
     } else if (result?.accessKey) {
       // 既存キーへの追加
       showToast(`グループキー「${result.accessKey}」に追加しました`);
@@ -1536,7 +1638,29 @@ function attachHistorySwipe(item, swipe, onDelete, onTap) {
 }
 
 // ---------- 記憶詳細 ----------
+let _viewerMemory = null;
+
+function canDeleteAsOwner(m) {
+  if (!_currentUser || !m) return false;
+  if (m.visibility !== "keyed") return false;
+  // keyed レイヤーで見つけた記憶なら _keyedOwnerId と照合
+  return _keyedOwnerId && _keyedOwnerId === _currentUser.id;
+}
+
+function updateViewerDeleteButton(m) {
+  const btn = $("viewer-delete");
+  if (!btn) return;
+  if (!_currentUser || !m) { btn.classList.add("hidden"); return; }
+  const isPoster = m.userId === _currentUser.id;
+  const isOwner = canDeleteAsOwner(m);
+  if (!isPoster && !isOwner) { btn.classList.add("hidden"); return; }
+  btn.classList.remove("hidden");
+  btn.textContent = isPoster ? "回収" : "回収（オーナー削除）";
+  btn.dataset.mode = isPoster ? "self" : "owner";
+}
+
 function openViewer(m) {
+  _viewerMemory = m;
   $("viewer").classList.remove("hidden");
   const dist = myPos ? distanceMeters(myPos, { lat: m.lat, lng: m.lng }) : Infinity;
   const unlocked = dist <= UNLOCK_RADIUS_M;
@@ -1550,11 +1674,44 @@ function openViewer(m) {
     $("polaroid-flip").classList.remove("flipped");
     const d = new Date(m.createdAt);
     $("viewer-meta").textContent = `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()}`;
+    updateViewerDeleteButton(m);
   } else {
     $("viewer-distance").textContent = `距離: 約${Math.round(dist)}m`;
+    $("viewer-delete")?.classList.add("hidden");
   }
 }
-function closeViewer() { $("viewer").classList.add("hidden"); }
+function closeViewer() {
+  $("viewer").classList.add("hidden");
+  _viewerMemory = null;
+  $("viewer-delete")?.classList.add("hidden");
+}
+
+async function onViewerDelete() {
+  const m = _viewerMemory;
+  if (!m) return;
+  const btn = $("viewer-delete");
+  const isOwnerDelete = btn?.dataset.mode === "owner";
+  const msg = isOwnerDelete
+    ? "この記憶をオーナー権限で回収しますか？（投稿者には通知されません）"
+    : "この記憶を回収しますか？";
+  if (!confirm(msg)) return;
+  btn.disabled = true;
+  try {
+    await removeMemory(m.id);
+    // keyed キャッシュからも除去
+    _keyedCache = _keyedCache.filter(x => x.id !== m.id);
+    closeViewer();
+    renderRadar();
+    showToast("回収しました");
+  } catch (e) {
+    if (e.message === "forbidden") showToast("この記憶は回収できません");
+    else if (e.message === "unauthorized") {
+      if (confirm("ログインが必要です。ログインしますか？")) goToLogin();
+    } else showToast("回収に失敗しました");
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
 
 // ---------- 起動 ----------
 document.addEventListener("DOMContentLoaded", () => {
@@ -1646,6 +1803,12 @@ document.addEventListener("DOMContentLoaded", () => {
   $("polaroid-flip").addEventListener("click", () => {
     $("polaroid-flip").classList.toggle("flipped");
   });
+  $("viewer-delete").addEventListener("click", (e) => {
+    e.stopPropagation();
+    onViewerDelete();
+  });
+  const composeKey = $("compose-key");
+  if (composeKey) composeKey.addEventListener("input", onComposeKeyInput);
   setupCropperEvents();
 
   // 公開範囲セグメント
