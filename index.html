@@ -28,7 +28,7 @@
 
     <div class="radar-wrap">
       <div class="radar-mode" role="group" aria-label="表示レイヤー">
-        <button class="radar-mode-btn is-on" data-toggle="public" type="button" aria-pressed="true" title="全体">
+        <button class="radar-mode-btn is-on" data-toggle="public" type="button" aria-pressed="true" title="公開">
           <svg viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round">
             <circle cx="12" cy="12" r="9.2"/>
             <ellipse cx="12" cy="12" rx="4.2" ry="9.2"/>
@@ -37,16 +37,16 @@
             <path d="M4.1 7.4h15.8M4.1 16.6h15.8"/>
           </svg>
         </button>
-        <button class="radar-mode-btn" data-toggle="mine" type="button" aria-pressed="false" title="自分だけ">
+        <button class="radar-mode-btn" data-toggle="mine" type="button" aria-pressed="false" title="プライベート">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12.4a4.6 4.6 0 100-9.2 4.6 4.6 0 000 9.2zm0 1.8c-4.4 0-8 2.7-8 6v1.6c0 .4.3.7.7.7h14.6c.4 0 .7-.3.7-.7v-1.6c0-3.3-3.6-6-8-6z"/></svg>
         </button>
-        <button class="radar-mode-btn" data-toggle="keyed" type="button" aria-pressed="false" title="合言葉">
+        <button class="radar-mode-btn" data-toggle="keyed" type="button" aria-pressed="false" title="グループ">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><circle cx="17" cy="8.5" r="2.8"/><path d="M2 20c0-3.9 3.1-7 7-7s7 3.1 7 7v1H2v-1zm14 1v-1c0-1.7-.4-3.3-1.2-4.7.5-.1 1.1-.2 1.7-.2 3.1 0 5.5 2.5 5.5 5.5v.4H16z"/></svg>
         </button>
       </div>
       <div id="key-bar" class="key-bar hidden">
         <input id="key-input" type="text" inputmode="latin" autocomplete="off" spellcheck="false"
-               maxlength="20" placeholder="合言葉（6〜20文字）" aria-label="合言葉" />
+               maxlength="20" placeholder="グループキー（6〜20文字）" aria-label="グループキー" />
       </div>
       <div id="range-label" class="range-chip" aria-live="polite">500m</div>
       <div class="range-zoom" role="group" aria-label="表示範囲">
@@ -133,13 +133,13 @@
           <span>だれに見せる？</span>
           <div class="vis-seg" role="radiogroup" aria-label="公開範囲">
             <button type="button" class="vis-seg-btn is-active" data-vis="public" role="radio" aria-checked="true">
-              <span class="vis-ico"><svg viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round"><circle cx="12" cy="12" r="9.2"/><ellipse cx="12" cy="12" rx="4.2" ry="9.2"/><line x1="2.8" y1="12" x2="21.2" y2="12"/><line x1="12" y1="2.8" x2="12" y2="21.2"/><path d="M4.1 7.4h15.8M4.1 16.6h15.8"/></svg></span><span class="vis-lbl">全体</span>
+              <span class="vis-ico"><svg viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round"><circle cx="12" cy="12" r="9.2"/><ellipse cx="12" cy="12" rx="4.2" ry="9.2"/><line x1="2.8" y1="12" x2="21.2" y2="12"/><line x1="12" y1="2.8" x2="12" y2="21.2"/><path d="M4.1 7.4h15.8M4.1 16.6h15.8"/></svg></span><span class="vis-lbl">公開</span>
             </button>
             <button type="button" class="vis-seg-btn" data-vis="private" role="radio" aria-checked="false">
-              <span class="vis-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12.4a4.6 4.6 0 100-9.2 4.6 4.6 0 000 9.2zm0 1.8c-4.4 0-8 2.7-8 6v1.6c0 .4.3.7.7.7h14.6c.4 0 .7-.3.7-.7v-1.6c0-3.3-3.6-6-8-6z"/></svg></span><span class="vis-lbl">自分だけ</span>
+              <span class="vis-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12.4a4.6 4.6 0 100-9.2 4.6 4.6 0 000 9.2zm0 1.8c-4.4 0-8 2.7-8 6v1.6c0 .4.3.7.7.7h14.6c.4 0 .7-.3.7-.7v-1.6c0-3.3-3.6-6-8-6z"/></svg></span><span class="vis-lbl">プライベート</span>
             </button>
             <button type="button" class="vis-seg-btn" data-vis="keyed" role="radio" aria-checked="false">
-              <span class="vis-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><circle cx="17" cy="8.5" r="2.8"/><path d="M2 20c0-3.9 3.1-7 7-7s7 3.1 7 7v1H2v-1zm14 1v-1c0-1.7-.4-3.3-1.2-4.7.5-.1 1.1-.2 1.7-.2 3.1 0 5.5 2.5 5.5 5.5v.4H16z"/></svg></span><span class="vis-lbl">合言葉</span>
+              <span class="vis-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><circle cx="17" cy="8.5" r="2.8"/><path d="M2 20c0-3.9 3.1-7 7-7s7 3.1 7 7v1H2v-1zm14 1v-1c0-1.7-.4-3.3-1.2-4.7.5-.1 1.1-.2 1.7-.2 3.1 0 5.5 2.5 5.5 5.5v.4H16z"/></svg></span><span class="vis-lbl">グループ</span>
             </button>
           </div>
           <p id="vis-hint" class="vis-hint dim small">レーダーで全員に見える。</p>
@@ -147,9 +147,9 @@
             <input id="compose-key" type="text" inputmode="latin" autocomplete="off"
                    spellcheck="false" maxlength="20"
                    list="my-keys-list"
-                   placeholder="合言葉（空欄なら自動発行）" />
+                   placeholder="グループキー（空欄なら自動発行）" />
             <datalist id="my-keys-list"></datalist>
-            <p class="dim small key-input-hint">同じ合言葉で複数の記憶をまとめられます（6〜20文字、英数字とハイフン）</p>
+            <p class="dim small key-input-hint">同じグループキーで複数の記憶をまとめられます（6〜20文字、英数字とハイフン）</p>
           </div>
         </div>
         <button id="save-btn" class="place-btn wide" type="button">ここに置く</button>
@@ -217,12 +217,12 @@
     </div>
   </div>
 
-  <!-- 合言葉の発行完了モーダル -->
+  <!-- グループキーの発行完了モーダル -->
   <div id="key-issued" class="modal hidden">
     <div class="modal-card key-issued-card">
-      <p class="key-issued-title">合言葉を発行しました</p>
-      <p class="dim small">この合言葉を知っている人だけが、この記憶を見つけられます。</p>
-      <div id="key-issued-code" class="key-code" aria-label="合言葉">------</div>
+      <p class="key-issued-title">グループキーを発行しました</p>
+      <p class="dim small">このグループキーを知っている人だけが、この記憶を見つけられます。</p>
+      <div id="key-issued-code" class="key-code" aria-label="グループキー">------</div>
       <div class="actions key-actions">
         <button id="key-copy" class="ghost" type="button">コピー</button>
         <button id="key-share" class="primary" type="button">共有</button>

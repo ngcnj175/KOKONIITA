@@ -695,7 +695,7 @@ async function setRadarToggle(kind, on) {
       }
       if (_radarKey) {
         await refreshKeyedMemories(_radarKey);
-        if (_keyedCache.length === 0) showToast("この合言葉の記憶はありません");
+        if (_keyedCache.length === 0) showToast("このグループキーの記憶はありません");
       } else {
         _keyedCache = [];
       }
@@ -712,7 +712,7 @@ async function applyRadarKey(k) {
   try { localStorage.setItem(RADAR_KEY_STORAGE, k); } catch {}
   await refreshKeyedMemories(k);
   renderRadar();
-  if (_keyedCache.length === 0) showToast("この合言葉の記憶はありません");
+  if (_keyedCache.length === 0) showToast("このグループキーの記憶はありません");
   else showToast(`${_keyedCache.length}件の記憶が見つかりました`);
 }
 function clearRadarKey() {
@@ -847,7 +847,7 @@ function setComposeVisibility(v) {
   if (hint) {
     hint.textContent =
       _composeVisibility === "private" ? "自分だけに表示。マップにも出しません。"
-      : _composeVisibility === "keyed"  ? "合言葉を伝えた人だけが見つけられます。"
+      : _composeVisibility === "keyed"  ? "グループキーを伝えた人だけが見つけられます。"
       : "レーダーで全員に見えます。";
   }
   const keyWrap = $("key-input-wrap");
@@ -890,13 +890,13 @@ async function copyKey(key) {
       document.execCommand("copy");
       ta.remove();
     }
-    showToast("合言葉をコピーしました");
+    showToast("グループキーをコピーしました");
   } catch {
     showToast("コピーできませんでした");
   }
 }
 async function shareKey(key) {
-  const text = `合言葉「${key}」を「ココニイタ。」の合言葉モードに入れると、置いた記憶を見つけられます。`;
+  const text = `グループキー「${key}」を「ココニイタ。」のグループモードに入れると、置いた記憶を見つけられます。`;
   if (navigator.share) {
     try { await navigator.share({ text }); return; }
     catch { /* キャンセル時は無視 */ }
@@ -1088,7 +1088,7 @@ async function savePlaced() {
     : "";
   // 事前バリデーション（サーバー側でも検証）
   if (visibility === "keyed" && userKey && !/^[a-z0-9-]{6,20}$/.test(userKey)) {
-    showToast("合言葉は6〜20文字の英数字とハイフンのみです");
+    showToast("グループキーは6〜20文字の英数字とハイフンのみです");
     if (btn) btn.disabled = false;
     _saving = false;
     return;
@@ -1109,7 +1109,7 @@ async function savePlaced() {
       openKeyIssuedModal(result.accessKey);
     } else if (result?.accessKey) {
       // 既存キーへの追加
-      showToast(`合言葉「${result.accessKey}」に追加しました`);
+      showToast(`グループキー「${result.accessKey}」に追加しました`);
     } else {
       showToast("記憶を置きました");
     }
@@ -1118,9 +1118,9 @@ async function savePlaced() {
       closeComposeSheet();
       if (confirm("ログインが必要です。ログインしますか？")) goToLogin();
     } else if (e.message === "key_conflict") {
-      showToast("この合言葉は他の人が使用中です。別の合言葉にしてください");
+      showToast("このグループキーは他の人が使用中です。別のグループキーにしてください");
     } else if (e.message === "key_invalid") {
-      showToast("合言葉の形式が正しくありません");
+      showToast("グループキーの形式が正しくありません");
     } else {
       showToast("投稿に失敗しました");
     }
@@ -1403,20 +1403,20 @@ function renderHistoryList() {
       const keyBtn = document.createElement("button");
       keyBtn.type = "button";
       keyBtn.className = "history-keybtn";
-      keyBtn.title = "タップで合言葉を表示";
-      keyBtn.setAttribute("aria-label", "合言葉を表示");
+      keyBtn.title = "タップでグループキーを表示";
+      keyBtn.setAttribute("aria-label", "グループキーを表示");
       keyBtn.innerHTML = `<span class="history-visibility-icon" aria-hidden="true">${VIS_ICON_SVG.keyed}</span>`;
       const stopBubbleKey = (e) => e.stopPropagation();
       keyBtn.addEventListener("pointerdown", stopBubbleKey);
       keyBtn.addEventListener("click", (e) => {
         e.stopPropagation();
-        if (m.accessKey) showToast(`合言葉: ${m.accessKey}`, 3000, "toast-key");
+        if (m.accessKey) showToast(`グループキー: ${m.accessKey}`, 3000, "toast-key");
       });
       rightControl = keyBtn;
     }
     const visLabel = document.createElement("label");
     visLabel.className = "history-visibility";
-    visLabel.title = "自分だけに表示";
+    visLabel.title = "プライベート";
     if (m.visibility === "keyed") visLabel.classList.add("invisible");
     const visInput = document.createElement("input");
     visInput.type = "checkbox";
