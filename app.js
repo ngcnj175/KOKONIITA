@@ -1676,6 +1676,24 @@ document.addEventListener("DOMContentLoaded", () => {
   if (keyInput) {
     keyInput.addEventListener("input", onRadarKeyInput);
   }
+  const keyPaste = $("key-paste");
+  if (keyPaste) {
+    keyPaste.addEventListener("click", async () => {
+      try {
+        const text = (await navigator.clipboard.readText() || "").trim();
+        if (!text) { showToast("クリップボードが空です"); return; }
+        if (keyInput) {
+          const v = text.slice(0, 20).toLowerCase();
+          keyInput.value = v;
+          if (_radarKeyDebounce) { clearTimeout(_radarKeyDebounce); _radarKeyDebounce = null; }
+          if (!/^[a-z0-9-]{6,20}$/.test(v)) { showToast("合言葉の形式が正しくありません"); return; }
+          if (v !== _radarKey) applyRadarKey(v);
+        }
+      } catch {
+        showToast("貼り付けできませんでした");
+      }
+    });
+  }
 
   // 合言葉モーダル
   $("key-copy").addEventListener("click", () => {
