@@ -100,7 +100,7 @@ function loadMemories() {
   // ON になっているソースをマージ（id で重複除去）
   const seen = new Map();
   if (_radarToggles.public) for (const m of _publicCache) seen.set(m.id, m);
-  if (_radarToggles.mine)   for (const m of _myCache)     seen.set(m.id, m);
+  if (_radarToggles.mine)   for (const m of _myCache) if (m.visibility === "private") seen.set(m.id, m);
   if (_radarToggles.keyed)  for (const m of _keyedCache)  seen.set(m.id, m);
   return [...seen.values()];
 }
