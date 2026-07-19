@@ -255,7 +255,7 @@ app.get("/api/memories", async (c) => {
       c.env.DB.prepare(
         `SELECT id, user_id, lat, lng, accuracy, note, visibility, access_key, created_at
          FROM memories
-         WHERE visibility = 'keyed' AND access_key = ?
+         WHERE visibility = 'keyed' AND access_key = ? AND deleted_at IS NULL
          ORDER BY created_at DESC LIMIT 1000`
       ).bind(key).all(),
       getAccessKey(c.env.DB, key),
@@ -270,7 +270,7 @@ app.get("/api/memories", async (c) => {
   const { results } = await c.env.DB.prepare(
     `SELECT id, user_id, lat, lng, accuracy, note, visibility, access_key, created_at
      FROM memories
-     WHERE visibility = 'public'
+     WHERE visibility = 'public' AND deleted_at IS NULL
      ORDER BY created_at DESC LIMIT 1000`
   ).all();
   return c.json({ memories: results.map(r => toMemoryRow(r, { sessionUserId: uid })) });
@@ -282,7 +282,7 @@ app.get("/api/me/memories", async (c) => {
   if (!s) return c.json({ error: "unauthorized" }, 401);
   const { results } = await c.env.DB.prepare(
     `SELECT id, user_id, lat, lng, accuracy, note, visibility, access_key, created_at
-     FROM memories WHERE user_id = ? ORDER BY created_at DESC`
+     FROM memories WHERE user_id = ? AND deleted_at IS NULL ORDER BY created_at DESC`
   ).bind(s.userId).all();
   return c.json({ memories: results.map(r => toMemoryRow(r, { includeKey: true, sessionUserId: s.userId })) });
 });
@@ -291,7 +291,7 @@ app.get("/api/me/memories", async (c) => {
 app.get("/api/memories/:id/image", async (c) => {
   const id = c.req.param("id");
   const row = await c.env.DB.prepare(
-    "SELECT image_blob, image_type, visibility, access_key, user_id FROM memories WHERE id = ?"
+    "SELECT image_blob, image_type, visibility, access_key, user_id FROM memories WHERE id = ? AND deleted_at IS NULL"
   ).bind(id).first();
   if (!row) return c.text("not found", 404);
 
@@ -454,7 +454,7 @@ app.get("/api/me/keys", async (c) => {
      LEFT JOIN (
        SELECT access_key, COUNT(*) AS cnt, MAX(created_at) AS last_at
        FROM memories
-       WHERE visibility = 'keyed' AND access_key IS NOT NULL AND user_id = ?
+       WHERE visibility = 'keyed' AND access_key IS NOT NULL AND user_id = ? AND deleted_at IS NULL
        GROUP BY access_key
      ) m ON m.access_key = ak.key
      WHERE ak.owner_id = ? OR m.cnt > 0
@@ -496,7 +496,7 @@ app.patch("/api/memories/:id", async (c) => {
   if (!nextVisibility) return c.json({ error: "visibility required" }, 400);
 
   const row = await c.env.DB.prepare(
-    "SELECT user_id FROM memories WHERE id = ?"
+    "SELECT user_id FROM memories WHERE id = ? AND deleted_at IS NULL"
   ).bind(id).first();
   if (!row) return c.json({ error: "not found" }, 404);
   if (row.user_id !== s.userId) return c.json({ error: "forbidden" }, 403);
@@ -507,24 +507,71 @@ app.patch("/api/memories/:id", async (c) => {
   return c.json({ ok: true, visibility: nextVisibility });
 });
 
-// 削除（投稿者本人、または keyed 投稿ならグループキーのオーナー）
+// 削除（投稿者本人、または keyed 投稿ならグループキーのオーナー）。soft delete。
 app.delete("/api/memories/:id", async (c) => {
   const s = await requireSession(c);
   if (!s) return c.json({ error: "unauthorized" }, 401);
   const id = c.req.param("id");
   const row = await c.env.DB.prepare(
-    "SELECT user_id, visibility, access_key FROM memories WHERE id = ?"
+    "SELECT user_id, visibility, access_key FROM memories WHERE id = ? AND deleted_at IS NULL"
   ).bind(id).first();
   if (!row) return c.json({ error: "not found" }, 404);
   let allowed = row.user_id === s.userId;
+  let reason = "self";
   if (!allowed && row.visibility === "keyed" && row.access_key) {
     const ak = await getAccessKey(c.env.DB, row.access_key);
-    if (ak && ak.owner_id === s.userId) allowed = true;
+    if (ak && ak.owner_id === s.userId) { allowed = true; reason = "owner"; }
   }
   if (!allowed) return c.json({ error: "forbidden" }, 403);
 
-  await c.env.DB.prepare("DELETE FROM memories WHERE id = ?").bind(id).run();
+  await c.env.DB.prepare(
+    "UPDATE memories SET deleted_at = ?, deleted_reason = ? WHERE id = ?"
+  ).bind(Date.now(), reason, id).run();
   return c.json({ ok: true });
+});
+
+// 不適切通報。同一ユーザーは冪等。別アカウント3件で soft delete。
+const REPORT_THRESHOLD = 3;
+app.post("/api/memories/:id/report", async (c) => {
+  const s = await requireSession(c);
+  if (!s) return c.json({ error: "unauthorized" }, 401);
+  const id = c.req.param("id");
+  const row = await c.env.DB.prepare(
+    "SELECT user_id FROM memories WHERE id = ? AND deleted_at IS NULL"
+  ).bind(id).first();
+  if (!row) return c.json({ error: "not found" }, 404);
+  if (row.user_id === s.userId) return c.json({ error: "cannot report own memory" }, 400);
+
+  // UNIQUE(memory_id, reporter_id) により重複はスキップ（OR IGNORE で冪等化）
+  await c.env.DB.prepare(
+    "INSERT OR IGNORE INTO reports(id, memory_id, reporter_id, created_at) VALUES(?, ?, ?, ?)"
+  ).bind(crypto.randomUUID(), id, s.userId, Date.now()).run();
+
+  const cnt = await c.env.DB.prepare(
+    "SELECT COUNT(*) AS n FROM reports WHERE memory_id = ?"
+  ).bind(id).first();
+  const count = Number(cnt?.n || 0);
+  let deleted = false;
+  if (count >= REPORT_THRESHOLD) {
+    await c.env.DB.prepare(
+      "UPDATE memories SET deleted_at = ?, deleted_reason = 'reported' WHERE id = ? AND deleted_at IS NULL"
+    ).bind(Date.now(), id).run();
+    deleted = true;
+  }
+  return c.json({ ok: true, count, deleted });
+});
+
+// 自分の投稿で不適切通報により削除されたもの（起動時トースト用）
+app.get("/api/me/notifications", async (c) => {
+  const s = await requireSession(c);
+  if (!s) return c.json({ error: "unauthorized" }, 401);
+  const { results } = await c.env.DB.prepare(
+    `SELECT id, deleted_at FROM memories
+     WHERE user_id = ? AND deleted_at IS NOT NULL AND deleted_reason = 'reported'
+     ORDER BY deleted_at DESC LIMIT 50`
+  ).bind(s.userId).all();
+  const removed = (results || []).map(r => ({ id: r.id, deletedAt: r.deleted_at }));
+  return c.json({ removed });
 });
 
 // 容量統計（デバッグ用）

@@ -21,6 +21,8 @@ CREATE TABLE IF NOT EXISTS memories (
   visibility   TEXT NOT NULL DEFAULT 'public',  -- 'public' | 'private' | 'keyed'
   access_key   TEXT,                             -- visibility='keyed' の合言葉（6桁英数字）
   created_at   INTEGER NOT NULL,
+  deleted_at     INTEGER,                        -- NULL=生存 / 値あり=soft delete 済
+  deleted_reason TEXT,                           -- 'reported' | 'self' | 'owner'
   FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
@@ -29,6 +31,19 @@ CREATE INDEX IF NOT EXISTS idx_memories_user       ON memories(user_id);
 CREATE INDEX IF NOT EXISTS idx_memories_created    ON memories(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_memories_visibility ON memories(visibility);
 CREATE INDEX IF NOT EXISTS idx_memories_access_key ON memories(access_key);
+CREATE INDEX IF NOT EXISTS idx_memories_deleted    ON memories(deleted_at);
+
+-- 不適切通報のログ
+CREATE TABLE IF NOT EXISTS reports (
+  id           TEXT PRIMARY KEY,
+  memory_id    TEXT NOT NULL,
+  reporter_id  TEXT NOT NULL,
+  created_at   INTEGER NOT NULL,
+  UNIQUE(memory_id, reporter_id),
+  FOREIGN KEY (memory_id) REFERENCES memories(id),
+  FOREIGN KEY (reporter_id) REFERENCES users(id)
+);
+CREATE INDEX IF NOT EXISTS idx_reports_memory ON reports(memory_id);
 
 -- グループキーの所有者とモード（owner_only / open）
 CREATE TABLE IF NOT EXISTS access_keys (

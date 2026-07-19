@@ -1259,6 +1259,21 @@ button.ghost.danger { color: var(--danger); border-color: rgba(178, 58, 58, 0.4)
 .viewer-delete:hover { background: rgba(0, 0, 0, 0.55); }
 .viewer-delete.hidden { display: none; }
 
+.viewer-report {
+  margin-top: 10px;
+  padding: 6px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: inherit;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.viewer-report:hover { color: #fff; border-color: rgba(255, 255, 255, 0.5); }
+.viewer-report.hidden { display: none; }
+
 /* ---------- グループキー発行モーダル ---------- */
 .key-issued-card { text-align: center; }
 .key-issued-title {

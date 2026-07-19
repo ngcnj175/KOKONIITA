@@ -199,6 +199,46 @@ async function removeMemory(id) {
   await Promise.all([refreshMemories(), refreshMyMemories()]);
 }
 
+async function reportMemory(id) {
+  const r = await apiFetch(`/api/memories/${id}/report`, { method: "POST" });
+  if (r.status === 401) throw new Error("unauthorized");
+  if (r.status === 400) throw new Error("bad request");
+  if (r.status === 404) throw new Error("not found");
+  if (!r.ok) throw new Error("report failed");
+  return r.json();
+}
+
+// 起動時: 通報削除された自分の投稿を1回だけトースト通知。既読 id は localStorage 管理。
+const REMOVAL_ACK_STORAGE = "kk_removal_ack_v1";
+function loadRemovalAcks() {
+  try {
+    const raw = localStorage.getItem(REMOVAL_ACK_STORAGE);
+    if (!raw) return new Set();
+    return new Set(JSON.parse(raw));
+  } catch { return new Set(); }
+}
+function saveRemovalAcks(set) {
+  try { localStorage.setItem(REMOVAL_ACK_STORAGE, JSON.stringify([...set])); } catch {}
+}
+async function checkRemovalNotifications() {
+  try {
+    const r = await apiFetch("/api/me/notifications");
+    if (!r.ok) return;
+    const j = await r.json();
+    const removed = j.removed || [];
+    if (removed.length === 0) return;
+    const acks = loadRemovalAcks();
+    const fresh = removed.filter(x => !acks.has(x.id));
+    if (fresh.length === 0) return;
+    const msg = fresh.length === 1
+      ? "あなたの写真が1件、通報により削除されました"
+      : `あなたの写真が${fresh.length}件、通報により削除されました`;
+    showToast(msg);
+    for (const x of removed) acks.add(x.id);
+    saveRemovalAcks(acks);
+  } catch (e) { console.warn("checkRemovalNotifications", e); }
+}
+
 async function updateMemoryVisibility(id, visibility) {
   const r = await apiFetch(`/api/memories/${id}`, {
     method: "PATCH",
@@ -1647,6 +1687,18 @@ function updateViewerDeleteButton(m) {
   btn.dataset.mode = isPoster ? "self" : "owner";
 }
 
+function updateViewerReportButton(m) {
+  const btn = $("viewer-report");
+  if (!btn) return;
+  // ログイン済み かつ 自分の投稿ではない場合のみ表示
+  if (!_currentUser || !m || m.userId === _currentUser.id) {
+    btn.classList.add("hidden");
+    return;
+  }
+  btn.classList.remove("hidden");
+  btn.disabled = false;
+}
+
 function openViewer(m) {
   _viewerMemory = m;
   $("viewer").classList.remove("hidden");
@@ -1663,15 +1715,18 @@ function openViewer(m) {
     const d = new Date(m.createdAt);
     $("viewer-meta").textContent = `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()}`;
     updateViewerDeleteButton(m);
+    updateViewerReportButton(m);
   } else {
     $("viewer-distance").textContent = `距離: 約${Math.round(dist)}m`;
     $("viewer-delete")?.classList.add("hidden");
+    $("viewer-report")?.classList.add("hidden");
   }
 }
 function closeViewer() {
   $("viewer").classList.add("hidden");
   _viewerMemory = null;
   $("viewer-delete")?.classList.add("hidden");
+  $("viewer-report")?.classList.add("hidden");
 }
 
 async function onViewerDelete() {
@@ -1692,6 +1747,43 @@ async function onViewerDelete() {
     },
   });
   if (btn) btn.disabled = false;
+}
+
+async function onViewerReport() {
+  const m = _viewerMemory;
+  if (!m) return;
+  if (!_currentUser) {
+    if (confirm("通報にはログインが必要です。ログインしますか？")) goToLogin();
+    return;
+  }
+  if (!confirm("この写真を『不適切』として通報しますか？\n別のアカウントからの通報が合計3件で自動的に削除されます。")) return;
+  const btn = $("viewer-report");
+  if (btn) btn.disabled = true;
+  try {
+    const res = await reportMemory(m.id);
+    if (res.deleted) {
+      _publicCache = _publicCache.filter(x => x.id !== m.id);
+      _keyedCache = _keyedCache.filter(x => x.id !== m.id);
+      releaseImageCache(m.id);
+      closeViewer();
+      renderRadar();
+      showToast("通報を受け付け、写真は削除されました");
+    } else {
+      showToast("通報を受け付けました");
+      if (btn) btn.disabled = false;
+    }
+  } catch (e) {
+    if (e.message === "unauthorized") {
+      if (confirm("ログインが必要です。ログインしますか？")) goToLogin();
+    } else if (e.message === "bad request") {
+      showToast("自分の投稿は通報できません");
+    } else if (e.message === "not found") {
+      showToast("この写真は見つかりません");
+    } else {
+      showToast("通報に失敗しました");
+    }
+    if (btn) btn.disabled = false;
+  }
 }
 
 // ---------- 起動 ----------
@@ -1727,6 +1819,7 @@ document.addEventListener("DOMContentLoaded", () => {
   refreshMe().then(() => {
     if (_currentUser) {
       refreshMyMemories();
+      checkRemovalNotifications();
       // ログイン直後だけ「自分」レイヤーを自動ON
       if (justLoggedIn && !_radarToggles.mine) {
         _radarToggles.mine = true;
@@ -1787,6 +1880,10 @@ document.addEventListener("DOMContentLoaded", () => {
   $("viewer-delete").addEventListener("click", (e) => {
     e.stopPropagation();
     onViewerDelete();
+  });
+  $("viewer-report").addEventListener("click", (e) => {
+    e.stopPropagation();
+    onViewerReport();
   });
   const composeKey = $("compose-key");
   if (composeKey) composeKey.addEventListener("input", onComposeKeyInput);
