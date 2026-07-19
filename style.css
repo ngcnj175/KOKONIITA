@@ -912,10 +912,18 @@ button.primary { background: var(--ink); color: #fff; border: 1px solid var(--in
   overflow: hidden;
   border-bottom: 1px solid rgba(17, 17, 17, 0.06);
 }
+.history-swipe {
+  position: relative;
+  transform: translateX(0);
+  transition: transform 0.25s cubic-bezier(0.2, 0.7, 0.2, 1);
+  touch-action: pan-y;
+}
+.history-swipe.swiping { transition: none; }
+.history-swipe.revealed { transform: translateX(-96px); }
 .history-delete {
   position: absolute;
+  left: 100%;
   top: 0;
-  right: 0;
   bottom: 0;
   width: 96px;
   border: none;
@@ -934,12 +942,7 @@ button.primary { background: var(--ink); color: #fff; border: 1px solid var(--in
   gap: 12px;
   padding: 10px 8px;
   cursor: pointer;
-  transform: translateX(0);
-  transition: transform 0.25s cubic-bezier(0.2, 0.7, 0.2, 1);
-  touch-action: pan-y;
 }
-.history-item.swiping { transition: none; }
-.history-item.revealed { transform: translateX(-96px); }
 .history-item:active { background: rgba(17, 17, 17, 0.04); }
 .history-thumb {
   width: 56px;

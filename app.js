@@ -1450,12 +1450,15 @@ function renderHistoryList() {
     item.appendChild(img);
     item.appendChild(body);
     item.appendChild(rightControl || visLabel);
-    row.appendChild(delBtn);
-    row.appendChild(item);
+    const swipe = document.createElement("div");
+    swipe.className = "history-swipe";
+    swipe.appendChild(item);
+    swipe.appendChild(delBtn);
+    row.appendChild(swipe);
 
-    attachHistorySwipe(item, () => {
+    attachHistorySwipe(item, swipe, () => {
       if (!confirm("この記憶を回収しますか？")) {
-        item.classList.remove("revealed");
+        swipe.classList.remove("revealed");
         return;
       }
       (async () => {
@@ -1479,51 +1482,51 @@ function renderHistoryList() {
   }
 }
 
-function attachHistorySwipe(item, onDelete, onTap) {
+function attachHistorySwipe(item, swipe, onDelete, onTap) {
   const REVEAL = 96;
   const THRESHOLD = 40;
   let startX = 0, baseX = 0, dx = 0, active = false, moved = false;
 
-  item.addEventListener("pointerdown", (e) => {
+  swipe.addEventListener("pointerdown", (e) => {
     if (e.pointerType === "mouse" && e.button !== 0) return;
     startX = e.clientX;
-    baseX = item.classList.contains("revealed") ? -REVEAL : 0;
+    baseX = swipe.classList.contains("revealed") ? -REVEAL : 0;
     dx = 0;
     active = true;
     moved = false;
-    item.classList.add("swiping");
+    swipe.classList.add("swiping");
   });
 
-  item.addEventListener("pointermove", (e) => {
+  swipe.addEventListener("pointermove", (e) => {
     if (!active) return;
     dx = e.clientX - startX;
     if (Math.abs(dx) > 4) moved = true;
     const x = Math.max(-REVEAL * 1.3, Math.min(0, baseX + dx));
-    item.style.transform = `translateX(${x}px)`;
+    swipe.style.transform = `translateX(${x}px)`;
   });
 
   const end = () => {
     if (!active) return;
     active = false;
-    item.classList.remove("swiping");
-    item.style.transform = "";
+    swipe.classList.remove("swiping");
+    swipe.style.transform = "";
     const final = baseX + dx;
-    item.classList.toggle("revealed", final < -THRESHOLD);
+    swipe.classList.toggle("revealed", final < -THRESHOLD);
   };
-  item.addEventListener("pointerup", end);
-  item.addEventListener("pointercancel", end);
+  swipe.addEventListener("pointerup", end);
+  swipe.addEventListener("pointercancel", end);
 
   item.addEventListener("click", (e) => {
     if (moved) { e.stopPropagation(); return; }
-    if (item.classList.contains("revealed")) {
-      item.classList.remove("revealed");
+    if (swipe.classList.contains("revealed")) {
+      swipe.classList.remove("revealed");
       e.stopPropagation();
       return;
     }
     onTap();
   });
 
-  item.parentElement.querySelector(".history-delete")
+  swipe.querySelector(".history-delete")
     .addEventListener("click", (e) => { e.stopPropagation(); onDelete(); });
 }
 
