@@ -1308,8 +1308,7 @@ function showToast(msg, ms = 3000, variant = "") {
 const AR_FOV_DEG = 60;             // 想定水平画角
 const AR_FAR_MAX_M = 100;          // ARに映る最遠距離
 const AR_NEAR_MAX_M = 20;          // タップで画像解放される距離
-const AR_ICON_MIN_PX = 2;          // 100m地点でのアイコンサイズ
-const AR_ICON_MAX_PX = 20;         // 20m地点でのアイコンサイズ
+const AR_ICON_MAX_PX = 120;        // 20m以下（近接）のサイズ上限。以遠は 1/距離 に比例
 let arStream = null;
 let arRafId = null;
 let arActive = false;
@@ -1402,10 +1401,9 @@ function renderArFrame() {
 
     visibleCount++;
 
-    // 距離に応じたサイズ（100m→AR_ICON_MIN_PX, 20m以下→AR_ICON_MAX_PX）
-    const clamped = Math.max(AR_NEAR_MAX_M, Math.min(AR_FAR_MAX_M, dist));
-    const t = (AR_FAR_MAX_M - clamped) / (AR_FAR_MAX_M - AR_NEAR_MAX_M); // 0..1
-    const size = AR_ICON_MIN_PX + (AR_ICON_MAX_PX - AR_ICON_MIN_PX) * t;
+    // 距離に応じたサイズ: 20m以下は AR_ICON_MAX_PX 固定、以遠は 1/距離 に比例（遠近感を強く）
+    const clamped = Math.max(AR_NEAR_MAX_M, dist);
+    const size = AR_ICON_MAX_PX * (AR_NEAR_MAX_M / clamped);
 
     const stage = dist <= AR_NEAR_MAX_M ? "ar-near" : "ar-icon";
     const x = w / 2 + (diff / halfFov) * (w / 2);
