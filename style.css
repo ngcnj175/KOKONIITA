@@ -59,8 +59,14 @@ html, body {
   align-items: center;
   justify-content: flex-end;
   padding: 12px 14px;
-  border-bottom: 1px solid rgba(17, 17, 17, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.35);
+  z-index: 2;
 }
+/* レーダー画面の topbar は空（夜）の上に載るので白抜きに */
+#radar-screen .topbar { border-bottom-color: rgba(255, 255, 255, 0.45); }
+#radar-screen .brand { color: #ffffff; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.25); }
+#radar-screen .topbar .chip { color: #ffffff; border-color: rgba(255, 255, 255, 0.7); }
+#radar-screen .topbar .chip:active { background: rgba(255, 255, 255, 0.15); }
 .brand {
   position: absolute;
   left: 50%;
@@ -141,6 +147,92 @@ html, body {
   align-items: center;
   justify-content: center;
   overflow: hidden;
+}
+
+/* 幻想的な空（レーダー上部を包み込むアーチ） */
+.radar-sky {
+  position: absolute;
+  left: 50%;
+  /* おおよそレーダー中心に合わせる（topbar とレーダー translateY(-3%) 分だけ上へ） */
+  top: calc(50% + 6px);
+  width: 260vmax;
+  height: 260vmax;
+  transform: translate(-50%, calc(-50% - min(88vw, 88vh) * 0.03));
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+  /* 地平線より上（＝アーチ状に）のみ表示。下半分は透過して隠す */
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 49%, rgba(0,0,0,0) 51%, rgba(0,0,0,0) 100%);
+          mask-image: linear-gradient(to bottom, #000 0%, #000 49%, rgba(0,0,0,0) 51%, rgba(0,0,0,0) 100%);
+  filter: blur(4px);
+  opacity: 1;
+}
+.radar-sky-layer {
+  position: absolute;
+  inset: 0;
+  mix-blend-mode: normal;
+}
+/* ベース：オレンジ→ピンク→薄紫の縦グラデーション */
+.radar-sky-layer.sky-a {
+  /* レーダー中心を原点に、レーダーの縦横比(0.6)を保ったまま外へ広がる楕円グラデ。
+     中心〜レーダー外周(≒半径の 20%)までは完全な白（透過）。
+     そこから 薄オレンジ → ピンク → 青紫 と外側へ緩やかに移り、
+     100% を超えた領域は最後の青紫のまま画面端でトリミングされる。 */
+  background: radial-gradient(
+    ellipse 170vmin 108vmin at 50% 50%,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,0) 26%,
+    rgba(255,232,210,0.55) 32%,
+    rgba(252,196,188,0.78) 40%,
+    rgba(232,172,208,0.85) 50%,
+    rgba(196,158,214,0.88) 62%,
+    rgba(150,138,210,0.92) 76%,
+    rgba(96, 92,184,0.95) 92%,
+    rgba(60, 60,150,0.98) 100%
+  );
+  animation: sky-drift-a 42s ease-in-out infinite alternate;
+}
+/* オーロラのような淡い流れ */
+.radar-sky-layer.sky-b {
+  background: radial-gradient(
+    ellipse 240vmin 140vmin at 46% 52%,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,0) 22%,
+    rgba(250,196,188,0.18) 40%,
+    rgba(200,168,216,0.22) 70%,
+    rgba(120,120,196,0.24) 100%
+  );
+  animation: sky-drift-b 68s ease-in-out infinite alternate;
+  opacity: 0.9;
+  mix-blend-mode: screen;
+}
+.radar-sky-layer.sky-c {
+  background: radial-gradient(
+    ellipse 230vmin 138vmin at 54% 48%,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,0) 24%,
+    rgba(238,178,208,0.16) 44%,
+    rgba(178,158,216,0.22) 74%,
+    rgba(110,110,190,0.24) 100%
+  );
+  animation: sky-drift-c 54s ease-in-out infinite alternate;
+  opacity: 0.85;
+  mix-blend-mode: screen;
+}
+@keyframes sky-drift-a {
+  0%   { transform: translate3d(-1%, 0.6%, 0) scale(1.00); filter: hue-rotate(0deg); }
+  100% { transform: translate3d( 1%, -0.4%, 0) scale(1.04); filter: hue-rotate(-6deg); }
+}
+@keyframes sky-drift-b {
+  0%   { transform: translate3d(-3%, 1%, 0) scale(1.02); opacity: 0.75; }
+  100% { transform: translate3d( 4%, -1%, 0) scale(1.08); opacity: 1.00; }
+}
+@keyframes sky-drift-c {
+  0%   { transform: translate3d( 3%, 0.5%, 0) scale(1.03); opacity: 0.65; }
+  100% { transform: translate3d(-2%, -0.8%, 0) scale(1.10); opacity: 0.95; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .radar-sky-layer { animation: none; }
 }
 #radar {
   width: min(88vw, 88vh);
