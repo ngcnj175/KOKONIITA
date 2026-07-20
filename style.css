@@ -153,11 +153,11 @@ html, body {
 .radar-sky {
   position: absolute;
   left: 50%;
-  /* おおよそレーダー中心に合わせる（topbar とレーダー translateY(-3%) 分だけ上へ） */
-  top: calc(50% + 6px);
+  /* 地平線（アーチの底）を、レーダーの上端よりわずかに上へ持ち上げる */
+  top: calc(50% - 20vmin);
   width: 260vmax;
   height: 260vmax;
-  transform: translate(-50%, calc(-50% - min(88vw, 88vh) * 0.03));
+  transform: translate(-50%, -50%);
   pointer-events: none;
   z-index: 0;
   overflow: hidden;
@@ -179,13 +179,13 @@ html, body {
      そこから 薄オレンジ → ピンク → 青紫 と外側へ緩やかに移り、
      100% を超えた領域は最後の青紫のまま画面端でトリミングされる。 */
   background: radial-gradient(
-    ellipse 170vmin 108vmin at 50% 50%,
+    ellipse 170vmin 62vmin at 50% 50%,
     rgba(255,255,255,0) 0%,
-    rgba(255,255,255,0) 26%,
-    rgba(255,232,210,0.55) 32%,
-    rgba(252,196,188,0.78) 40%,
-    rgba(232,172,208,0.85) 50%,
-    rgba(196,158,214,0.88) 62%,
+    rgba(255,255,255,0) 10%,
+    rgba(255,232,210,0.55) 20%,
+    rgba(252,196,188,0.78) 32%,
+    rgba(232,172,208,0.85) 46%,
+    rgba(196,158,214,0.88) 60%,
     rgba(150,138,210,0.92) 76%,
     rgba(96, 92,184,0.95) 92%,
     rgba(60, 60,150,0.98) 100%
@@ -195,11 +195,11 @@ html, body {
 /* オーロラのような淡い流れ */
 .radar-sky-layer.sky-b {
   background: radial-gradient(
-    ellipse 240vmin 140vmin at 46% 52%,
+    ellipse 240vmin 68vmin at 46% 52%,
     rgba(255,255,255,0) 0%,
-    rgba(255,255,255,0) 22%,
-    rgba(250,196,188,0.18) 40%,
-    rgba(200,168,216,0.22) 70%,
+    rgba(255,255,255,0) 14%,
+    rgba(250,196,188,0.18) 32%,
+    rgba(200,168,216,0.22) 66%,
     rgba(120,120,196,0.24) 100%
   );
   animation: sky-drift-b 68s ease-in-out infinite alternate;
@@ -208,11 +208,11 @@ html, body {
 }
 .radar-sky-layer.sky-c {
   background: radial-gradient(
-    ellipse 230vmin 138vmin at 54% 48%,
+    ellipse 230vmin 66vmin at 54% 48%,
     rgba(255,255,255,0) 0%,
-    rgba(255,255,255,0) 24%,
-    rgba(238,178,208,0.16) 44%,
-    rgba(178,158,216,0.22) 74%,
+    rgba(255,255,255,0) 16%,
+    rgba(238,178,208,0.16) 34%,
+    rgba(178,158,216,0.22) 70%,
     rgba(110,110,190,0.24) 100%
   );
   animation: sky-drift-c 54s ease-in-out infinite alternate;
