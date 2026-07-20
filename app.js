@@ -333,29 +333,41 @@ function bearingDeg(from, to) {
 }
 
 // ---------- 位置情報 ----------
+function onPositionFix(pos) {
+  const { latitude, longitude, accuracy } = pos.coords;
+  myPos = { lat: latitude, lng: longitude, accuracy };
+  gpsError = null;
+  updateHud();
+  renderRadar();
+  syncMapCenter();
+  syncMapZoom();
+  updatePlaceButtonState();
+}
+function onPositionError(err) {
+  gpsError = err.message || "位置情報を取得できません";
+  $("hud-status").textContent = `位置情報エラー: ${gpsError}`;
+  updatePlaceButtonState();
+}
 function watchLocation() {
   if (!navigator.geolocation) {
     $("hud-status").textContent = "位置情報に非対応";
     return;
   }
   navigator.geolocation.watchPosition(
-    (pos) => {
-      const { latitude, longitude, accuracy } = pos.coords;
-      myPos = { lat: latitude, lng: longitude, accuracy };
-      gpsError = null;
-      updateHud();
-      renderRadar();
-      syncMapCenter();
-      syncMapZoom();
-      updatePlaceButtonState();
-    },
-    (err) => {
-      gpsError = err.message || "位置情報を取得できません";
-      $("hud-status").textContent = `位置情報エラー: ${gpsError}`;
-      updatePlaceButtonState();
-    },
+    onPositionFix,
+    onPositionError,
     { enableHighAccuracy: true, maximumAge: 3000, timeout: 15000 }
   );
+  // タブ復帰時に watchPosition の次の fix を待たず、キャッシュ fix を即座に反映する
+  // （OAuth ポップアップから戻った直後などに HUD が「取得しています…」で止まる問題対策）
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState !== "visible") return;
+    navigator.geolocation.getCurrentPosition(
+      onPositionFix,
+      () => {}, // ここでのエラーは HUD を上書きしない
+      { enableHighAccuracy: true, maximumAge: 60000, timeout: 15000 }
+    );
+  });
 }
 
 // ---------- 方位センサー ----------
