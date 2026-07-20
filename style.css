@@ -384,7 +384,6 @@ html, body {
 }
 .polaroid-flip img {
   -webkit-user-drag: none;
-  user-drag: none;
   pointer-events: none;
 }
 .flip-inner {

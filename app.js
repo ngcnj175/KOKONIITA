@@ -358,17 +358,17 @@ function watchLocation() {
     onPositionError,
     { enableHighAccuracy: true, maximumAge: 3000, timeout: 15000 }
   );
-  // タブ復帰時に watchPosition の次の fix を待たず、キャッシュ fix を即座に反映する
-  // （OAuth ポップアップから戻った直後などに HUD が「取得しています…」で止まる問題対策）
-  document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState !== "visible") return;
-    navigator.geolocation.getCurrentPosition(
-      onPositionFix,
-      () => {}, // ここでのエラーは HUD を上書きしない
-      { enableHighAccuracy: true, maximumAge: 60000, timeout: 15000 }
-    );
-  });
 }
+// タブ復帰時に watchPosition の次の fix を待たず、キャッシュ fix を即座に反映する
+// （OAuth ポップアップから戻った直後などに HUD が「取得しています…」で止まる問題対策）
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState !== "visible" || !navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(
+    onPositionFix,
+    () => {},
+    { enableHighAccuracy: true, maximumAge: 60000, timeout: 15000 }
+  );
+});
 
 // ---------- 方位センサー ----------
 function setupOrientation() {
@@ -1798,23 +1798,28 @@ function setupViewerSwipe() {
   const inner = flip.querySelector(".flip-inner");
   if (!inner) return;
   const SWIPE_THRESHOLD_PX = 40;
-  const BASE_TRANSFORM = "rotate(-4deg)";
   const SLIDE_TRANSITION = "transform 0.28s cubic-bezier(0.4, 0, 0.2, 1)";
   let sx = 0, sy = 0, tracking = false, moved = false, horizontal = false;
-  let width = 0, pointerId = null;
+  let width = 0;
+  let pendingEnd = null; // 進行中の transitionend ハンドラ（速い連続スワイプで解除するため）
 
   const setTransform = (x) => {
-    inner.style.transform = x ? `${BASE_TRANSFORM} translateX(${x}px)` : "";
+    inner.style.transform = x ? `rotate(-4deg) translateX(${x}px)` : "";
   };
-  const clearInlineTransition = () => { inner.style.transition = ""; };
+  const cancelPendingEnd = () => {
+    if (pendingEnd) {
+      inner.removeEventListener("transitionend", pendingEnd);
+      pendingEnd = null;
+    }
+  };
 
   flip.addEventListener("pointerdown", (e) => {
     if (flip.classList.contains("flipped")) return; // 裏面ではスワイプ切替しない
+    cancelPendingEnd();
     tracking = true; moved = false; horizontal = false;
     sx = e.clientX; sy = e.clientY;
     width = flip.getBoundingClientRect().width || 286;
-    pointerId = e.pointerId;
-    try { flip.setPointerCapture(pointerId); } catch (_) {}
+    flip.setPointerCapture(e.pointerId);
     inner.style.transition = "none";
   });
 
@@ -1839,26 +1844,21 @@ function setupViewerSwipe() {
   const finish = (e) => {
     if (!tracking) return;
     tracking = false;
-    if (pointerId != null) {
-      try { flip.releasePointerCapture(pointerId); } catch (_) {}
-      pointerId = null;
-    }
-    const dx = (e.clientX ?? sx) - sx;
-    const dy = (e.clientY ?? sy) - sy;
+    flip.releasePointerCapture(e.pointerId);
+    const dx = e.clientX - sx;
     inner.style.transition = SLIDE_TRANSITION;
 
     const canGoNext = _viewerIndex < _viewerList.length - 1;
     const canGoPrev = _viewerIndex > 0;
     const passed = horizontal
       && Math.abs(dx) > SWIPE_THRESHOLD_PX
-      && Math.abs(dx) > Math.abs(dy)
       && ((dx < 0 && canGoNext) || (dx > 0 && canGoPrev));
 
     if (passed) {
       const dir = dx < 0 ? 1 : -1; // 1: 次へ, -1: 前へ
       setTransform(-dir * width);
-      const onEnd = () => {
-        inner.removeEventListener("transitionend", onEnd);
+      pendingEnd = () => {
+        pendingEnd = null;
         // 反対側にワープしてから戻す
         inner.style.transition = "none";
         setTransform(dir * width);
@@ -1866,29 +1866,17 @@ function setupViewerSwipe() {
         void inner.offsetWidth; // reflow
         inner.style.transition = SLIDE_TRANSITION;
         setTransform(0);
-        const clear = () => {
-          inner.removeEventListener("transitionend", clear);
-          clearInlineTransition();
-        };
-        inner.addEventListener("transitionend", clear);
       };
-      inner.addEventListener("transitionend", onEnd);
+      inner.addEventListener("transitionend", pendingEnd, { once: true });
     } else {
       setTransform(0);
-      const clear = () => {
-        inner.removeEventListener("transitionend", clear);
-        clearInlineTransition();
-      };
-      inner.addEventListener("transitionend", clear);
     }
   };
   flip.addEventListener("pointerup", finish);
-  flip.addEventListener("pointercancel", () => {
+  flip.addEventListener("pointercancel", (e) => {
+    if (!tracking) return;
     tracking = false;
-    if (pointerId != null) {
-      try { flip.releasePointerCapture(pointerId); } catch (_) {}
-      pointerId = null;
-    }
+    flip.releasePointerCapture(e.pointerId);
     inner.style.transition = SLIDE_TRANSITION;
     setTransform(0);
   });
