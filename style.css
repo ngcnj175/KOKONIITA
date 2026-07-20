@@ -59,7 +59,7 @@ html, body {
   align-items: center;
   justify-content: flex-end;
   padding: 12px 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.35);
+  border-bottom: 1px solid rgba(17, 17, 17, 0.1);
   z-index: 2;
 }
 /* レーダー画面の topbar は空（夜）の上に載るので白抜きに */
@@ -78,7 +78,6 @@ html, body {
   color: var(--ink);
   font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
 }
-.brand.small { font-size: 14px; letter-spacing: 0.2em; }
 
 .chip {
   border: 1px solid var(--line);
@@ -166,12 +165,10 @@ html, body {
   -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 49%, rgba(0,0,0,0) 51%, rgba(0,0,0,0) 100%);
           mask-image: linear-gradient(to bottom, #000 0%, #000 49%, rgba(0,0,0,0) 51%, rgba(0,0,0,0) 100%);
   filter: blur(4px);
-  opacity: 1;
 }
 .radar-sky-layer {
   position: absolute;
   inset: 0;
-  mix-blend-mode: normal;
 }
 /* ベース：オレンジ→ピンク→薄紫の縦グラデーション */
 .radar-sky-layer.sky-a {
@@ -256,7 +253,7 @@ html, body {
   transform: translate(-50%, -50%) scaleY(0.6);
   overflow: hidden;
   opacity: 1;
-  filter: grayscale(1) contrast(1);
+  filter: grayscale(1);
   pointer-events: none;
   z-index: 0;
   -webkit-mask-image: radial-gradient(circle closest-side at center, #000 80%, rgba(0,0,0,0.4) 90%, transparent 100%);
@@ -270,13 +267,10 @@ html, body {
   stroke: var(--line);
   stroke-width: 0.5;
 }
-.ring.outer { stroke-width: 1; }
 .ring.outer-depth {
-  fill: none;
   stroke: url(#ring-depth);
   stroke-width: 0.6;
 }
-.ring.cross { stroke-width: 0.3; opacity: 0.4; }
 .range-chip {
   position: absolute;
   top: 50%;
@@ -334,12 +328,6 @@ html, body {
   font-weight: 700;
   letter-spacing: 0.1em;
 }
-.me {
-  fill: var(--ink);
-  stroke: var(--ink);
-  stroke-width: 0.8;
-}
-
 /* 記憶ピン（動的生成される circle にクラス付与） */
 .memory-dot {
   fill: var(--ink);
@@ -407,7 +395,6 @@ html, body {
   color: var(--dim);
   letter-spacing: 0.05em;
 }
-.hud-line.dim { color: var(--dim); opacity: 0.7; }
 
 .hud-hint {
   margin: 8px 0 0;
@@ -637,60 +624,7 @@ html, body {
 }
 .field input:focus, .field textarea:focus { border-color: var(--ink); }
 
-/* チェックボックス型 field（自分だけに表示 など） */
-.field.check {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  user-select: none;
-}
-.field.check input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  margin: 0;
-  accent-color: #3d7ee6;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-.field.check .check-label {
-  display: inline;
-  margin: 0;
-  font-size: 13px;
-  color: var(--ink);
-  letter-spacing: 0;
-}
 
-.gps-panel {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  background: var(--panel);
-  border: 1px solid rgba(17, 17, 17, 0.1);
-  border-radius: 4px;
-}
-.gps-indicator {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--danger);
-  flex-shrink: 0;
-  transition: background 0.3s;
-}
-.gps-indicator.ok {
-  background: var(--ink);
-}
-.gps-indicator.pending {
-  background: var(--dim);
-  animation: pulse-gps 1.2s ease-in-out infinite;
-}
-@keyframes pulse-gps {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 1; }
-}
-.gps-text { flex: 1; }
-.gps-text p { margin: 2px 0; font-size: 13px; }
 .small { font-size: 11px; }
 .dim { color: var(--dim); }
 
@@ -731,7 +665,6 @@ html, body {
   background: rgba(17, 17, 17, 0.55);
   padding: 20px;
 }
-.viewer.hidden { display: none; }
 .locked-card {
   background: #fff;
   border-radius: 4px;
@@ -950,7 +883,6 @@ button.primary { background: var(--ink); color: #fff; border: 1px solid var(--in
   z-index: 900;
   pointer-events: none;
 }
-.sheet.hidden { display: none; }
 .sheet-backdrop {
   position: absolute;
   inset: 0;
@@ -1172,7 +1104,6 @@ button.primary { background: var(--ink); color: #fff; border: 1px solid var(--in
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.toast.hidden { display: none; }
 
 button.ghost { background: transparent; color: var(--dim); border: 1px solid rgba(17, 17, 17, 0.2); }
 button.ghost.danger { color: var(--danger); border-color: rgba(178, 58, 58, 0.4); }
@@ -1225,7 +1156,6 @@ button.ghost.danger { color: var(--danger); border-color: rgba(178, 58, 58, 0.4)
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
 }
-.key-bar.hidden { display: none; }
 #key-input {
   border: none;
   outline: none;
@@ -1242,19 +1172,6 @@ button.ghost.danger { color: var(--danger); border-color: rgba(178, 58, 58, 0.4)
   letter-spacing: 0.05em;
   text-transform: none;
 }
-.key-btn {
-  border: none;
-  background: transparent;
-  color: var(--ink);
-  font-family: inherit;
-  font-size: 12px;
-  letter-spacing: 0.1em;
-  border-radius: 999px;
-  padding: 6px 10px;
-  cursor: pointer;
-}
-.key-btn.primary { background: var(--ink); color: #fff; }
-.key-btn:active { opacity: 0.7; }
 
 /* keyed 記憶（レーダー上の点） */
 .memory-dot.keyed {
@@ -1307,7 +1224,6 @@ button.ghost.danger { color: var(--danger); border-color: rgba(178, 58, 58, 0.4)
   flex-direction: column;
   gap: 4px;
 }
-.key-input-wrap.hidden { display: none; }
 #compose-key {
   width: 100%;
   padding: 8px 10px;
@@ -1329,7 +1245,6 @@ button.ghost.danger { color: var(--danger); border-color: rgba(178, 58, 58, 0.4)
   gap: 4px;
   margin-top: 6px;
 }
-.key-mode-wrap.hidden { display: none; }
 .key-mode-opt {
   display: flex;
   align-items: center;
@@ -1341,7 +1256,6 @@ button.ghost.danger { color: var(--danger); border-color: rgba(178, 58, 58, 0.4)
 .key-mode-opt input[type="radio"] { accent-color: var(--ink); }
 .key-mode-opt input[type="radio"]:disabled + span { opacity: 0.5; }
 .key-mode-status { margin: 4px 0 0; }
-.key-mode-status.hidden { display: none; }
 .key-mode-status.err { color: #a33; }
 
 /* ビューア上部の記憶カウンタ（近接クラスタ時のみ表示） */
@@ -1352,7 +1266,6 @@ button.ghost.danger { color: var(--danger); border-color: rgba(178, 58, 58, 0.4)
   color: rgba(255, 255, 255, 0.75);
   text-align: center;
 }
-.viewer-counter.hidden { display: none; }
 
 /* ビューア下部のアクションボタン群（回収 / 通報 / 閉じる） */
 .viewer-actions {
@@ -1385,8 +1298,6 @@ button.ghost.danger { color: var(--danger); border-color: rgba(178, 58, 58, 0.4)
 .viewer-delete:focus-visible,
 .viewer-report:focus-visible,
 .viewer-close:focus-visible { outline: none; }
-.viewer-delete.hidden,
-.viewer-report.hidden { display: none; }
 .viewer-close { margin-left: auto; }
 
 /* ---------- グループキー発行モーダル ---------- */
