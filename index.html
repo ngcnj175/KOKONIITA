@@ -16,11 +16,6 @@
 
   <!-- レーダー画面 -->
   <section id="radar-screen" class="screen">
-    <div class="radar-sky" aria-hidden="true">
-      <div class="radar-sky-layer sky-a"></div>
-      <div class="radar-sky-layer sky-b"></div>
-      <div class="radar-sky-layer sky-c"></div>
-    </div>
     <header class="topbar">
       <h1 class="brand">KOKONI-ITA</h1>
       <div class="topbar-right">
@@ -32,6 +27,11 @@
     </header>
 
     <div class="radar-wrap">
+      <div class="radar-sky" aria-hidden="true">
+        <div class="radar-sky-layer sky-a"></div>
+        <div class="radar-sky-layer sky-b"></div>
+        <div class="radar-sky-layer sky-c"></div>
+      </div>
       <div class="radar-mode" role="group" aria-label="表示レイヤー">
         <button class="radar-mode-btn is-on" data-toggle="public" type="button" aria-pressed="true" title="公開">
           <svg viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round">

@@ -146,20 +146,21 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
+  overflow: visible;
 }
 
 /* 幻想的な空（レーダー上部を包み込むアーチ） */
 .radar-sky {
   position: absolute;
   left: 50%;
-  /* 地平線（アーチの底）を、レーダー上端よりさらに高い位置に */
+  /* top: 50% は .radar-wrap の中心＝レーダー中心。ここから
+     地平線（アーチの底）をレーダー上端の少し上まで引き上げる */
   top: calc(50% - 38vmin);
   width: 260vmax;
   height: 260vmax;
   transform: translate(-50%, -50%);
   pointer-events: none;
-  z-index: 0;
+  z-index: 1;
   overflow: hidden;
   /* 地平線より上（＝アーチ状に）のみ表示。下半分は透過して隠す */
   -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 49%, rgba(0,0,0,0) 51%, rgba(0,0,0,0) 100%);
