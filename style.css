@@ -1243,30 +1243,15 @@ button.ghost.danger { color: var(--danger); border-color: rgba(178, 58, 58, 0.4)
 .key-mode-status.hidden { display: none; }
 .key-mode-status.err { color: #a33; }
 
-/* ビューア内の回収ボタン */
-.viewer-delete {
-  margin-top: 18px;
-  padding: 8px 22px;
-  border: 1px solid #fff;
-  background: #222;
-  color: #fff;
-  font-family: inherit;
-  font-size: 13px;
-  letter-spacing: 0.12em;
-  border-radius: 999px;
-  cursor: pointer;
-}
-.viewer-delete:hover { background: #000; }
-.viewer-delete.hidden { display: none; }
-
+/* ビューア下部のアクションボタン群（回収 / 通報 / 閉じる） */
 .viewer-actions {
   margin-top: 48px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
   width: min(320px, 80vw);
 }
+.viewer-delete,
 .viewer-report,
 .viewer-close {
   padding: 8px 22px;
@@ -1278,10 +1263,19 @@ button.ghost.danger { color: var(--danger); border-color: rgba(178, 58, 58, 0.4)
   letter-spacing: 0.12em;
   border-radius: 999px;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
+.viewer-delete:hover,
 .viewer-report:hover,
 .viewer-close:hover { background: #000; }
-.viewer-report.hidden { visibility: hidden; }
+.viewer-delete:focus,
+.viewer-report:focus,
+.viewer-close:focus,
+.viewer-delete:focus-visible,
+.viewer-report:focus-visible,
+.viewer-close:focus-visible { outline: none; }
+.viewer-delete.hidden,
+.viewer-report.hidden { display: none; }
 .viewer-close { margin-left: auto; }
 
 /* ---------- グループキー発行モーダル ---------- */
