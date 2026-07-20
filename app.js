@@ -911,7 +911,8 @@ function setComposeVisibility(v) {
   if (keyWrap) keyWrap.classList.toggle("hidden", _composeVisibility !== "keyed");
   if (_composeVisibility === "keyed") {
     populateMyKeysDatalist();
-    refreshComposeKeyMode();
+    // シート再オープン時は入力欄が空なので UI だけ初期化（API は叩かない）
+    resetComposeKeyModeUi();
   }
 }
 
@@ -930,33 +931,64 @@ async function populateMyKeysDatalist() {
   }
 }
 
-// compose-key 入力に応じてモードラジオの状態を更新
-let _keyLookupToken = 0;
-let _composeKeyMode = null; // 既存キー確定時のモード (null なら新規=ラジオ有効)
-async function refreshComposeKeyMode() {
-  const inp = $("compose-key");
+// compose-key の判定は入力中ではなく確定時（change / 送信直前）のみに絞る。
+// 入力途中に叩くと存在するキーを列挙できてしまうため。
+let _composeKeyMode = null;      // 既存キー確定時のモード (null なら新規=ラジオ有効)
+let _lookupCache = new Map();    // key → info の memo（1 セッション内）
+
+function resetComposeKeyModeUi() {
+  _composeKeyMode = null;
   const wrap = $("key-mode-wrap");
   const status = $("key-mode-status");
-  if (!inp || !wrap || !status) return;
+  if (wrap) {
+    wrap.classList.remove("hidden");
+    wrap.querySelectorAll("input[type=radio]").forEach(r => r.disabled = false);
+  }
+  if (status) {
+    status.textContent = "";
+    status.classList.add("hidden");
+    status.classList.remove("err");
+  }
+}
+
+// 入力中に呼ばれる軽量ハンドラ：空欄・無効形式はローカル判定のみでリセット、
+// 有効形式ならモード確定を「未判定」状態にして送信時に判定する。
+function onComposeKeyInput() {
+  const inp = $("compose-key");
+  const raw = (inp?.value || "").trim().toLowerCase();
+  if (!raw || !isValidUserKey(raw)) {
+    resetComposeKeyModeUi();
+  } else if (_composeKeyMode !== null) {
+    // 直前まで既存キーと確定していたが値が変わった → 一旦リセット
+    resetComposeKeyModeUi();
+  }
+}
+
+// change イベント（blur 時＋値変化）で判定。同値なら memo で API を叩かない。
+async function commitComposeKeyMode() {
+  const inp = $("compose-key");
+  const status = $("key-mode-status");
+  const wrap = $("key-mode-wrap");
+  if (!inp || !status || !wrap) return;
   const raw = (inp.value || "").trim().toLowerCase();
-  const radios = wrap.querySelectorAll("input[type=radio]");
-  const setRadiosEnabled = (on) => radios.forEach(r => r.disabled = !on);
+  if (!raw || !isValidUserKey(raw)) { resetComposeKeyModeUi(); return; }
+
   const showStatus = (text, err = false) => {
     status.textContent = text;
     status.classList.toggle("hidden", !text);
     status.classList.toggle("err", err);
   };
+  const setRadiosEnabled = (on) =>
+    wrap.querySelectorAll("input[type=radio]").forEach(r => r.disabled = !on);
 
-  if (!raw || !isValidUserKey(raw)) {
-    _composeKeyMode = null;
-    wrap.classList.remove("hidden");
-    setRadiosEnabled(true);
-    showStatus("");
-    return;
+  let info = _lookupCache.get(raw);
+  if (info === undefined) {
+    info = await lookupKey(raw);
+    _lookupCache.set(raw, info);
   }
-  const token = ++_keyLookupToken;
-  const info = await lookupKey(raw);
-  if (token !== _keyLookupToken) return; // 途中で入力が変わっていたら破棄
+  // 判定中に入力が変わっていたら破棄
+  if ((inp.value || "").trim().toLowerCase() !== raw) return;
+
   if (!info || !info.exists) {
     _composeKeyMode = null;
     wrap.classList.remove("hidden");
@@ -964,7 +996,6 @@ async function refreshComposeKeyMode() {
     showStatus("新しいグループキーとして発行されます");
     return;
   }
-  // 既存キー
   _composeKeyMode = info.mode;
   wrap.classList.add("hidden");
   setRadiosEnabled(false);
@@ -977,12 +1008,6 @@ async function refreshComposeKeyMode() {
       ? "🔒 自分だけが投稿できるグループ（あなたがオーナー）"
       : "🔒 このキーは他の人の非公開グループです（投稿できません）", !info.isOwner);
   }
-}
-
-let _composeKeyDebounce = null;
-function onComposeKeyInput() {
-  if (_composeKeyDebounce) clearTimeout(_composeKeyDebounce);
-  _composeKeyDebounce = setTimeout(refreshComposeKeyMode, 300);
 }
 
 function getSelectedKeyMode() {
@@ -1886,7 +1911,12 @@ document.addEventListener("DOMContentLoaded", () => {
     onViewerReport();
   });
   const composeKey = $("compose-key");
-  if (composeKey) composeKey.addEventListener("input", onComposeKeyInput);
+  if (composeKey) {
+    // input: 空欄/無効へ戻った時だけローカルで UI リセット（API は叩かない）
+    composeKey.addEventListener("input", onComposeKeyInput);
+    // change: フォーカスアウト時に値が変わっていたら 1 回だけ判定 API を叩く
+    composeKey.addEventListener("change", commitComposeKeyMode);
+  }
   setupCropperEvents();
 
   // 公開範囲セグメント
