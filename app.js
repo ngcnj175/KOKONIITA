@@ -1910,6 +1910,10 @@ document.addEventListener("DOMContentLoaded", () => {
     e.stopPropagation();
     onViewerReport();
   });
+  $("viewer-close").addEventListener("click", (e) => {
+    e.stopPropagation();
+    closeViewer();
+  });
   const composeKey = $("compose-key");
   if (composeKey) {
     // input: 空欄/無効へ戻った時だけローカルで UI リセット（API は叩かない）
