@@ -342,6 +342,29 @@ function onPositionFix(pos) {
   syncMapCenter();
   syncMapZoom();
   updatePlaceButtonState();
+  updateSkyMode();
+}
+
+// ---------- 空のパレット（現在地のおおよその現地時刻で切替）----------
+// 経度から現地時刻を近似（±30分程度の誤差は許容）。位置未取得時は端末時刻。
+function updateSkyMode() {
+  const d = new Date();
+  let hour;
+  if (myPos && Number.isFinite(myPos.lng)) {
+    const utcHour = d.getUTCHours() + d.getUTCMinutes() / 60;
+    hour = (utcHour + myPos.lng / 15 + 24) % 24;
+  } else {
+    hour = d.getHours() + d.getMinutes() / 60;
+  }
+  let mode;
+  if (hour >= 6 && hour < 16) mode = "day";
+  else if (hour >= 16 && hour < 19) mode = "dusk";
+  else mode = "night";
+  const body = document.body;
+  const next = "sky-" + mode;
+  if (body.classList.contains(next)) return;
+  body.classList.remove("sky-day", "sky-dusk", "sky-night");
+  body.classList.add(next);
 }
 function onPositionError(err) {
   gpsError = err.message || "位置情報を取得できません";
@@ -1974,6 +1997,9 @@ document.addEventListener("DOMContentLoaded", () => {
   renderRadar();
   updatePlaceButtonState();
   updateUserChip();
+  updateSkyMode();
+  // 時間帯が跨いだ場合の再判定（15 分おき）
+  setInterval(updateSkyMode, 15 * 60 * 1000);
 
   // OAuthコールバックから戻ってきた場合、URLフラグメントのトークンを保存
   let justLoggedIn = false;

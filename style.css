@@ -148,7 +148,56 @@ html, body {
   overflow: visible;
 }
 
-/* 幻想的な空（レーダー上部を包み込むアーチ） */
+/* 幻想的な空（レーダー上部を包み込むアーチ）
+   --------------------------------------------
+   グラデーションの各ストップ色は CSS カスタムプロパティに切り出し、
+   body の .sky-day / .sky-dusk / .sky-night クラスで昼夜を切り替える。
+   @property で型を <color> と宣言することで、パレット切替時に色が
+   30 秒かけて滑らかに補間される（未対応ブラウザではスナップ切替）。
+
+   レーダー領域（下半分）は mask で完全に透過するため、
+   どのパレットでもレーダー下の白背景に色が漏れることはない。 */
+@property --sky-c1 { syntax: '<color>'; inherits: true; initial-value: rgba(255,255,255,0); }
+@property --sky-c2 { syntax: '<color>'; inherits: true; initial-value: rgba(255,255,255,0); }
+@property --sky-c3 { syntax: '<color>'; inherits: true; initial-value: rgba(255,232,210,0.55); }
+@property --sky-c4 { syntax: '<color>'; inherits: true; initial-value: rgba(252,196,188,0.78); }
+@property --sky-c5 { syntax: '<color>'; inherits: true; initial-value: rgba(232,172,208,0.85); }
+@property --sky-c6 { syntax: '<color>'; inherits: true; initial-value: rgba(196,158,214,0.88); }
+@property --sky-c7 { syntax: '<color>'; inherits: true; initial-value: rgba(150,138,210,0.92); }
+@property --sky-c8 { syntax: '<color>'; inherits: true; initial-value: rgba(96, 92,184,0.95); }
+@property --sky-c9 { syntax: '<color>'; inherits: true; initial-value: rgba(60, 60,150,0.98); }
+
+/* 昼：スカイブルー → ブルー → 青紫 */
+.sky-day {
+  --sky-c3: rgba(214,236,255,0.55);
+  --sky-c4: rgba(178,214,250,0.78);
+  --sky-c5: rgba(140,188,240,0.85);
+  --sky-c6: rgba(118,160,226,0.88);
+  --sky-c7: rgba(100,130,210,0.92);
+  --sky-c8: rgba( 74, 96,188,0.95);
+  --sky-c9: rgba( 48, 70,160,0.98);
+}
+/* 夕暮れ：オレンジ → ピンク → 青紫（デフォルトと同じ） */
+.sky-dusk {
+  --sky-c3: rgba(255,232,210,0.55);
+  --sky-c4: rgba(252,196,188,0.78);
+  --sky-c5: rgba(232,172,208,0.85);
+  --sky-c6: rgba(196,158,214,0.88);
+  --sky-c7: rgba(150,138,210,0.92);
+  --sky-c8: rgba( 96, 92,184,0.95);
+  --sky-c9: rgba( 60, 60,150,0.98);
+}
+/* 夜：ブルー → 青紫 → 暗いブルー */
+.sky-night {
+  --sky-c3: rgba(150,170,215,0.55);
+  --sky-c4: rgba(108,132,200,0.78);
+  --sky-c5: rgba( 78,102,180,0.85);
+  --sky-c6: rgba( 56, 78,158,0.90);
+  --sky-c7: rgba( 38, 56,132,0.92);
+  --sky-c8: rgba( 22, 36,100,0.95);
+  --sky-c9: rgba( 12, 20, 70,0.98);
+}
+
 .radar-sky {
   position: absolute;
   left: 50%;
@@ -165,72 +214,30 @@ html, body {
   -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 49%, rgba(0,0,0,0) 51%, rgba(0,0,0,0) 100%);
           mask-image: linear-gradient(to bottom, #000 0%, #000 49%, rgba(0,0,0,0) 51%, rgba(0,0,0,0) 100%);
   filter: blur(4px);
-}
-.radar-sky-layer {
-  position: absolute;
-  inset: 0;
-}
-/* ベース：オレンジ→ピンク→薄紫の縦グラデーション */
-.radar-sky-layer.sky-a {
   /* レーダー中心を原点に、レーダーの縦横比(0.6)を保ったまま外へ広がる楕円グラデ。
      中心〜レーダー外周(≒半径の 20%)までは完全な白（透過）。
-     そこから 薄オレンジ → ピンク → 青紫 と外側へ緩やかに移り、
-     100% を超えた領域は最後の青紫のまま画面端でトリミングされる。 */
+     そこから外側へ緩やかに移り、100% を超えた領域は最後の色のまま
+     画面端でトリミングされる。 */
   background: radial-gradient(
     ellipse 170vmin 62vmin at 50% 50%,
-    rgba(255,255,255,0) 0%,
-    rgba(255,255,255,0) 10%,
-    rgba(255,232,210,0.55) 20%,
-    rgba(252,196,188,0.78) 32%,
-    rgba(232,172,208,0.85) 46%,
-    rgba(196,158,214,0.88) 60%,
-    rgba(150,138,210,0.92) 76%,
-    rgba(96, 92,184,0.95) 92%,
-    rgba(60, 60,150,0.98) 100%
+    var(--sky-c1) 0%,
+    var(--sky-c2) 10%,
+    var(--sky-c3) 20%,
+    var(--sky-c4) 32%,
+    var(--sky-c5) 46%,
+    var(--sky-c6) 60%,
+    var(--sky-c7) 76%,
+    var(--sky-c8) 92%,
+    var(--sky-c9) 100%
   );
-  animation: sky-drift-a 42s ease-in-out infinite alternate;
-}
-/* オーロラのような淡い流れ */
-.radar-sky-layer.sky-b {
-  background: radial-gradient(
-    ellipse 240vmin 68vmin at 46% 52%,
-    rgba(255,255,255,0) 0%,
-    rgba(255,255,255,0) 14%,
-    rgba(250,196,188,0.18) 32%,
-    rgba(200,168,216,0.22) 66%,
-    rgba(120,120,196,0.24) 100%
-  );
-  animation: sky-drift-b 68s ease-in-out infinite alternate;
-  opacity: 0.9;
-  mix-blend-mode: screen;
-}
-.radar-sky-layer.sky-c {
-  background: radial-gradient(
-    ellipse 230vmin 66vmin at 54% 48%,
-    rgba(255,255,255,0) 0%,
-    rgba(255,255,255,0) 16%,
-    rgba(238,178,208,0.16) 34%,
-    rgba(178,158,216,0.22) 70%,
-    rgba(110,110,190,0.24) 100%
-  );
-  animation: sky-drift-c 54s ease-in-out infinite alternate;
-  opacity: 0.85;
-  mix-blend-mode: screen;
-}
-@keyframes sky-drift-a {
-  0%   { transform: translate3d(-1%, 0.6%, 0) scale(1.00); filter: hue-rotate(0deg); }
-  100% { transform: translate3d( 1%, -0.4%, 0) scale(1.04); filter: hue-rotate(-6deg); }
-}
-@keyframes sky-drift-b {
-  0%   { transform: translate3d(-3%, 1%, 0) scale(1.02); opacity: 0.75; }
-  100% { transform: translate3d( 4%, -1%, 0) scale(1.08); opacity: 1.00; }
-}
-@keyframes sky-drift-c {
-  0%   { transform: translate3d( 3%, 0.5%, 0) scale(1.03); opacity: 0.65; }
-  100% { transform: translate3d(-2%, -0.8%, 0) scale(1.10); opacity: 0.95; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .radar-sky-layer { animation: none; }
+  transition:
+    --sky-c3 30s ease,
+    --sky-c4 30s ease,
+    --sky-c5 30s ease,
+    --sky-c6 30s ease,
+    --sky-c7 30s ease,
+    --sky-c8 30s ease,
+    --sky-c9 30s ease;
 }
 #radar {
   width: min(88vw, 88vh);
