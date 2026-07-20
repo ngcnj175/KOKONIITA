@@ -153,8 +153,8 @@ html, body {
 .radar-sky {
   position: absolute;
   left: 50%;
-  /* 地平線（アーチの底）を、レーダーの上端よりわずかに上へ持ち上げる */
-  top: calc(50% - 20vmin);
+  /* 地平線（アーチの底）を、レーダー上端よりさらに高い位置に */
+  top: calc(50% - 38vmin);
   width: 260vmax;
   height: 260vmax;
   transform: translate(-50%, -50%);
