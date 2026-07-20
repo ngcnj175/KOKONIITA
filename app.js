@@ -621,12 +621,13 @@ function renderRadar() {
     if (hasNear) {
       dot.addEventListener("click", (ev) => {
         ev.stopPropagation();
-        // 20m以内で最も近いものを開く
+        // 20m 以内のもの全てを距離順で開く（スワイプで切替可）
         const near = c.memories
           .map(m => ({ m, d: distanceMeters(myPos, { lat: m.lat, lng: m.lng }) }))
           .filter(x => x.d <= UNLOCK_RADIUS_M)
-          .sort((a, b) => a.d - b.d)[0];
-        if (near) openViewer(near.m);
+          .sort((a, b) => a.d - b.d)
+          .map(x => x.m);
+        if (near.length) openViewer(near[0], near);
       });
     }
     g.appendChild(dot);
@@ -1685,6 +1686,8 @@ function attachHistorySwipe(item, swipe, onDelete, onTap) {
 
 // ---------- 記憶詳細 ----------
 let _viewerMemory = null;
+let _viewerList = [];   // 同時表示中の記憶リスト（近接クラスタ用）
+let _viewerIndex = 0;   // _viewerList 内の現在位置
 
 // 削除処理の共通ハンドラ（swipe と viewer で共有）
 async function deleteMemoryWithFeedback(id, { onSuccess } = {}) {
@@ -1724,14 +1727,24 @@ function updateViewerReportButton(m) {
   btn.disabled = false;
 }
 
-function openViewer(m) {
-  _viewerMemory = m;
+function openViewer(m, list) {
+  _viewerList = Array.isArray(list) && list.length ? list.slice() : [m];
+  const i = _viewerList.indexOf(m);
+  _viewerIndex = i >= 0 ? i : 0;
   $("viewer").classList.remove("hidden");
+  renderViewerAt(_viewerIndex);
+}
+
+function renderViewerAt(idx) {
+  const m = _viewerList[idx];
+  if (!m) return;
+  _viewerMemory = m;
   const dist = myPos ? distanceMeters(myPos, { lat: m.lat, lng: m.lng }) : Infinity;
   const unlocked = dist <= UNLOCK_RADIUS_M;
 
   $("viewer-locked").classList.toggle("hidden", unlocked);
   $("viewer-open").classList.toggle("hidden", !unlocked);
+  updateViewerCounter();
 
   if (unlocked) {
     setImageSrc($("viewer-img"), m);
@@ -1747,11 +1760,67 @@ function openViewer(m) {
     $("viewer-report")?.classList.add("hidden");
   }
 }
+
+function updateViewerCounter() {
+  const el = $("viewer-counter");
+  if (!el) return;
+  if (_viewerList.length > 1) {
+    el.textContent = `${_viewerIndex + 1} / ${_viewerList.length}`;
+    el.classList.remove("hidden");
+  } else {
+    el.classList.add("hidden");
+  }
+}
+
+function viewerStep(delta) {
+  const next = _viewerIndex + delta;
+  if (next < 0 || next >= _viewerList.length) return;
+  _viewerIndex = next;
+  renderViewerAt(_viewerIndex);
+}
+
+// polaroid のスワイプ / タップハンドラ
+// - 横方向 40px 超のスワイプ → 前後の記憶へ切替
+// - それ以下の動きなら flip をトグル（=タップ扱い）
+function setupViewerSwipe() {
+  const flip = $("polaroid-flip");
+  if (!flip) return;
+  const SWIPE_THRESHOLD_PX = 40;
+  let sx = 0, sy = 0, tracking = false, moved = false;
+  flip.addEventListener("pointerdown", (e) => {
+    tracking = true; moved = false;
+    sx = e.clientX; sy = e.clientY;
+  });
+  flip.addEventListener("pointermove", (e) => {
+    if (!tracking) return;
+    if (Math.abs(e.clientX - sx) > 6 || Math.abs(e.clientY - sy) > 6) moved = true;
+  });
+  const finish = (e) => {
+    if (!tracking) return;
+    tracking = false;
+    const dx = e.clientX - sx;
+    const dy = e.clientY - sy;
+    if (Math.abs(dx) > SWIPE_THRESHOLD_PX && Math.abs(dx) > Math.abs(dy)) {
+      viewerStep(dx < 0 ? 1 : -1);
+      moved = true; // 直後の click を抑止するため moved 継続
+    }
+  };
+  flip.addEventListener("pointerup", finish);
+  flip.addEventListener("pointercancel", () => { tracking = false; });
+  flip.addEventListener("click", (e) => {
+    if (moved) { e.stopPropagation(); moved = false; return; }
+    flip.classList.toggle("flipped");
+  });
+}
+
 function closeViewer() {
   $("viewer").classList.add("hidden");
   _viewerMemory = null;
+  _viewerList = [];
+  _viewerIndex = 0;
   $("viewer-delete")?.classList.add("hidden");
   $("viewer-report")?.classList.add("hidden");
+  $("viewer-counter")?.classList.add("hidden");
 }
 
 async function onViewerDelete() {
@@ -1899,9 +1968,7 @@ document.addEventListener("DOMContentLoaded", () => {
   $("viewer").addEventListener("click", (e) => {
     if (e.target === $("viewer")) closeViewer();
   });
-  $("polaroid-flip").addEventListener("click", () => {
-    $("polaroid-flip").classList.toggle("flipped");
-  });
+  setupViewerSwipe();
   $("viewer-delete").addEventListener("click", (e) => {
     e.stopPropagation();
     onViewerDelete();

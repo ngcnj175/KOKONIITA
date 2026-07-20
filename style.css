@@ -1243,6 +1243,16 @@ button.ghost.danger { color: var(--danger); border-color: rgba(178, 58, 58, 0.4)
 .key-mode-status.hidden { display: none; }
 .key-mode-status.err { color: #a33; }
 
+/* ビューア上部の記憶カウンタ（近接クラスタ時のみ表示） */
+.viewer-counter {
+  margin: 0 0 12px;
+  font-size: 12px;
+  letter-spacing: 0.15em;
+  color: rgba(255, 255, 255, 0.75);
+  text-align: center;
+}
+.viewer-counter.hidden { display: none; }
+
 /* ビューア下部のアクションボタン群（回収 / 通報 / 閉じる） */
 .viewer-actions {
   margin-top: 48px;
