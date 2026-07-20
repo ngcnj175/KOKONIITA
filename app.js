@@ -530,10 +530,17 @@ function initRadarMap() {
       const isRoad = lid.startsWith("road") || lid.startsWith("highway") ||
                      lid.startsWith("tunnel") || lid.startsWith("bridge") ||
                      lid.startsWith("transportation");
+      const isLand = lid.startsWith("background") || lid.startsWith("landcover") ||
+                     lid.startsWith("landuse") || lid.startsWith("park");
       if (isWater || isRoad) {
         try {
           if (l.type === "fill") _map.setPaintProperty(l.id, "fill-color", "#ffffff");
           if (l.type === "line") _map.setPaintProperty(l.id, "line-color", "#ffffff");
+        } catch {}
+      } else if (isLand) {
+        try {
+          if (l.type === "fill") _map.setPaintProperty(l.id, "fill-color", "#dcdcdc");
+          if (l.type === "background") _map.setPaintProperty(l.id, "background-color", "#dcdcdc");
         } catch {}
       }
     }
