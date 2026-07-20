@@ -1778,33 +1778,108 @@ function viewerStep(delta) {
 }
 
 // polaroid のスワイプ / タップハンドラ
-// - 横方向 40px 超のスワイプ → 前後の記憶へ切替
-// - それ以下の動きなら flip をトグル（=タップ扱い）
+// - 指の動きに追従してポラロイド自体を横移動、閾値超えで隣の記憶へスライド遷移
+// - 動きが小さければ flip をトグル（=タップ扱い）
 function setupViewerSwipe() {
   const flip = $("polaroid-flip");
   if (!flip) return;
+  const inner = flip.querySelector(".flip-inner");
+  if (!inner) return;
   const SWIPE_THRESHOLD_PX = 40;
-  let sx = 0, sy = 0, tracking = false, moved = false;
+  const BASE_TRANSFORM = "rotate(-4deg)";
+  const SLIDE_TRANSITION = "transform 0.28s cubic-bezier(0.4, 0, 0.2, 1)";
+  let sx = 0, sy = 0, tracking = false, moved = false, horizontal = false;
+  let width = 0, pointerId = null;
+
+  const setTransform = (x) => {
+    inner.style.transform = x ? `${BASE_TRANSFORM} translateX(${x}px)` : "";
+  };
+  const clearInlineTransition = () => { inner.style.transition = ""; };
+
   flip.addEventListener("pointerdown", (e) => {
-    tracking = true; moved = false;
+    if (flip.classList.contains("flipped")) return; // 裏面ではスワイプ切替しない
+    tracking = true; moved = false; horizontal = false;
     sx = e.clientX; sy = e.clientY;
+    width = flip.getBoundingClientRect().width || 286;
+    pointerId = e.pointerId;
+    try { flip.setPointerCapture(pointerId); } catch (_) {}
+    inner.style.transition = "none";
   });
+
   flip.addEventListener("pointermove", (e) => {
     if (!tracking) return;
-    if (Math.abs(e.clientX - sx) > 6 || Math.abs(e.clientY - sy) > 6) moved = true;
+    const dx = e.clientX - sx;
+    const dy = e.clientY - sy;
+    if (!horizontal && (Math.abs(dx) > 6 || Math.abs(dy) > 6)) {
+      horizontal = Math.abs(dx) > Math.abs(dy);
+      moved = true;
+    }
+    if (horizontal) {
+      let d = dx;
+      const atStart = _viewerIndex <= 0 && d > 0;
+      const atEnd = _viewerIndex >= _viewerList.length - 1 && d < 0;
+      if (atStart || atEnd) d = d * 0.25; // 端では抵抗
+      setTransform(d);
+      if (e.cancelable) e.preventDefault();
+    }
   });
+
   const finish = (e) => {
     if (!tracking) return;
     tracking = false;
-    const dx = e.clientX - sx;
-    const dy = e.clientY - sy;
-    if (Math.abs(dx) > SWIPE_THRESHOLD_PX && Math.abs(dx) > Math.abs(dy)) {
-      viewerStep(dx < 0 ? 1 : -1);
-      moved = true; // 直後の click を抑止するため moved 継続
+    if (pointerId != null) {
+      try { flip.releasePointerCapture(pointerId); } catch (_) {}
+      pointerId = null;
+    }
+    const dx = (e.clientX ?? sx) - sx;
+    const dy = (e.clientY ?? sy) - sy;
+    inner.style.transition = SLIDE_TRANSITION;
+
+    const canGoNext = _viewerIndex < _viewerList.length - 1;
+    const canGoPrev = _viewerIndex > 0;
+    const passed = horizontal
+      && Math.abs(dx) > SWIPE_THRESHOLD_PX
+      && Math.abs(dx) > Math.abs(dy)
+      && ((dx < 0 && canGoNext) || (dx > 0 && canGoPrev));
+
+    if (passed) {
+      const dir = dx < 0 ? 1 : -1; // 1: 次へ, -1: 前へ
+      setTransform(-dir * width);
+      const onEnd = () => {
+        inner.removeEventListener("transitionend", onEnd);
+        // 反対側にワープしてから戻す
+        inner.style.transition = "none";
+        setTransform(dir * width);
+        viewerStep(dir);
+        void inner.offsetWidth; // reflow
+        inner.style.transition = SLIDE_TRANSITION;
+        setTransform(0);
+        const clear = () => {
+          inner.removeEventListener("transitionend", clear);
+          clearInlineTransition();
+        };
+        inner.addEventListener("transitionend", clear);
+      };
+      inner.addEventListener("transitionend", onEnd);
+    } else {
+      setTransform(0);
+      const clear = () => {
+        inner.removeEventListener("transitionend", clear);
+        clearInlineTransition();
+      };
+      inner.addEventListener("transitionend", clear);
     }
   };
   flip.addEventListener("pointerup", finish);
-  flip.addEventListener("pointercancel", () => { tracking = false; });
+  flip.addEventListener("pointercancel", () => {
+    tracking = false;
+    if (pointerId != null) {
+      try { flip.releasePointerCapture(pointerId); } catch (_) {}
+      pointerId = null;
+    }
+    inner.style.transition = SLIDE_TRANSITION;
+    setTransform(0);
+  });
   flip.addEventListener("click", (e) => {
     if (moved) { e.stopPropagation(); moved = false; return; }
     flip.classList.toggle("flipped");

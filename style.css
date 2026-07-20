@@ -377,6 +377,15 @@ html, body {
   width: fit-content;
   margin: 0 auto 8px;
   cursor: pointer;
+  touch-action: pan-y;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+.polaroid-flip img {
+  -webkit-user-drag: none;
+  user-drag: none;
+  pointer-events: none;
 }
 .flip-inner {
   position: relative;
