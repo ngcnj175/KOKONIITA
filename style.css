@@ -363,6 +363,8 @@ html, body {
   justify-content: center;
   padding: 0;
   transition: transform 0.08s, opacity 0.15s;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 .range-zoom-btn:active:not(:disabled) { transform: scale(0.92); }
 .range-zoom-btn:disabled {
@@ -1186,6 +1188,8 @@ button.ghost.danger { color: var(--danger); border-color: rgba(178, 58, 58, 0.4)
   align-items: center;
   justify-content: center;
   transition: color 0.18s, filter 0.18s, transform 0.12s;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 .radar-mode-btn svg {
   width: 100%;
