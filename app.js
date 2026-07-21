@@ -1866,6 +1866,32 @@ function setupViewerSwipe() {
   let sx = 0, sy = 0, tracking = false, moved = false, horizontal = false;
   let width = 0;
   let pendingEnd = null; // 進行中の transitionend ハンドラ（速い連続スワイプで解除するため）
+  let longPressTimer = null;
+  let longPressed = false;
+  const LONG_PRESS_MS = 500;
+
+  const cancelLongPress = () => {
+    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+  };
+  const copyNoteOnLongPress = async () => {
+    const note = _viewerMemory?.note || "";
+    if (!note) { showToast("コピーするメッセージがありません"); return; }
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(note);
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = note;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        ta.remove();
+      }
+      showToast("メッセージをコピーしました");
+    } catch {
+      showToast("コピーに失敗しました");
+    }
+  };
 
   const setTransform = (x) => {
     inner.style.transform = x ? `rotate(-4deg) translateX(${x}px)` : "";
@@ -1878,7 +1904,18 @@ function setupViewerSwipe() {
   };
 
   flip.addEventListener("pointerdown", (e) => {
-    if (flip.classList.contains("flipped")) return; // 裏面ではスワイプ切替しない
+    longPressed = false;
+    cancelLongPress();
+    if (flip.classList.contains("flipped")) {
+      // 裏面: スワイプ切替はしないが、長押しでメッセージコピー
+      sx = e.clientX; sy = e.clientY;
+      longPressTimer = setTimeout(() => {
+        longPressTimer = null;
+        longPressed = true;
+        copyNoteOnLongPress();
+      }, LONG_PRESS_MS);
+      return;
+    }
     cancelPendingEnd();
     tracking = true; moved = false; horizontal = false;
     sx = e.clientX; sy = e.clientY;
@@ -1888,6 +1925,10 @@ function setupViewerSwipe() {
   });
 
   flip.addEventListener("pointermove", (e) => {
+    if (longPressTimer) {
+      const mdx = e.clientX - sx, mdy = e.clientY - sy;
+      if (Math.abs(mdx) > 8 || Math.abs(mdy) > 8) cancelLongPress();
+    }
     if (!tracking) return;
     const dx = e.clientX - sx;
     const dy = e.clientY - sy;
@@ -1936,8 +1977,9 @@ function setupViewerSwipe() {
       setTransform(0);
     }
   };
-  flip.addEventListener("pointerup", finish);
+  flip.addEventListener("pointerup", (e) => { cancelLongPress(); finish(e); });
   flip.addEventListener("pointercancel", (e) => {
+    cancelLongPress();
     if (!tracking) return;
     tracking = false;
     flip.releasePointerCapture(e.pointerId);
@@ -1945,6 +1987,7 @@ function setupViewerSwipe() {
     setTransform(0);
   });
   flip.addEventListener("click", (e) => {
+    if (longPressed) { e.stopPropagation(); longPressed = false; return; }
     if (moved) { e.stopPropagation(); moved = false; return; }
     flip.classList.toggle("flipped");
   });
