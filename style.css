@@ -1175,7 +1175,6 @@ button.ghost.danger { color: var(--danger); border-color: rgba(178, 58, 58, 0.4)
   box-shadow: 0 2px 8px rgba(20, 20, 40, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.28);
 }
 .radar-mode-btn {
-  position: relative;
   border: none;
   background: transparent;
   color: #7a7a84;
@@ -1186,7 +1185,6 @@ button.ghost.danger { color: var(--danger); border-color: rgba(178, 58, 58, 0.4)
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 999px;
   transition: color 0.18s, filter 0.18s, transform 0.12s;
 }
 .radar-mode-btn svg {
