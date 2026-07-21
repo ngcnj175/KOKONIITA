@@ -1179,7 +1179,7 @@ button.ghost.danger { color: var(--danger); border-color: rgba(178, 58, 58, 0.4)
 .radar-mode-btn {
   border: none;
   background: transparent;
-  color: #9a9aa4;
+  color: #b8b8c0;
   width: 38px;
   height: 38px;
   padding: 8px;
