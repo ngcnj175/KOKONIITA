@@ -1216,20 +1216,32 @@ button.ghost.danger { color: var(--danger); border-color: rgba(178, 58, 58, 0.4)
 }
 .vis-seg-btn .vis-ico { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; opacity: 0.55; }
 .vis-seg-btn .vis-ico svg { width: 100%; height: 100%; fill: currentColor; }
-.vis-seg-btn .vis-lbl { font-size: 11px; letter-spacing: 0.05em; }
+.vis-seg-btn .vis-lbl { font-size: 12px; letter-spacing: 0.05em; font-weight: 600; }
+.vis-seg-btn .vis-sub { font-size: 10px; letter-spacing: 0.02em; line-height: 1.3; opacity: 0.75; text-align: center; }
 .vis-seg-btn.is-active {
   border-color: var(--ink);
   background: rgba(17, 17, 17, 0.04);
   color: var(--ink);
 }
 .vis-seg-btn.is-active .vis-ico { opacity: 1; }
-.vis-hint { margin: 6px 0 0; }
 
 .key-input-wrap {
-  margin-top: 8px;
+  margin-top: 10px;
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+.key-input-label {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink);
+  font-weight: 600;
+}
+.key-mode-label {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: var(--ink);
+  font-weight: 600;
 }
 #compose-key {
   width: 100%;
@@ -1248,20 +1260,42 @@ button.ghost.danger { color: var(--danger); border-color: rgba(178, 58, 58, 0.4)
 .key-input-hint { margin: 0; }
 .key-mode-wrap {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-top: 6px;
+  gap: 8px;
+  margin-top: 4px;
+  background: rgba(17, 17, 17, 0.06);
+  border-radius: 999px;
+  padding: 4px;
 }
 .key-mode-opt {
+  flex: 1;
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  color: var(--ink);
+  justify-content: center;
   cursor: pointer;
+  position: relative;
 }
-.key-mode-opt input[type="radio"] { accent-color: var(--ink); }
-.key-mode-opt input[type="radio"]:disabled + span { opacity: 0.5; }
+.key-mode-opt input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.key-mode-opt span {
+  display: block;
+  width: 100%;
+  text-align: center;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dim);
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+}
+.key-mode-opt input[type="radio"]:checked + span {
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+.key-mode-opt input[type="radio"]:disabled + span { opacity: 0.5; cursor: not-allowed; }
 .key-mode-status { margin: 4px 0 0; }
 .key-mode-status.err { color: #a33; }
 

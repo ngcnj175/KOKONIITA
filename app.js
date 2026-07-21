@@ -943,13 +943,6 @@ function setComposeVisibility(v) {
     btn.classList.toggle("is-active", on);
     btn.setAttribute("aria-checked", on ? "true" : "false");
   });
-  const hint = $("vis-hint");
-  if (hint) {
-    hint.textContent =
-      _composeVisibility === "private" ? "自分だけに表示。マップにも出しません。"
-      : _composeVisibility === "keyed"  ? "グループキーを伝えた人だけが見つけられます。"
-      : "レーダーで全員に見えます。";
-  }
   const keyWrap = $("key-input-wrap");
   if (keyWrap) keyWrap.classList.toggle("hidden", _composeVisibility !== "keyed");
   if (_composeVisibility === "keyed") {
