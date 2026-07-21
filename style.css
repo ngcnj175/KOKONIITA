@@ -239,6 +239,48 @@ html, body {
     --sky-c8 30s ease,
     --sky-c9 30s ease;
 }
+
+/* ---------- 星（夜モードのみ表示） ---------- */
+.star-field {
+  position: absolute;
+  left: 50%;
+  top: calc(50% - 38vmin);
+  width: 260vmax;
+  height: 260vmax;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+  /* 空アーチと同じマスク（地平線より上のみ表示 → レーダー下には星が漏れない） */
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 49%, rgba(0,0,0,0) 51%, rgba(0,0,0,0) 100%);
+          mask-image: linear-gradient(to bottom, #000 0%, #000 49%, rgba(0,0,0,0) 51%, rgba(0,0,0,0) 100%);
+  opacity: 0;
+  transition: opacity 8s ease;
+}
+.sky-night .star-field { opacity: 1; }
+
+.star {
+  position: absolute;
+  background: #ffffff;
+  border-radius: 50%;
+  /* --base: 星ごとに JS から乱数で流し込む基本の明るさ */
+  opacity: var(--base, 0.7);
+  animation: star-twinkle var(--dur, 8s) ease-in-out var(--delay, 0s) infinite;
+}
+.star.s1 { width: 1px;   height: 1px; }
+.star.s2 { width: 1.5px; height: 1.5px; }
+.star.s3 { width: 2px;   height: 2px; }
+
+/* サイクルの大半は基本の明るさ、ごくたまに一瞬明るくきらめく */
+@keyframes star-twinkle {
+  0%, 88%   { opacity: var(--base, 0.7); box-shadow: none; }
+  93%       { opacity: 1; box-shadow: 0 0 3px rgba(255,255,255,0.9); }
+  97%       { opacity: var(--base, 0.7); box-shadow: none; }
+  100%      { opacity: var(--base, 0.7); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .star { animation: none; }
+}
 #radar {
   width: min(88vw, 88vh);
   height: min(88vw, 88vh);

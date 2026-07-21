@@ -345,6 +345,42 @@ function onPositionFix(pos) {
   updateSkyMode();
 }
 
+// ---------- 星（夜モード時に薄く瞬く） ----------
+// star-field は空アーチと同じ 260vmax 要素なので、要素の 0-100% は
+// 大半が画面外。実測 rect から可視領域を要素座標(%)に換算して配置する。
+// 表示/非表示は CSS 側（body.sky-night .star-field { opacity: 1 }）に任せる。
+function createStars(count = 70) {
+  const field = $("star-field");
+  if (!field || field.children.length) return;
+  const rect = field.getBoundingClientRect();
+  if (rect.width <= 0 || rect.height <= 0) return;
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const leftPct   = Math.max(0,   ((0  - rect.left) / rect.width)  * 100);
+  const rightPct  = Math.min(100, ((vw - rect.left) / rect.width)  * 100);
+  const topPct    = Math.max(0,   ((0  - rect.top)  / rect.height) * 100);
+  // マスクで下半分は非表示なので、上限は 50% と画面下端 % の小さい方
+  const bottomPct = Math.min(50,  ((vh - rect.top)  / rect.height) * 100);
+  const rand = (a, b) => a + Math.random() * (b - a);
+
+  const frag = document.createDocumentFragment();
+  for (let i = 0; i < count; i++) {
+    const s = document.createElement("div");
+    // 直径 3 段階：小さめが多く、大きめは希少に
+    const rSize = Math.random();
+    s.className = "star " + (rSize < 0.6 ? "s1" : rSize < 0.9 ? "s2" : "s3");
+    s.style.left = rand(leftPct, rightPct).toFixed(2) + "%";
+    // 上空ほど密になるよう y を偏らせる（Math.pow で下端 = 地平線側を薄く）
+    const yBias = Math.pow(Math.random(), 1.6);
+    s.style.top  = (topPct + yBias * (bottomPct - topPct)).toFixed(2) + "%";
+    s.style.setProperty("--base",  (0.35 + Math.random() * 0.55).toFixed(2));
+    s.style.setProperty("--dur",   (6 + Math.random() * 8).toFixed(2) + "s");
+    // 負の delay でランダムに開始位相をずらす（同時にきらめかないように）
+    s.style.setProperty("--delay", (-Math.random() * 14).toFixed(2) + "s");
+    frag.appendChild(s);
+  }
+  field.appendChild(frag);
+}
+
 // ---------- 空のパレット（現在地のおおよその現地時刻で切替）----------
 // 経度から現地時刻を近似（±30分程度の誤差は許容）。位置未取得時は端末時刻。
 function updateSkyMode() {
@@ -1997,6 +2033,7 @@ document.addEventListener("DOMContentLoaded", () => {
   renderRadar();
   updatePlaceButtonState();
   updateUserChip();
+  createStars();
   updateSkyMode();
   // 時間帯が跨いだ場合の再判定（15 分おき）
   setInterval(updateSkyMode, 15 * 60 * 1000);
