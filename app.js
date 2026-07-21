@@ -854,15 +854,20 @@ function clearRadarKey() {
   try { localStorage.removeItem(RADAR_KEY_STORAGE); } catch {}
   renderRadar();
 }
-let _radarKeyDebounce = null;
+// input: 空になった時だけ即クリア（API は叩かない）
 function onRadarKeyInput() {
   const inp = $("key-input");
   const raw = (inp?.value || "").trim().toLowerCase();
-  if (_radarKeyDebounce) clearTimeout(_radarKeyDebounce);
+  if (!raw) clearRadarKey();
+}
+// change: フォーカスアウト時に値が変わっていたら 1 回だけ判定
+function commitRadarKey() {
+  const inp = $("key-input");
+  const raw = (inp?.value || "").trim().toLowerCase();
   if (!raw) { clearRadarKey(); return; }
   if (!isValidUserKey(raw)) return;
   if (raw === _radarKey) return;
-  _radarKeyDebounce = setTimeout(() => applyRadarKey(raw), 350);
+  applyRadarKey(raw);
 }
 
 function updateHud() {
@@ -2149,10 +2154,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (_radarKey) refreshKeyedMemories(_radarKey).then(renderRadar);
   }
 
-  // 合言葉入力（入力後デバウンスで自動反映）
+  // グループキー入力: input は空欄復帰のクリアのみ、change（blur 時）で判定
   const keyInput = $("key-input");
   if (keyInput) {
     keyInput.addEventListener("input", onRadarKeyInput);
+    keyInput.addEventListener("change", commitRadarKey);
   }
 
   // 合言葉モーダル
