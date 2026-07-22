@@ -198,8 +198,11 @@ async function removeMemory(id) {
   if (r.status === 401) throw new Error("unauthorized");
   if (r.status === 403) throw new Error("forbidden");
   if (!r.ok && r.status !== 404) throw new Error("delete failed");
+  let keyReleased = null;
+  try { keyReleased = (await r.json())?.keyReleased || null; } catch {}
   releaseImageCache(id);
   await Promise.all([refreshMemories(), refreshMyMemories()]);
+  return { keyReleased };
 }
 
 async function toggleFindMemory(id, next) {
@@ -1791,9 +1794,13 @@ let _viewerIndex = 0;   // _viewerList 内の現在位置
 // 削除処理の共通ハンドラ（swipe と viewer で共有）
 async function deleteMemoryWithFeedback(id, { onSuccess } = {}) {
   try {
-    await removeMemory(id);
+    const { keyReleased } = await removeMemory(id);
     if (onSuccess) onSuccess();
-    showToast("回収しました");
+    if (keyReleased) {
+      showToast(`回収しました。グループキー「${keyReleased}」は解放されました`, 3500);
+    } else {
+      showToast("回収しました");
+    }
     return true;
   } catch (e) {
     if (e.message === "forbidden") showToast("この記憶は回収できません");

@@ -535,7 +535,20 @@ app.delete("/api/memories/:id", async (c) => {
   await c.env.DB.prepare(
     "UPDATE memories SET deleted_at = ?, deleted_reason = ? WHERE id = ?"
   ).bind(Date.now(), reason, id).run();
-  return c.json({ ok: true });
+
+  // keyed の場合、そのグループキーの残り投稿が 0 になったら access_keys 行も削除して解放
+  let keyReleased = null;
+  if (row.visibility === "keyed" && row.access_key) {
+    const rest = await c.env.DB.prepare(
+      "SELECT COUNT(*) AS n FROM memories WHERE access_key = ? AND deleted_at IS NULL"
+    ).bind(row.access_key).first();
+    if (Number(rest?.n || 0) === 0) {
+      await c.env.DB.prepare("DELETE FROM access_keys WHERE key = ?")
+        .bind(row.access_key).run();
+      keyReleased = row.access_key;
+    }
+  }
+  return c.json({ ok: true, keyReleased });
 });
 
 // 不適切通報。同一ユーザーは冪等。別アカウント3件で soft delete。
@@ -545,7 +558,7 @@ app.post("/api/memories/:id/report", async (c) => {
   if (!s) return c.json({ error: "unauthorized" }, 401);
   const id = c.req.param("id");
   const row = await c.env.DB.prepare(
-    "SELECT user_id FROM memories WHERE id = ? AND deleted_at IS NULL"
+    "SELECT user_id, visibility, access_key FROM memories WHERE id = ? AND deleted_at IS NULL"
   ).bind(id).first();
   if (!row) return c.json({ error: "not found" }, 404);
   if (row.user_id === s.userId) return c.json({ error: "cannot report own memory" }, 400);
@@ -565,6 +578,16 @@ app.post("/api/memories/:id/report", async (c) => {
       "UPDATE memories SET deleted_at = ?, deleted_reason = 'reported' WHERE id = ? AND deleted_at IS NULL"
     ).bind(Date.now(), id).run();
     deleted = true;
+    // keyed の残り投稿が 0 になったら access_keys 行を解放
+    if (row.visibility === "keyed" && row.access_key) {
+      const rest = await c.env.DB.prepare(
+        "SELECT COUNT(*) AS n FROM memories WHERE access_key = ? AND deleted_at IS NULL"
+      ).bind(row.access_key).first();
+      if (Number(rest?.n || 0) === 0) {
+        await c.env.DB.prepare("DELETE FROM access_keys WHERE key = ?")
+          .bind(row.access_key).run();
+      }
+    }
   }
   return c.json({ ok: true, count, deleted });
 });
