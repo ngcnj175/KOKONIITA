@@ -571,6 +571,9 @@ html, body {
   justify-content: center;
   text-align: center;
   margin: 0;
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
 }
 
 /* ---------- 手書き文字 ---------- */
