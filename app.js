@@ -1891,6 +1891,37 @@ function viewerStep(delta) {
   renderViewerAt(_viewerIndex);
 }
 
+// 裏面ダブルタップから呼ぶ: メッセージ全文をクリップボードへ
+function copyViewerNote() {
+  const note = _viewerMemory?.note || "";
+  if (!note) { showToast("コピーするメッセージがありません"); return; }
+  const fallback = () => {
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = note;
+      ta.setAttribute("readonly", "");
+      ta.style.cssText = "position:fixed;top:0;left:0;opacity:0;";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      ta.setSelectionRange(0, note.length);
+      const ok = document.execCommand("copy");
+      ta.remove();
+      showToast(ok ? "メッセージをコピーしました" : "コピーに失敗しました");
+    } catch {
+      showToast("コピーに失敗しました");
+    }
+  };
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(note).then(
+      () => showToast("メッセージをコピーしました"),
+      fallback
+    );
+  } else {
+    fallback();
+  }
+}
+
 // polaroid のスワイプ / タップハンドラ
 // - 指の動きに追従してポラロイド自体を横移動、閾値超えで隣の記憶へスライド遷移
 // - 動きが小さければ flip をトグル（=タップ扱い）
@@ -1986,9 +2017,14 @@ function setupViewerSwipe() {
   });
   flip.addEventListener("click", (e) => {
     if (moved) { e.stopPropagation(); moved = false; return; }
-    // 裏面ではダブルタップでテキスト選択に入りたいので、単発クリックの flip を少し遅延させる
+    // 裏面: 単発タップで表に戻す。ダブルタップでメッセージ全文をコピー
     if (flip.classList.contains("flipped")) {
-      if (flipClickTimer) { clearTimeout(flipClickTimer); flipClickTimer = null; return; }
+      if (flipClickTimer) {
+        clearTimeout(flipClickTimer);
+        flipClickTimer = null;
+        copyViewerNote();
+        return;
+      }
       flipClickTimer = setTimeout(() => {
         flipClickTimer = null;
         flip.classList.remove("flipped");
