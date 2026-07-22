@@ -133,11 +133,11 @@ function generateAccessKey(len = 6) {
   return s;
 }
 function normalizeKey(k) {
-  return (k || "").toString().trim().toLowerCase();
+  return (k || "").toString().normalize("NFKC").trim().toLowerCase();
 }
-// 合言葉の妥当性: 6-20文字、英数字とハイフンのみ
+// 合言葉の妥当性: 2-20文字、Unicode文字・数字・アンダースコア・ハイフンのみ
 function isValidUserKey(k) {
-  return typeof k === "string" && /^[a-z0-9-]{6,20}$/.test(k);
+  return typeof k === "string" && /^[\p{L}\p{N}_-]{2,20}$/u.test(k);
 }
 // access_keys テーブルからキー情報を取得。未登録なら null。
 async function getAccessKey(db, key) {
@@ -379,7 +379,7 @@ app.post("/api/memories", async (c) => {
     const userKeyRaw = normalizeKey(form.get("access_key"));
     if (userKeyRaw) {
       if (!isValidUserKey(userKeyRaw)) {
-        return c.json({ error: "invalid access_key (6-20 chars, a-z 0-9 -)" }, 400);
+        return c.json({ error: "invalid access_key (2-20 chars, letters/digits/_/-)" }, 400);
       }
       existingKey = await getAccessKey(c.env.DB, userKeyRaw);
       if (existingKey) {

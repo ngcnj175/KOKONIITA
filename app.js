@@ -163,11 +163,14 @@ async function refreshMyKeys() {
   } catch { return []; }
 }
 
-const KEY_FORMAT = /^[a-z0-9-]{6,20}$/;
+const KEY_FORMAT = /^[\p{L}\p{N}_-]{2,20}$/u;
+function normalizeKey(k) {
+  return (k || "").toString().normalize("NFKC").trim().toLowerCase();
+}
 function isValidUserKey(k) { return typeof k === "string" && KEY_FORMAT.test(k); }
 
 async function refreshKeyedMemories(key) {
-  const k = (key || "").trim().toLowerCase();
+  const k = normalizeKey(key);
   if (!k) { _keyedCache = []; return; }
   try {
     const r = await apiFetch(`/api/memories?key=${encodeURIComponent(k)}`);
@@ -181,7 +184,7 @@ async function refreshKeyedMemories(key) {
 }
 
 async function lookupKey(key) {
-  const k = (key || "").trim().toLowerCase();
+  const k = normalizeKey(key);
   if (!isValidUserKey(k)) return null;
   try {
     const r = await apiFetch(`/api/keys/${encodeURIComponent(k)}`);
@@ -872,13 +875,13 @@ function clearRadarKey() {
 // input: 空になった時だけ即クリア（API は叩かない）
 function onRadarKeyInput() {
   const inp = $("key-input");
-  const raw = (inp?.value || "").trim().toLowerCase();
+  const raw = normalizeKey(inp?.value);
   if (!raw) clearRadarKey();
 }
 // change: フォーカスアウト時に値が変わっていたら 1 回だけ判定
 function commitRadarKey() {
   const inp = $("key-input");
-  const raw = (inp?.value || "").trim().toLowerCase();
+  const raw = normalizeKey(inp?.value);
   if (!raw) { clearRadarKey(); return; }
   if (!isValidUserKey(raw)) return;
   if (raw === _radarKey) return;
@@ -1047,7 +1050,7 @@ function resetComposeKeyModeUi() {
 // 有効形式ならモード確定を「未判定」状態にして送信時に判定する。
 function onComposeKeyInput() {
   const inp = $("compose-key");
-  const raw = (inp?.value || "").trim().toLowerCase();
+  const raw = normalizeKey(inp?.value);
   if (!raw || !isValidUserKey(raw)) {
     resetComposeKeyModeUi();
   } else if (_composeKeyMode !== null) {
@@ -1062,7 +1065,7 @@ async function commitComposeKeyMode() {
   const status = $("key-mode-status");
   const wrap = $("key-mode-wrap");
   if (!inp || !status || !wrap) return;
-  const raw = (inp.value || "").trim().toLowerCase();
+  const raw = normalizeKey(inp.value);
   if (!raw || !isValidUserKey(raw)) { resetComposeKeyModeUi(); return; }
 
   const showStatus = (text, err = false) => {
@@ -1079,7 +1082,7 @@ async function commitComposeKeyMode() {
     _lookupCache.set(raw, info);
   }
   // 判定中に入力が変わっていたら破棄
-  if ((inp.value || "").trim().toLowerCase() !== raw) return;
+  if (normalizeKey(inp.value) !== raw) return;
 
   if (!info || !info.exists) {
     _composeKeyMode = null;
@@ -1331,11 +1334,11 @@ async function savePlaced() {
   const note = $("note-input").value.trim();
   const visibility = _composeVisibility;
   const userKey = visibility === "keyed"
-    ? ($("compose-key")?.value || "").trim().toLowerCase()
+    ? normalizeKey($("compose-key")?.value)
     : "";
   // 事前バリデーション（サーバー側でも検証）
   if (visibility === "keyed" && userKey && !isValidUserKey(userKey)) {
-    showToast("グループキーは6〜20文字の英数字とハイフンのみです");
+    showToast("グループキーは2〜20文字（英数字・かな・漢字と _ - のみ）");
     if (btn) btn.disabled = false;
     _saving = false;
     return;
