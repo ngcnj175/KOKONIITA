@@ -219,6 +219,13 @@
           <div class="flip-face flip-front">
             <div class="polaroid-frame small">
               <img id="viewer-img" alt="memory" />
+              <button id="viewer-find" class="viewer-find hidden" type="button" aria-pressed="false" aria-label="見つけた">
+                <svg class="find-drop" viewBox="0 0 24 32" aria-hidden="true">
+                  <path d="M12 1.5 C 5 12, 3 18, 3 22 a 9 9 0 0 0 18 0 c 0 -4 -2 -10 -9 -20.5 Z"/>
+                </svg>
+                <span id="viewer-find-count" class="find-count">0</span>
+              </button>
+              <span id="find-splash" class="find-splash" aria-hidden="true"></span>
             </div>
           </div>
           <div class="flip-face flip-back">

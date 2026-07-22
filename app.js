@@ -199,6 +199,21 @@ async function removeMemory(id) {
   await Promise.all([refreshMemories(), refreshMyMemories()]);
 }
 
+async function toggleFindMemory(id, next) {
+  const r = await apiFetch(`/api/memories/${id}/find`, { method: next ? "POST" : "DELETE" });
+  if (r.status === 401) throw new Error("unauthorized");
+  if (r.status === 400) throw new Error("bad request");
+  if (r.status === 404) throw new Error("not found");
+  if (!r.ok) throw new Error("find failed");
+  const j = await r.json();
+  // 全キャッシュに反映
+  for (const arr of [_publicCache, _myCache, _keyedCache]) {
+    const m = arr.find(x => x.id === id);
+    if (m) { m.findCount = j.findCount; m.foundByMe = j.foundByMe; }
+  }
+  return j;
+}
+
 async function reportMemory(id) {
   const r = await apiFetch(`/api/memories/${id}/report`, { method: "POST" });
   if (r.status === 401) throw new Error("unauthorized");
@@ -1626,6 +1641,13 @@ function renderHistoryList() {
     const d = new Date(m.createdAt);
     const dateStr = `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()}`;
     meta.textContent = dateStr;
+    if (Number(m.findCount || 0) > 0) {
+      const finds = document.createElement("span");
+      finds.className = "history-finds";
+      finds.title = "見つけられた回数";
+      finds.innerHTML = `<svg viewBox="0 0 24 32" aria-hidden="true"><path d="M12 1.5 C 5 12, 3 18, 3 22 a 9 9 0 0 0 18 0 c 0 -4 -2 -10 -9 -20.5 Z"/></svg>${m.findCount}`;
+      meta.appendChild(finds);
+    }
     body.appendChild(msg);
     body.appendChild(dist);
     body.appendChild(meta);
@@ -1789,6 +1811,20 @@ function updateViewerDeleteButton(m) {
   btn.dataset.mode = isPoster ? "self" : "owner";
 }
 
+function updateViewerFindButton(m) {
+  const btn = document.getElementById("viewer-find");
+  const cnt = document.getElementById("viewer-find-count");
+  if (!btn || !cnt) return;
+  if (!m || m.visibility === "private") { btn.classList.add("hidden"); return; }
+  btn.classList.remove("hidden");
+  const isOwner = !!(_currentUser && m.userId === _currentUser.id);
+  const count = Number(m.findCount || 0);
+  cnt.textContent = String(count);
+  btn.setAttribute("aria-pressed", m.foundByMe ? "true" : "false");
+  btn.classList.toggle("is-owner", isOwner);
+  btn.dataset.mid = m.id;
+}
+
 function updateViewerReportButton(m) {
   const btn = $("viewer-report");
   if (!btn) return;
@@ -1828,10 +1864,12 @@ function renderViewerAt(idx) {
     $("viewer-meta").textContent = `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()}`;
     updateViewerDeleteButton(m);
     updateViewerReportButton(m);
+    updateViewerFindButton(m);
   } else {
     $("viewer-distance").textContent = `距離: 約${Math.round(dist)}m`;
     $("viewer-delete")?.classList.add("hidden");
     $("viewer-report")?.classList.add("hidden");
+    document.getElementById("viewer-find")?.classList.add("hidden");
   }
 }
 
@@ -1969,6 +2007,44 @@ function closeViewer() {
   $("viewer-delete")?.classList.add("hidden");
   $("viewer-report")?.classList.add("hidden");
   $("viewer-counter")?.classList.add("hidden");
+  document.getElementById("viewer-find")?.classList.add("hidden");
+}
+
+async function onViewerFind() {
+  const m = _viewerMemory;
+  if (!m) return;
+  if (!_currentUser) {
+    if (confirm("ログインが必要です。ログインしますか？")) goToLogin();
+    return;
+  }
+  if (m.userId === _currentUser.id) return;
+  const btn = document.getElementById("viewer-find");
+  if (!btn || btn.disabled) return;
+  const next = !m.foundByMe;
+  btn.disabled = true;
+  try {
+    await toggleFindMemory(m.id, next);
+    updateViewerFindButton(m);
+    if (next) {
+      const frame = btn.closest(".polaroid-frame");
+      if (frame) {
+        frame.classList.remove("found-pulse");
+        void frame.offsetWidth;
+        frame.classList.add("found-pulse");
+        setTimeout(() => frame.classList.remove("found-pulse"), 750);
+      }
+    }
+    // 履歴が開いていれば数字を更新
+    if (!$("history-sheet").classList.contains("hidden")) renderHistoryList();
+  } catch (e) {
+    if (e.message === "unauthorized") {
+      if (confirm("ログインが必要です。ログインしますか？")) goToLogin();
+    } else {
+      showToast("失敗しました");
+    }
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 async function onViewerDelete() {
@@ -2133,6 +2209,14 @@ document.addEventListener("DOMContentLoaded", () => {
     e.stopPropagation();
     closeViewer();
   });
+  const findBtn = document.getElementById("viewer-find");
+  if (findBtn) {
+    findBtn.addEventListener("pointerdown", (e) => e.stopPropagation());
+    findBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      onViewerFind();
+    });
+  }
   const composeKey = $("compose-key");
   if (composeKey) {
     // input: 空欄/無効へ戻った時だけローカルで UI リセット（API は叩かない）

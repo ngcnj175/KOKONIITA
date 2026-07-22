@@ -107,6 +107,8 @@ function toMemoryRow(r, opts = {}) {
     createdAt: r.created_at,
     userId: r.user_id,
     visibility,
+    findCount: Number(r.find_count || 0),
+    foundByMe: !!Number(r.found_by_me || 0),
   };
   // access_key は所有者向けレスポンス（履歴/投稿完了時）でのみ含める
   if (opts.includeKey && visibility === "keyed") {
@@ -253,11 +255,13 @@ app.get("/api/memories", async (c) => {
   if (key) {
     const [{ results }, ak] = await Promise.all([
       c.env.DB.prepare(
-        `SELECT id, user_id, lat, lng, accuracy, note, visibility, access_key, created_at
+        `SELECT id, user_id, lat, lng, accuracy, note, visibility, access_key, created_at,
+                (SELECT COUNT(*) FROM finds f WHERE f.memory_id = memories.id) AS find_count,
+                EXISTS(SELECT 1 FROM finds f2 WHERE f2.memory_id = memories.id AND f2.user_id = ?) AS found_by_me
          FROM memories
          WHERE visibility = 'keyed' AND access_key = ? AND deleted_at IS NULL
          ORDER BY created_at DESC LIMIT 1000`
-      ).bind(key).all(),
+      ).bind(uid || "", key).all(),
       getAccessKey(c.env.DB, key),
     ]);
     const keyOwnerId = ak?.owner_id || null;
@@ -268,11 +272,13 @@ app.get("/api/memories", async (c) => {
   }
   // 「公開」モードは public のみ。自分の private / keyed は「プライベート」モードから見る
   const { results } = await c.env.DB.prepare(
-    `SELECT id, user_id, lat, lng, accuracy, note, visibility, access_key, created_at
+    `SELECT id, user_id, lat, lng, accuracy, note, visibility, access_key, created_at,
+            (SELECT COUNT(*) FROM finds f WHERE f.memory_id = memories.id) AS find_count,
+            EXISTS(SELECT 1 FROM finds f2 WHERE f2.memory_id = memories.id AND f2.user_id = ?) AS found_by_me
      FROM memories
      WHERE visibility = 'public' AND deleted_at IS NULL
      ORDER BY created_at DESC LIMIT 1000`
-  ).all();
+  ).bind(uid || "").all();
   return c.json({ memories: results.map(r => toMemoryRow(r, { sessionUserId: uid })) });
 });
 
@@ -281,7 +287,9 @@ app.get("/api/me/memories", async (c) => {
   const s = await requireSession(c);
   if (!s) return c.json({ error: "unauthorized" }, 401);
   const { results } = await c.env.DB.prepare(
-    `SELECT id, user_id, lat, lng, accuracy, note, visibility, access_key, created_at
+    `SELECT id, user_id, lat, lng, accuracy, note, visibility, access_key, created_at,
+            (SELECT COUNT(*) FROM finds f WHERE f.memory_id = memories.id) AS find_count,
+            0 AS found_by_me
      FROM memories WHERE user_id = ? AND deleted_at IS NULL ORDER BY created_at DESC`
   ).bind(s.userId).all();
   return c.json({ memories: results.map(r => toMemoryRow(r, { includeKey: true, sessionUserId: s.userId })) });
@@ -559,6 +567,40 @@ app.post("/api/memories/:id/report", async (c) => {
     deleted = true;
   }
   return c.json({ ok: true, count, deleted });
+});
+
+// 「見つけた」（琥珀のしずく）: トグル。距離検証はクライアント側に委ねる。
+async function findCountFor(db, id) {
+  const r = await db.prepare("SELECT COUNT(*) AS n FROM finds WHERE memory_id = ?").bind(id).first();
+  return Number(r?.n || 0);
+}
+
+app.post("/api/memories/:id/find", async (c) => {
+  const s = await requireSession(c);
+  if (!s) return c.json({ error: "unauthorized" }, 401);
+  const id = c.req.param("id");
+  const row = await c.env.DB.prepare(
+    "SELECT user_id, visibility FROM memories WHERE id = ? AND deleted_at IS NULL"
+  ).bind(id).first();
+  if (!row) return c.json({ error: "not found" }, 404);
+  if (row.user_id === s.userId) return c.json({ error: "cannot find own memory" }, 400);
+  if (row.visibility === "private") return c.json({ error: "not found" }, 404);
+  await c.env.DB.prepare(
+    "INSERT OR IGNORE INTO finds(memory_id, user_id, created_at) VALUES(?, ?, ?)"
+  ).bind(id, s.userId, Date.now()).run();
+  const count = await findCountFor(c.env.DB, id);
+  return c.json({ ok: true, findCount: count, foundByMe: true });
+});
+
+app.delete("/api/memories/:id/find", async (c) => {
+  const s = await requireSession(c);
+  if (!s) return c.json({ error: "unauthorized" }, 401);
+  const id = c.req.param("id");
+  await c.env.DB.prepare(
+    "DELETE FROM finds WHERE memory_id = ? AND user_id = ?"
+  ).bind(id, s.userId).run();
+  const count = await findCountFor(c.env.DB, id);
+  return c.json({ ok: true, findCount: count, foundByMe: false });
 });
 
 // 自分の投稿で不適切通報により削除されたもの（起動時トースト用）

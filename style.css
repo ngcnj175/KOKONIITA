@@ -1404,6 +1404,98 @@ button.ghost.danger { color: var(--danger); border-color: rgba(178, 58, 58, 0.4)
 .viewer-close:focus-visible { outline: none; }
 .viewer-close { margin-left: auto; }
 
+/* ---------- 見つけた（琥珀のしずく） ---------- */
+.polaroid-flip .polaroid-frame.small { position: relative; }
+.viewer-find {
+  position: absolute;
+  right: 10px;
+  bottom: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px 5px 7px;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(180, 120, 40, 0.35);
+  border-radius: 999px;
+  color: #7a4a10;
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease;
+  z-index: 3;
+}
+.viewer-find:hover { background: rgba(255, 240, 210, 0.95); }
+.viewer-find:active { transform: scale(0.94); }
+.viewer-find .find-drop {
+  width: 14px;
+  height: 18px;
+  fill: none;
+  stroke: #b3781f;
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+  transition: fill 0.2s ease, stroke 0.2s ease;
+}
+.viewer-find[aria-pressed="true"] {
+  background: rgba(255, 214, 140, 0.95);
+  border-color: rgba(180, 120, 40, 0.7);
+  color: #5a3200;
+}
+.viewer-find[aria-pressed="true"] .find-drop {
+  fill: #e29a2b;
+  stroke: #a1621b;
+}
+.viewer-find.is-owner {
+  cursor: default;
+  pointer-events: none;
+  background: rgba(255, 255, 255, 0.7);
+}
+.find-count { font-variant-numeric: tabular-nums; font-weight: 600; }
+
+/* タップ演出: しずくが写真の中央に落ちる + ポラロイド全体が琥珀に脈打つ */
+.find-splash {
+  position: absolute;
+  left: 50%;
+  top: 20%;
+  width: 22px;
+  height: 28px;
+  margin-left: -11px;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(ellipse at 50% 60%, #f2b64a 0%, #d18a1a 60%, rgba(180, 120, 40, 0) 75%);
+  clip-path: path("M11 0 C 4 10, 2 16, 2 20 a 9 9 0 0 0 18 0 c 0 -4 -2 -10 -9 -20 Z");
+  z-index: 4;
+}
+.polaroid-flip .polaroid-frame.small.found-pulse {
+  animation: find-pulse 0.7s ease-out;
+}
+.polaroid-flip .polaroid-frame.small.found-pulse .find-splash {
+  animation: find-drop 0.7s ease-out;
+}
+@keyframes find-drop {
+  0%   { transform: translateY(-40px) scale(0.7); opacity: 0; }
+  30%  { transform: translateY(0) scale(1); opacity: 1; }
+  60%  { transform: translateY(20px) scale(1.4, 0.6); opacity: 0.6; }
+  100% { transform: translateY(30px) scale(2.2, 0.2); opacity: 0; }
+}
+@keyframes find-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(226, 154, 43, 0); }
+  40%      { box-shadow: 0 0 24px 4px rgba(226, 154, 43, 0.55); }
+}
+
+/* 履歴カードのしずくバッジ */
+.history-finds {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 6px;
+  color: #b3781f;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.history-finds svg { width: 10px; height: 13px; fill: #e29a2b; }
+
 /* ---------- グループキー発行モーダル ---------- */
 .key-issued-card { text-align: center; }
 .key-issued-title {
