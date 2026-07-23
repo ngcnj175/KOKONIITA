@@ -1380,19 +1380,20 @@ button.ghost.danger { color: var(--danger); border-color: rgba(178, 58, 58, 0.4)
 .viewer-report,
 .viewer-close {
   padding: 8px 22px;
-  border: 1px solid #fff;
-  background: #222;
-  color: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.92);
+  color: #333;
   font-family: inherit;
   font-size: 13px;
   letter-spacing: 0.12em;
   border-radius: 999px;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  transition: background 0.2s ease;
 }
 .viewer-delete:hover,
 .viewer-report:hover,
-.viewer-close:hover { background: #000; }
+.viewer-close:hover { background: #fff; }
 .viewer-delete:focus,
 .viewer-report:focus,
 .viewer-close:focus,
@@ -1410,35 +1411,31 @@ button.ghost.danger { color: var(--danger); border-color: rgba(178, 58, 58, 0.4)
 .star-btn {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 6px 11px 6px 9px;
+  gap: 8px;
+  padding: 8px 22px;
   background: rgba(255, 255, 255, 0.92);
   border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 999px;
-  color: #6b5a2a;
+  color: #333;
   font-family: inherit;
-  font-size: 12px;
+  font-size: 13px;
+  letter-spacing: 0.12em;
   line-height: 1;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease;
+  transition: transform 0.15s ease, background 0.2s ease;
   z-index: 5;
 }
 .star-btn:hover { background: #fff; }
 .star-btn:active { transform: scale(0.94); }
 .star-btn .star-icon {
-  width: 15px;
-  height: 15px;
+  width: 16px;
+  height: 16px;
   fill: none;
   stroke: #b3941f;
   stroke-width: 1.5;
   stroke-linejoin: round;
   transition: fill 0.2s ease, stroke 0.2s ease, transform 0.2s ease;
-}
-.star-btn[aria-pressed="true"] {
-  background: #fff5d1;
-  border-color: rgba(180, 148, 40, 0.5);
-  color: #6a4f00;
 }
 .star-btn[aria-pressed="true"] .star-icon {
   fill: #f0b83a;
