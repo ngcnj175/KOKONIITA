@@ -1445,7 +1445,6 @@ button.ghost.danger { color: var(--danger); border-color: rgba(178, 58, 58, 0.4)
 .star-btn.is-owner {
   cursor: default;
   pointer-events: none;
-  opacity: 0.85;
 }
 .star-count { font-variant-numeric: tabular-nums; font-weight: 600; }
 
