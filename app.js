@@ -1651,7 +1651,7 @@ function renderHistoryList() {
       const finds = document.createElement("span");
       finds.className = "history-finds";
       finds.title = "見つけられた回数";
-      finds.innerHTML = `<svg viewBox="0 0 24 32" aria-hidden="true"><path d="M12 1.5 C 5 12, 3 18, 3 22 a 9 9 0 0 0 18 0 c 0 -4 -2 -10 -9 -20.5 Z"/></svg>${m.findCount}`;
+      finds.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 L14.85 9.05 L22 9.75 L16.5 14.55 L18.2 21.5 L12 17.8 L5.8 21.5 L7.5 14.55 L2 9.75 L9.15 9.05 Z"/></svg>${m.findCount}`;
       meta.appendChild(finds);
     }
     body.appendChild(msg);
@@ -2072,13 +2072,10 @@ async function onViewerFind() {
     await toggleFindMemory(m.id, next);
     updateViewerFindButton(m);
     if (next) {
-      const frame = btn.closest(".polaroid-frame");
-      if (frame) {
-        frame.classList.remove("found-pulse");
-        void frame.offsetWidth;
-        frame.classList.add("found-pulse");
-        setTimeout(() => frame.classList.remove("found-pulse"), 750);
-      }
+      btn.classList.remove("is-popping");
+      void btn.offsetWidth;
+      btn.classList.add("is-popping");
+      setTimeout(() => btn.classList.remove("is-popping"), 600);
     }
     // 履歴が開いていれば数字を更新
     if (!$("history-sheet").classList.contains("hidden")) renderHistoryList();
