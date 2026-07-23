@@ -1372,9 +1372,11 @@ button.ghost.danger { color: var(--danger); border-color: rgba(178, 58, 58, 0.4)
 .viewer-actions {
   margin-top: 28px;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
-  width: min(320px, 80vw);
+  justify-content: center;
+  gap: 10px;
+  width: min(360px, 88vw);
 }
 .viewer-delete,
 .viewer-report,
@@ -1400,14 +1402,8 @@ button.ghost.danger { color: var(--danger); border-color: rgba(178, 58, 58, 0.4)
 .viewer-delete:focus-visible,
 .viewer-report:focus-visible,
 .viewer-close:focus-visible { outline: none; }
-.viewer-close { margin-left: auto; }
 
 /* ---------- 星ボタン（いいね / 将来のお気に入り兼用） ---------- */
-.viewer-star-row {
-  margin: 18px 0 0;
-  display: flex;
-  justify-content: center;
-}
 .star-btn {
   display: inline-flex;
   align-items: center;
