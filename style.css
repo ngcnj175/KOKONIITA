@@ -1370,7 +1370,7 @@ button.ghost.danger { color: var(--danger); border-color: rgba(178, 58, 58, 0.4)
 
 /* ビューア下部のアクションボタン群（回収 / 通報 / 閉じる） */
 .viewer-actions {
-  margin-top: 48px;
+  margin-top: 28px;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -1402,11 +1402,12 @@ button.ghost.danger { color: var(--danger); border-color: rgba(178, 58, 58, 0.4)
 .viewer-close { margin-left: auto; }
 
 /* ---------- 星ボタン（いいね / 将来のお気に入り兼用） ---------- */
-.polaroid-flip { position: relative; }
+.viewer-star-row {
+  margin: 18px 0 0;
+  display: flex;
+  justify-content: center;
+}
 .star-btn {
-  position: absolute;
-  top: -40px;
-  right: 0;
   display: inline-flex;
   align-items: center;
   gap: 5px;

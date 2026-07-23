@@ -215,12 +215,6 @@
     <div id="viewer-open" class="hidden">
       <p id="viewer-counter" class="viewer-counter hidden" aria-live="polite"></p>
       <div class="polaroid-flip" id="polaroid-flip">
-        <button id="viewer-find" class="star-btn hidden" type="button" aria-pressed="false" aria-label="いいね" data-role="find">
-          <svg class="star-icon" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 2.5 L14.85 9.05 L22 9.75 L16.5 14.55 L18.2 21.5 L12 17.8 L5.8 21.5 L7.5 14.55 L2 9.75 L9.15 9.05 Z"/>
-          </svg>
-          <span id="viewer-find-count" class="star-count">0</span>
-        </button>
         <div class="flip-inner">
           <div class="flip-face flip-front">
             <div class="polaroid-frame small">
@@ -234,6 +228,14 @@
             </div>
           </div>
         </div>
+      </div>
+      <div class="viewer-star-row">
+        <button id="viewer-find" class="star-btn hidden" type="button" aria-pressed="false" aria-label="いいね" data-role="find">
+          <svg class="star-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 2.5 L14.85 9.05 L22 9.75 L16.5 14.55 L18.2 21.5 L12 17.8 L5.8 21.5 L7.5 14.55 L2 9.75 L9.15 9.05 Z"/>
+          </svg>
+          <span id="viewer-find-count" class="star-count">0</span>
+        </button>
       </div>
       <div class="viewer-actions">
         <button id="viewer-delete" class="viewer-delete hidden" type="button"></button>
