@@ -9,6 +9,10 @@ const VIS_ICON_SVG = {
 
 const UNLOCK_RADIUS_M = 20;
 const GPS_ACCURACY_THRESHOLD_M = 20;
+// 直近この期間内の最良精度の fix を保持する（一瞬悪化しても投函できるように）
+const GPS_BEST_FIX_TTL_MS = 45000;
+// 前回の最良 fix からこの距離を超えて動いたら「移動した」とみなし最新値に置き換える
+const GPS_BEST_FIX_MOVE_M = 30;
 const MAX_IMAGE_DIM = 1600;      // クロップ前の作業用最大寸法
 const OUTPUT_SIZE = 720;         // 保存する正方形サイズ
 const JPEG_QUALITY = 0.72;
@@ -29,7 +33,8 @@ const CLUSTER_PX = 8;
 const $ = (id) => document.getElementById(id);
 
 // ---------- 状態 ----------
-let myPos = null;      // {lat, lng, accuracy}
+let myPos = null;      // {lat, lng, accuracy} — UI/投函で使う「採用値」
+let _bestFix = null;   // {lat, lng, accuracy, timestamp} — 直近の最良精度 fix
 let gpsError = null;   // 位置情報エラー
 let heading = 0;       // 度、0=北、時計回り
 
@@ -356,7 +361,19 @@ function bearingDeg(from, to) {
 // ---------- 位置情報 ----------
 function onPositionFix(pos) {
   const { latitude, longitude, accuracy } = pos.coords;
-  myPos = { lat: latitude, lng: longitude, accuracy };
+  const now = Date.now();
+  const rawFix = { lat: latitude, lng: longitude, accuracy, timestamp: now };
+
+  // 直近 GPS_BEST_FIX_TTL_MS の中で最も精度の良い fix を保持する。
+  // ただし前回の最良 fix から GPS_BEST_FIX_MOVE_M 以上離れていれば
+  // 「移動した」とみなして最新値に置き換える（古い場所に貼り付かないため）。
+  const expired = !_bestFix || (now - _bestFix.timestamp) > GPS_BEST_FIX_TTL_MS;
+  const moved = _bestFix && distanceMeters(_bestFix, rawFix) > GPS_BEST_FIX_MOVE_M;
+  if (expired || moved || accuracy <= _bestFix.accuracy) {
+    _bestFix = rawFix;
+  }
+
+  myPos = { lat: _bestFix.lat, lng: _bestFix.lng, accuracy: _bestFix.accuracy };
   gpsError = null;
   updateHud();
   renderRadar();
