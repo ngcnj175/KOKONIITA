@@ -98,7 +98,7 @@
     <footer class="bottombar">
       <button id="ar-btn" class="ghost-btn" type="button">AR</button>
       <button id="place-btn" class="place-btn" type="button">＋ 記憶を置く</button>
-      <button id="history-btn" class="ghost-btn" type="button">履歴</button>
+      <button id="history-btn" class="ghost-btn" type="button">マイページ</button>
     </footer>
   </section>
 
@@ -191,15 +191,19 @@
     </div>
   </section>
 
-  <!-- 履歴ボトムシート -->
+  <!-- マイページボトムシート -->
   <div id="history-sheet" class="sheet hidden" role="dialog" aria-modal="true">
     <div class="sheet-backdrop" id="history-backdrop"></div>
     <div class="sheet-panel">
       <div class="sheet-handle"></div>
       <header class="sheet-head">
-        <h2 class="sheet-title">置いた記憶</h2>
+        <h2 class="sheet-title">マイページ</h2>
         <button id="history-close" class="chip" type="button">閉じる</button>
       </header>
+      <div class="history-tabs" role="tablist">
+        <button id="history-tab-mine" class="history-tab active" type="button" role="tab" aria-selected="true">投稿</button>
+        <button id="history-tab-finds" class="history-tab" type="button" role="tab" aria-selected="false">お気に入り</button>
+      </div>
       <div id="history-list" class="history-list"></div>
       <p id="history-empty" class="history-empty dim hidden">まだ記憶は置かれていません</p>
     </div>

@@ -985,6 +985,31 @@ button.primary { background: var(--ink); color: #fff; border: 1px solid var(--in
   font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
 }
 
+.history-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px 12px 8px;
+  border-bottom: 1px solid rgba(17, 17, 17, 0.06);
+}
+.history-tab {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  color: rgba(17, 17, 17, 0.55);
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.history-tab.active {
+  color: rgba(17, 17, 17, 0.95);
+  background: rgba(17, 17, 17, 0.06);
+}
+.history-tab:not(.active):hover {
+  background: rgba(17, 17, 17, 0.03);
+}
 .history-list {
   overflow-y: auto;
   padding: 8px 12px 24px;

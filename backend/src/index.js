@@ -295,6 +295,22 @@ app.get("/api/me/memories", async (c) => {
   return c.json({ memories: results.map(r => toMemoryRow(r, { includeKey: true, sessionUserId: s.userId })) });
 });
 
+// お気に入り（自分が find した投稿。public + keyed。private は他人のを見れないので除外）
+app.get("/api/me/finds", async (c) => {
+  const s = await requireSession(c);
+  if (!s) return c.json({ error: "unauthorized" }, 401);
+  const { results } = await c.env.DB.prepare(
+    `SELECT m.id, m.user_id, m.lat, m.lng, m.accuracy, m.note, m.visibility, m.access_key, m.created_at,
+            (SELECT COUNT(*) FROM finds f2 WHERE f2.memory_id = m.id) AS find_count,
+            1 AS found_by_me
+     FROM finds f
+     JOIN memories m ON m.id = f.memory_id
+     WHERE f.user_id = ? AND m.deleted_at IS NULL AND m.visibility IN ('public','keyed')
+     ORDER BY f.created_at DESC`
+  ).bind(s.userId).all();
+  return c.json({ memories: results.map(r => toMemoryRow(r, { includeKey: true, sessionUserId: s.userId })) });
+});
+
 // 画像配信（D1 BLOBから直接返す）
 app.get("/api/memories/:id/image", async (c) => {
   const id = c.req.param("id");
@@ -608,6 +624,12 @@ app.post("/api/memories/:id/find", async (c) => {
   if (!row) return c.json({ error: "not found" }, 404);
   if (row.user_id === s.userId) return c.json({ error: "cannot find own memory" }, 400);
   if (row.visibility === "private") return c.json({ error: "not found" }, 404);
+  // keyed 投稿は「現地でキーを保持している」証明としてキー一致を要求
+  if (row.visibility === "keyed") {
+    const key = normalizeKey(c.req.query("key"));
+    const keyMatches = key && row.access_key && key === row.access_key;
+    if (!keyMatches) return c.json({ error: "forbidden" }, 403);
+  }
   await c.env.DB.prepare(
     "INSERT OR IGNORE INTO finds(memory_id, user_id, created_at) VALUES(?, ?, ?)"
   ).bind(id, s.userId, Date.now()).run();

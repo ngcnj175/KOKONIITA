@@ -45,6 +45,7 @@ const TOKEN_STORAGE_KEY = "kokoniita.token.v1";
 let _publicCache = [];    // 全公開記憶
 let _myCache = [];        // 自分の記憶
 let _keyedCache = [];     // グループキーモードで取得した記憶
+let _findsCache = [];     // 自分が「見つけた」（お気に入り）記憶
 let _currentUser = null;  // {id, name, email, picture} | null
 
 // レーダーの表示レイヤー（複数ON可）。デフォルトは public のみ ON。
@@ -129,6 +130,16 @@ async function refreshMyMemories() {
     _myCache = (j.memories || []).map(normalizeApiMemory);
   } catch (e) { console.warn("refreshMyMemories", e); }
 }
+async function refreshMyFinds() {
+  if (!_currentUser) { _findsCache = []; return; }
+  try {
+    const r = await apiFetch("/api/me/finds");
+    if (r.status === 401) { _currentUser = null; _findsCache = []; updateUserChip(); return; }
+    if (!r.ok) return;
+    const j = await r.json();
+    _findsCache = (j.memories || []).map(normalizeApiMemory);
+  } catch (e) { console.warn("refreshMyFinds", e); }
+}
 async function refreshMe() {
   try {
     const r = await apiFetch("/api/me");
@@ -211,16 +222,36 @@ async function removeMemory(id) {
 }
 
 async function toggleFindMemory(id, next) {
-  const r = await apiFetch(`/api/memories/${id}/find`, { method: next ? "POST" : "DELETE" });
+  // keyed 投稿への find はサーバー側で ?key= 一致を要求するので、キャッシュから探して付ける
+  let path = `/api/memories/${id}/find`;
+  const candidate = [..._publicCache, ..._keyedCache, ..._findsCache].find(x => x.id === id);
+  if (candidate && candidate.visibility === "keyed") {
+    // accessKey は /api/me/finds 経由なら直接載る。/api/memories?key=xxx 経由は
+    // imageUrl に ?key= が埋まっているので取り出す。
+    let key = candidate.accessKey || null;
+    if (!key && typeof candidate.imageUrl === "string") {
+      const m = candidate.imageUrl.match(/[?&]key=([^&]+)/);
+      if (m) key = decodeURIComponent(m[1]);
+    }
+    if (key) path += `?key=${encodeURIComponent(key)}`;
+  }
+  const r = await apiFetch(path, { method: next ? "POST" : "DELETE" });
   if (r.status === 401) throw new Error("unauthorized");
   if (r.status === 400) throw new Error("bad request");
+  if (r.status === 403) throw new Error("forbidden");
   if (r.status === 404) throw new Error("not found");
   if (!r.ok) throw new Error("find failed");
   const j = await r.json();
   // 全キャッシュに反映
-  for (const arr of [_publicCache, _myCache, _keyedCache]) {
+  for (const arr of [_publicCache, _myCache, _keyedCache, _findsCache]) {
     const m = arr.find(x => x.id === id);
     if (m) { m.findCount = j.findCount; m.foundByMe = j.foundByMe; }
+  }
+  // お気に入り一覧に追加/削除
+  if (j.foundByMe && candidate && !_findsCache.some(x => x.id === id)) {
+    _findsCache.unshift({ ...candidate, foundByMe: true, findCount: j.findCount });
+  } else if (!j.foundByMe) {
+    _findsCache = _findsCache.filter(x => x.id !== id);
   }
   return j;
 }
@@ -703,10 +734,13 @@ function renderRadar() {
   for (const c of clusters) {
     const count = c.memories.length;
     const isCluster = count > 1;
-    // クラスタ内に20m以内があれば近距離扱い
-    const hasNear = c.memories.some(m =>
-      distanceMeters(myPos, { lat: m.lat, lng: m.lng }) <= UNLOCK_RADIUS_M
-    );
+    // クラスタ内に「解放可能」なものがあれば near 扱い
+    // (20m以内 / 自分の投稿 / お気に入り済みkeyed は距離無視で解放)
+    const isUnlockable = (m) =>
+      (_currentUser && m.userId === _currentUser.id) ||
+      (m.foundByMe && m.visibility === "keyed") ||
+      distanceMeters(myPos, { lat: m.lat, lng: m.lng }) <= UNLOCK_RADIUS_M;
+    const hasNear = c.memories.some(isUnlockable);
     const allPrivateMine = _currentUser && c.memories.every(m =>
       m.visibility === "private" && m.userId === _currentUser.id
     );
@@ -737,10 +771,10 @@ function renderRadar() {
     if (hasNear) {
       dot.addEventListener("click", (ev) => {
         ev.stopPropagation();
-        // 20m 以内のもの全てを距離順で開く（スワイプで切替可）
+        // 解放可能なもの全てを距離順で開く（スワイプで切替可）
         const near = c.memories
           .map(m => ({ m, d: distanceMeters(myPos, { lat: m.lat, lng: m.lng }) }))
-          .filter(x => x.d <= UNLOCK_RADIUS_M)
+          .filter(x => isUnlockable(x.m))
           .sort((a, b) => a.d - b.d)
           .map(x => x.m);
         if (near.length) openViewer(near[0], near);
@@ -1567,8 +1601,11 @@ function renderArFrame() {
       el.dataset.stage = stage;
     }
 
-    // タップ処理は近距離時のみ
-    el.onclick = stage === "ar-near" ? () => onArItemTap(m, dist) : null;
+    // タップ処理: 近距離 or 自分の投稿 or お気に入り済みkeyed（距離無視で解放）
+    const alwaysUnlocked =
+      (_currentUser && m.userId === _currentUser.id) ||
+      (m.foundByMe && m.visibility === "keyed");
+    el.onclick = (stage === "ar-near" || alwaysUnlocked) ? () => onArItemTap(m, dist) : null;
 
     // サイズ・距離・位置更新
     el.style.width = `${size}px`;
@@ -1591,21 +1628,48 @@ function renderArFrame() {
 }
 
 function onArItemTap(m, dist) {
-  if (dist > AR_NEAR_MAX_M) return; // 20m以内のみ解放
+  const alwaysUnlocked =
+    (_currentUser && m.userId === _currentUser.id) ||
+    (m.foundByMe && m.visibility === "keyed");
+  if (!alwaysUnlocked && dist > AR_NEAR_MAX_M) return; // 20m以内のみ解放
   openViewer(m);
 }
 
-// ---------- 履歴（ボトムシート） ----------
+// ---------- マイページ（ボトムシート） ----------
+let _historyTab = "mine"; // "mine" | "finds"
+
 async function openHistory() {
   if (!_currentUser) {
-    if (confirm("履歴を見るにはGoogleでログインが必要です。ログインしますか？")) goToLogin();
+    if (confirm("マイページを見るにはGoogleでログインが必要です。ログインしますか？")) goToLogin();
     return;
   }
-  await refreshMyMemories();
+  await refreshCurrentHistoryTab();
+  updateHistoryTabsUI();
   renderHistoryList();
   const sheet = $("history-sheet");
   sheet.classList.remove("hidden");
   requestAnimationFrame(() => sheet.classList.add("open"));
+}
+async function refreshCurrentHistoryTab() {
+  if (_historyTab === "finds") await refreshMyFinds();
+  else await refreshMyMemories();
+}
+function updateHistoryTabsUI() {
+  const t1 = $("history-tab-mine");
+  const t2 = $("history-tab-finds");
+  if (!t1 || !t2) return;
+  const isMine = _historyTab === "mine";
+  t1.classList.toggle("active", isMine);
+  t2.classList.toggle("active", !isMine);
+  t1.setAttribute("aria-selected", String(isMine));
+  t2.setAttribute("aria-selected", String(!isMine));
+}
+async function switchHistoryTab(next) {
+  if (_historyTab === next) return;
+  _historyTab = next;
+  updateHistoryTabsUI();
+  await refreshCurrentHistoryTab();
+  renderHistoryList();
 }
 function closeHistory() {
   const sheet = $("history-sheet");
@@ -1616,9 +1680,14 @@ function closeHistory() {
 function renderHistoryList() {
   const list = $("history-list");
   const empty = $("history-empty");
-  const memories = loadMyMemories().sort((a, b) => b.createdAt - a.createdAt);
+  const isFindsTab = _historyTab === "finds";
+  const source = isFindsTab ? _findsCache : loadMyMemories();
+  const memories = source.slice().sort((a, b) => b.createdAt - a.createdAt);
   list.innerHTML = "";
   if (memories.length === 0) {
+    empty.textContent = isFindsTab
+      ? "まだお気に入りはありません"
+      : "まだ記憶は置かれていません";
     empty.classList.remove("hidden");
     return;
   }
@@ -1633,7 +1702,7 @@ function renderHistoryList() {
     const delBtn = document.createElement("button");
     delBtn.className = "history-delete";
     delBtn.type = "button";
-    delBtn.textContent = "回収";
+    delBtn.textContent = isFindsTab ? "解除" : "回収";
 
     const item = document.createElement("div");
     item.className = "history-item";
@@ -1676,7 +1745,14 @@ function renderHistoryList() {
     body.appendChild(meta);
     // 可視性トグル / 合言葉表示ボタン（スワイプ・タップと干渉しないよう pointerdown を止める）
     let rightControl;
-    if (m.visibility === "keyed") {
+    if (isFindsTab) {
+      // お気に入りタブ: 種別アイコンだけ静的に表示（他人の投稿なので可視性トグルはしない）
+      const icon = document.createElement("span");
+      icon.className = "history-visibility-icon";
+      icon.setAttribute("aria-hidden", "true");
+      icon.innerHTML = VIS_ICON_SVG[m.visibility === "keyed" ? "keyed" : "public"];
+      rightControl = icon;
+    } else if (m.visibility === "keyed") {
       const keyBtn = document.createElement("button");
       keyBtn.type = "button";
       keyBtn.className = "history-keybtn";
@@ -1691,43 +1767,46 @@ function renderHistoryList() {
       });
       rightControl = keyBtn;
     }
-    const visLabel = document.createElement("label");
-    visLabel.className = "history-visibility";
-    visLabel.title = "プライベート";
-    if (m.visibility === "keyed") visLabel.classList.add("invisible");
-    const visInput = document.createElement("input");
-    visInput.type = "checkbox";
-    visInput.checked = m.visibility === "private";
-    const visIcon = document.createElement("span");
-    visIcon.className = "history-visibility-icon";
-    visIcon.setAttribute("aria-hidden", "true");
-    visIcon.innerHTML = visInput.checked ? VIS_ICON_SVG.private : VIS_ICON_SVG.public;
-    visLabel.appendChild(visInput);
-    visLabel.appendChild(visIcon);
-    const stopBubble = (e) => e.stopPropagation();
-    visLabel.addEventListener("pointerdown", stopBubble);
-    visLabel.addEventListener("click", stopBubble);
-    visInput.addEventListener("change", async (e) => {
-      e.stopPropagation();
-      const next = visInput.checked ? "private" : "public";
-      visInput.disabled = true;
-      try {
-        await updateMemoryVisibility(m.id, next);
-        m.visibility = next;
-        visIcon.innerHTML = next === "private" ? VIS_ICON_SVG.private : VIS_ICON_SVG.public;
-        row.classList.toggle("is-private", next === "private");
-        renderRadar();
-      } catch (err) {
-        visInput.checked = !visInput.checked;
-        if (err.message === "unauthorized") {
-          if (confirm("ログインが必要です。ログインしますか？")) goToLogin();
-        } else {
-          showToast("変更に失敗しました");
+    let visLabel = null;
+    if (!isFindsTab && !rightControl) {
+      visLabel = document.createElement("label");
+      visLabel.className = "history-visibility";
+      visLabel.title = "プライベート";
+      if (m.visibility === "keyed") visLabel.classList.add("invisible");
+      const visInput = document.createElement("input");
+      visInput.type = "checkbox";
+      visInput.checked = m.visibility === "private";
+      const visIcon = document.createElement("span");
+      visIcon.className = "history-visibility-icon";
+      visIcon.setAttribute("aria-hidden", "true");
+      visIcon.innerHTML = visInput.checked ? VIS_ICON_SVG.private : VIS_ICON_SVG.public;
+      visLabel.appendChild(visInput);
+      visLabel.appendChild(visIcon);
+      const stopBubble = (e) => e.stopPropagation();
+      visLabel.addEventListener("pointerdown", stopBubble);
+      visLabel.addEventListener("click", stopBubble);
+      visInput.addEventListener("change", async (e) => {
+        e.stopPropagation();
+        const next = visInput.checked ? "private" : "public";
+        visInput.disabled = true;
+        try {
+          await updateMemoryVisibility(m.id, next);
+          m.visibility = next;
+          visIcon.innerHTML = next === "private" ? VIS_ICON_SVG.private : VIS_ICON_SVG.public;
+          row.classList.toggle("is-private", next === "private");
+          renderRadar();
+        } catch (err) {
+          visInput.checked = !visInput.checked;
+          if (err.message === "unauthorized") {
+            if (confirm("ログインが必要です。ログインしますか？")) goToLogin();
+          } else {
+            showToast("変更に失敗しました");
+          }
+        } finally {
+          visInput.disabled = false;
         }
-      } finally {
-        visInput.disabled = false;
-      }
-    });
+      });
+    }
 
     item.appendChild(img);
     item.appendChild(body);
@@ -1739,6 +1818,21 @@ function renderHistoryList() {
     row.appendChild(swipe);
 
     attachHistorySwipe(item, swipe, () => {
+      if (isFindsTab) {
+        if (!confirm("お気に入りから解除しますか？")) {
+          swipe.classList.remove("revealed");
+          return;
+        }
+        toggleFindMemory(m.id, false).then(() => {
+          renderHistoryList();
+          renderRadar();
+        }).catch((e) => {
+          if (e.message === "unauthorized") {
+            if (confirm("ログインが必要です。ログインしますか？")) goToLogin();
+          } else showToast("解除に失敗しました");
+        });
+        return;
+      }
       if (!confirm("この記憶を回収しますか？")) {
         swipe.classList.remove("revealed");
         return;
@@ -1746,7 +1840,17 @@ function renderHistoryList() {
       deleteMemoryWithFeedback(m.id, {
         onSuccess: () => { renderHistoryList(); renderRadar(); },
       });
-    }, () => {
+    }, async () => {
+      if (isFindsTab) {
+        // 元写真が削除されていないか事前チェック（サーバー側の finds は
+        // deleted_at IS NULL でフィルタ済みなので、再取得して残っているか見る）
+        await refreshMyFinds();
+        if (!_findsCache.some(x => x.id === m.id)) {
+          showToast("この写真は削除されました");
+          renderHistoryList();
+          return;
+        }
+      }
       closeHistory();
       setTimeout(() => openViewer(m), 320);
     });
@@ -1877,7 +1981,9 @@ function renderViewerAt(idx) {
   if (!m) return;
   _viewerMemory = m;
   const dist = myPos ? distanceMeters(myPos, { lat: m.lat, lng: m.lng }) : Infinity;
-  const unlocked = dist <= UNLOCK_RADIUS_M;
+  const isOwn = !!(_currentUser && m.userId === _currentUser.id);
+  const favoritedKeyed = !!(m.foundByMe && m.visibility === "keyed");
+  const unlocked = isOwn || favoritedKeyed || dist <= UNLOCK_RADIUS_M;
 
   $("viewer-locked").classList.toggle("hidden", unlocked);
   $("viewer-open").classList.toggle("hidden", !unlocked);
@@ -2246,6 +2352,8 @@ document.addEventListener("DOMContentLoaded", () => {
   $("history-btn").addEventListener("click", openHistory);
   $("history-close").addEventListener("click", closeHistory);
   $("history-backdrop").addEventListener("click", closeHistory);
+  $("history-tab-mine")?.addEventListener("click", () => switchHistoryTab("mine"));
+  $("history-tab-finds")?.addEventListener("click", () => switchHistoryTab("finds"));
   $("ar-btn").addEventListener("click", openAR);
   $("ar-back").addEventListener("click", closeAR);
   $("ar-error-back").addEventListener("click", closeAR);
