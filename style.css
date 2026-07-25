@@ -171,6 +171,7 @@ html, body {
 .place-fab__label {
   font-size: 11px;
   letter-spacing: 0.12em;
+  text-indent: 0.12em;
   color: var(--ink);
 }
 .place-fab:active:not(:disabled) .place-fab__icon { transform: translateY(1px); }
