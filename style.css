@@ -159,7 +159,9 @@ html, body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  box-shadow:
+    0 0 0 4px #d9d9d9,
+    0 4px 12px rgba(0, 0, 0, 0.18);
   transition: transform 0.1s;
 }
 .place-fab__label {
