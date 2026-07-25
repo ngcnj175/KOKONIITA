@@ -52,8 +52,12 @@
       </div>
       <div id="range-label" class="range-chip" aria-live="polite">500m</div>
       <div class="range-zoom" role="group" aria-label="表示範囲">
-        <button id="range-up" class="range-zoom-btn" type="button" aria-label="広く表示">▲</button>
-        <button id="range-down" class="range-zoom-btn" type="button" aria-label="狭く表示">▼</button>
+        <button id="range-up" class="range-zoom-btn" type="button" aria-label="広く表示">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 6 20 18H4z" fill="#fff"/></svg>
+        </button>
+        <button id="range-down" class="range-zoom-btn" type="button" aria-label="狭く表示">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 18 4 6h16z" fill="#fff"/></svg>
+        </button>
       </div>
       <div id="radar-map" class="radar-map" aria-hidden="true"></div>
       <svg id="radar" viewBox="-100 -100 200 200" preserveAspectRatio="xMidYMid meet">

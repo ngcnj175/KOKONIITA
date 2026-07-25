@@ -410,10 +410,8 @@ html, body {
   background: #c9c9c9;
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
-  font-size: 22px;
   line-height: 1;
   color: #fff;
-  text-shadow: 0 1px 2px rgba(90, 90, 90, 0.9), 0 0 1px rgba(90, 90, 90, 0.6);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -422,6 +420,9 @@ html, body {
   transition: transform 0.08s, opacity 0.15s;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+}
+.range-zoom-btn svg {
+  filter: drop-shadow(0 1px 1.5px rgba(90, 90, 90, 0.9));
 }
 .range-zoom-btn:active:not(:disabled) { transform: scale(0.92); }
 .range-zoom-btn:disabled {
