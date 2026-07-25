@@ -164,6 +164,10 @@ html, body {
   box-sizing: content-box;
   transition: transform 0.1s;
 }
+.place-fab__icon svg {
+  width: 32px;
+  height: 32px;
+}
 .place-fab__label {
   font-size: 11px;
   letter-spacing: 0.12em;
