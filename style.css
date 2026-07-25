@@ -388,7 +388,7 @@ html, body {
   pointer-events: none;
   cursor: default;
   font-size: 13px;
-  color: #ff7a1a;
+  color: #ff5a00;
   font-weight: 500;
 }
 
@@ -447,7 +447,7 @@ html, body {
   cursor: default;
 }
 .memory-dot.near {
-  fill: #ff7a1a;
+  fill: #ff5a00;
   cursor: pointer;
   filter: drop-shadow(0 0 3px rgba(255, 122, 26, 0.7));
   animation: near-pulse 1.8s ease-in-out infinite;
@@ -462,8 +462,8 @@ html, body {
   stroke-width: 0.5;
 }
 .memory-dot.cluster.near {
-  fill: #ff7a1a;
-  stroke: #ff7a1a;
+  fill: #ff5a00;
+  stroke: #ff5a00;
 }
 /* 自分だけに表示中の記憶（レーダー上は青） */
 .memory-dot.private {
