@@ -159,9 +159,9 @@ html, body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow:
-    0 0 0 4px #d9d9d9,
-    0 4px 12px rgba(0, 0, 0, 0.18);
+  border: 6px solid #c9c9c9;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  box-sizing: content-box;
   transition: transform 0.1s;
 }
 .place-fab__label {
