@@ -103,20 +103,6 @@ html, body {
   justify-content: center;
   gap: 28px;
 }
-.ghost-btn {
-  background: transparent;
-  color: var(--ink);
-  border: 1px solid var(--ink);
-  padding: 12px 0;
-  min-width: 72px;
-  border-radius: 999px;
-  font-family: inherit;
-  font-size: 13px;
-  letter-spacing: 0.15em;
-  cursor: pointer;
-  text-align: center;
-}
-.ghost-btn:active { background: rgba(17, 17, 17, 0.06); }
 .place-btn {
   background: var(--ink);
   color: #fff;
@@ -130,8 +116,7 @@ html, body {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 .place-btn.wide { width: 100%; padding: 14px; }
-.place-btn:disabled,
-.place-btn.looks-disabled {
+.place-btn:disabled {
   background: #d0d0d0;
   color: #888;
   box-shadow: none;
@@ -411,8 +396,6 @@ html, body {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
-  line-height: 1;
-  color: #fff;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -449,7 +432,7 @@ html, body {
 .memory-dot.near {
   fill: #ff8500;
   cursor: pointer;
-  filter: drop-shadow(0 0 3px rgba(255, 122, 26, 0.7));
+  filter: drop-shadow(0 0 3px rgba(255, 133, 0, 0.7));
   animation: near-pulse 1.8s ease-in-out infinite;
 }
 @keyframes near-pulse {
