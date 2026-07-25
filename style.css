@@ -99,9 +99,9 @@ html, body {
   padding: 16px 14px 24px;
   border-top: 1px solid rgba(17, 17, 17, 0.1);
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
-  gap: 12px;
+  gap: 28px;
 }
 .ghost-btn {
   background: transparent;
@@ -175,6 +175,14 @@ html, body {
   color: var(--ink);
 }
 #place-btn .place-fab__label { padding-left: 6px; }
+#place-btn .place-fab__icon {
+  width: 67px;
+  height: 67px;
+}
+#place-btn .place-fab__icon svg {
+  width: 38px;
+  height: 38px;
+}
 .place-fab:active:not(:disabled) .place-fab__icon { transform: translateY(1px); }
 .place-fab:disabled .place-fab__icon,
 .place-fab.looks-disabled .place-fab__icon {
