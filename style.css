@@ -138,6 +138,46 @@ html, body {
 }
 .place-btn:active:not(:disabled) { transform: translateY(1px); }
 
+.place-fab {
+  background: transparent;
+  border: none;
+  padding: 0;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  color: var(--ink);
+  font-family: inherit;
+}
+.place-fab__icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  transition: transform 0.1s;
+}
+.place-fab__label {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--ink);
+}
+.place-fab:active:not(:disabled) .place-fab__icon { transform: translateY(1px); }
+.place-fab:disabled .place-fab__icon,
+.place-fab.looks-disabled .place-fab__icon {
+  background: #d0d0d0;
+  box-shadow: none;
+}
+.place-fab:disabled .place-fab__label,
+.place-fab.looks-disabled .place-fab__label {
+  color: #888;
+}
+
 /* ---------- レーダー ---------- */
 .radar-wrap {
   flex: 1;

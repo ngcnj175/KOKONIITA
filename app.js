@@ -1640,7 +1640,7 @@ let _historyTab = "mine"; // "mine" | "finds"
 
 async function openHistory() {
   if (!_currentUser) {
-    if (confirm("マイページを見るにはGoogleでログインが必要です。ログインしますか？")) goToLogin();
+    if (confirm("履歴を見るにはGoogleでログインが必要です。ログインしますか？")) goToLogin();
     return;
   }
   await refreshCurrentHistoryTab();
