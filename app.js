@@ -668,8 +668,8 @@ function initRadarMap() {
         } catch {}
       } else if (isLand) {
         try {
-          if (l.type === "fill") _map.setPaintProperty(l.id, "fill-color", "#dcdcdc");
-          if (l.type === "background") _map.setPaintProperty(l.id, "background-color", "#dcdcdc");
+          if (l.type === "fill") _map.setPaintProperty(l.id, "fill-color", "#D7E2F4");
+          if (l.type === "background") _map.setPaintProperty(l.id, "background-color", "#D7E2F4");
         } catch {}
       }
     }
