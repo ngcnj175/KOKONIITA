@@ -1315,7 +1315,7 @@ button.ghost.danger { color: var(--danger); border-color: rgba(167, 68, 98, 0.4)
 
 .key-bar {
   position: absolute;
-  top: 62px;
+  top: 88px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 3;
