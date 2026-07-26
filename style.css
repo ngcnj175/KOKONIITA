@@ -141,13 +141,13 @@ html, body {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: #718CFB;
+  background: #619FFE;
   color: #fff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 6px solid #c9c9c9;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  border: 6px solid #C2D2EF;
+  box-shadow: 0 4px 12px rgba(0, 65, 185, 0.20);
   box-sizing: content-box;
   transition: transform 0.1s;
 }
@@ -159,7 +159,7 @@ html, body {
   font-size: 11px;
   letter-spacing: 0.12em;
   text-indent: 0.12em;
-  color: var(--ink);
+  color: #0F141D;
 }
 #place-btn .place-fab__label { padding-left: 6px; }
 #place-btn .place-fab__icon {
@@ -173,25 +173,25 @@ html, body {
 .place-fab:active:not(:disabled) .place-fab__icon { transform: translateY(1px); }
 .place-fab:disabled .place-fab__icon,
 .place-fab.looks-disabled .place-fab__icon {
-  background: #d0d0d0;
+  background: #CAD8F1;
   box-shadow: none;
 }
 .place-fab:disabled .place-fab__label,
 .place-fab.looks-disabled .place-fab__label {
-  color: #888;
+  color: #789CDB;
 }
 
 /* 「記憶を置く」: タップ可能時は N と同じオレンジで強調 */
 #place-btn:not(:disabled):not(.looks-disabled) .place-fab__icon {
-  background: #718CFB;
+  background: #619FFE;
 }
 #place-btn:not(:disabled):not(.looks-disabled) .place-fab__icon svg path[stroke] {
-  stroke: #718CFB;
+  stroke: #619FFE;
 }
 /* 「記憶を置く」: タップ不可時は + を外周帯と同色に沈める */
 #place-btn:disabled .place-fab__icon svg path[stroke],
 #place-btn.looks-disabled .place-fab__icon svg path[stroke] {
-  stroke: #c9c9c9;
+  stroke: #C2D2EF;
 }
 
 /* ---------- レーダー ---------- */
@@ -1028,6 +1028,7 @@ button.primary { background: var(--ink); color: #fff; border: 1px solid var(--in
 .sheet-panel {
   position: absolute;
   left: 0; right: 0; bottom: 0;
+  height: 85vh;
   max-height: 85vh;
   background: #fff;
   border-top-left-radius: 16px;
