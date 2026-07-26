@@ -68,7 +68,8 @@
             <stop offset="1" stop-color="#ff8500" stop-opacity="1" />
           </linearGradient>
         </defs>
-        <!-- 外周リング（奥ほど薄く=細く見える）: マップの pitch 72° と整合するようさらに scaleY -->
+        <!-- 外周リング: 親 scaleY(0.6) との合成でマップ地面の見かけ縦圧縮と一致させる（0.6×0.917≈0.55）。
+             app.js の edge ドット y 倍率 (0.917) と一致させること。 -->
         <g class="radar-rings" transform="scale(1, 0.917)">
           <circle r="98" class="ring outer-depth" />
         </g>

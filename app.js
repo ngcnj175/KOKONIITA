@@ -566,6 +566,7 @@ function updateRadarPositions() {
     if (p) {
       const len = Math.hypot(p.x, p.y);
       if (edge) {
+        // y の 0.917 は index.html の .radar-rings scale(1, 0.917) と対。両方を同時に変えること。
         const n = len || 1;
         x = p.x / n * 103; y = p.y / n * 103 * 0.917;
       } else if (len > 98) {
