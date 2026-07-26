@@ -782,7 +782,7 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.7);
   padding: 20px;
 }
 .locked-card {
