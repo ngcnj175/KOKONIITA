@@ -613,14 +613,14 @@ html, body {
 /* flip 時に表裏サイズを完全一致させる */
 .polaroid-flip .polaroid-frame.small {
   padding: 11px 11px 44px;
-  width: 286px;
+  width: 312px;
   min-height: 0;
   transform: none;
   cursor: pointer;
 }
 .polaroid-flip .polaroid-frame.small img {
-  width: 264px;
-  height: 264px;
+  width: 290px;
+  height: 290px;
   object-fit: cover;
   max-width: none;
   max-height: none;
@@ -633,8 +633,8 @@ html, body {
   min-height: 0;
 }
 .polaroid-flip .polaroid-frame.small.back .handwritten {
-  width: 264px;
-  min-height: 264px;
+  width: 290px;
+  min-height: 290px;
   display: flex;
   align-items: center;
   justify-content: center;
