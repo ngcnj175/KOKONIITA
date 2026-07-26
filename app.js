@@ -612,7 +612,7 @@ function initRadarMap() {
     style: "https://tiles.openfreemap.org/styles/positron",
     center: [139.767, 35.681], // 仮: 東京駅
     zoom: 15,
-    pitch: 52,
+    pitch: 23.5,
     interactive: false,
     attributionControl: false,
     pitchWithRotate: false,
