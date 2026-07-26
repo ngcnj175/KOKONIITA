@@ -479,14 +479,14 @@ html, body {
 
 .radar-hud {
   position: absolute;
-  bottom: 8px;
+  bottom: 40px;
   left: 0;
   right: 0;
   text-align: center;
   pointer-events: none;
 }
 .hud-line {
-  margin: 0 0 8px;
+  margin: 0 0 32px;
   font-size: 12px;
   letter-spacing: 0.1em;
   color: var(--dim);
