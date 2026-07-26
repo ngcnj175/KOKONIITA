@@ -405,9 +405,7 @@ html, body {
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
-.range-zoom-btn svg {
-  filter: drop-shadow(0 1px 1.5px rgba(90, 90, 90, 0.9));
-}
+.range-zoom-btn svg { display: block; }
 .range-zoom-btn:active:not(:disabled) {
   transform: scale(0.92);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
