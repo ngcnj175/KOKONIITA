@@ -505,14 +505,22 @@ html, body {
   margin: 0;
 }
 .hud-step {
-  width: 6px; height: 6px;
+  width: 8px; height: 8px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.22);
-  transition: background 260ms ease, box-shadow 260ms ease;
+  background: transparent;
+  border: 1.4px solid var(--dim);
+  box-sizing: border-box;
+  opacity: 0.65;
+  transition: background 260ms ease, border-color 260ms ease,
+              opacity 260ms ease, box-shadow 260ms ease;
 }
 .hud-steps[data-step="1"] .hud-step:nth-child(-n+1),
 .hud-steps[data-step="2"] .hud-step:nth-child(-n+2),
-.hud-steps[data-step="3"] .hud-step { background: #7BC96F; }
+.hud-steps[data-step="3"] .hud-step {
+  background: #7BC96F;
+  border-color: #7BC96F;
+  opacity: 1;
+}
 .hud-steps[data-step="3"] .hud-step { box-shadow: 0 0 6px rgba(123, 201, 111, 0.55); }
 /* 取得中(=0個緑)は3つのドットが順にゆっくり点滅 */
 .hud-steps[data-step="0"] .hud-step {
