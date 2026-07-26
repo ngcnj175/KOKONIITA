@@ -379,8 +379,11 @@ html, body {
   position: absolute;
   top: 50%;
   left: 50%;
-  /* 外周リング(視覚的に約 65% の位置)のさらに少し上に。Nマーカーと重ならない程度 */
-  transform: translate(-50%, calc(max(-44vw, -44vh, -250px) * 0.65 - 22px));
+  /* 拡大縮小ボタン列（.range-zoom）の直上、列の中心に揃える */
+  transform: translate(
+    calc(min(44vw, 44vh, 250px) - 22px - 50%),
+    calc(min(26vw, 26vh, 140px) - 6px - 100%)
+  );
   z-index: 2;
   min-width: 62px;
   text-align: center;
