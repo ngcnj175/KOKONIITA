@@ -74,8 +74,10 @@
         </g>
         <!-- 方位に合わせて回転するレイヤー（Nコンパスのみ） -->
         <g id="radar-rotate">
-          <!-- 北マーカー（自分の向き基準、回転する） -->
-          <text x="0" y="-90" class="compass-n" text-anchor="middle">N</text>
+          <!-- 北マーカー（自分の向き基準、回転する）: scaleY(0.6) を打ち消し、リング頂点のすぐ外へ配置 -->
+          <g transform="scale(1, 1.6667)">
+            <text x="0" y="-55" class="compass-n" text-anchor="middle">N</text>
+          </g>
         </g>
         <!-- 記憶ピン / 圏外インジケータ：mapの投影と同じ world 空間に置く -->
         <g id="memory-layer"></g>

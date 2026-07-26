@@ -567,7 +567,7 @@ function updateRadarPositions() {
       const len = Math.hypot(p.x, p.y);
       if (edge) {
         const n = len || 1;
-        x = p.x / n * 103; y = p.y / n * 103;
+        x = p.x / n * 103; y = p.y / n * 103 * 0.917;
       } else if (len > 98) {
         // 回転で境界を跨いだ点は外周にクランプして飛び出しを防ぐ
         x = p.x / len * 98; y = p.y / len * 98;
