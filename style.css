@@ -385,7 +385,7 @@ html, body {
   z-index: 2;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 14px;
 }
 .range-zoom-btn {
   width: 44px;
