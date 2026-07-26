@@ -373,7 +373,7 @@ html, body {
   pointer-events: none;
   cursor: default;
   font-size: 13px;
-  color: #ff8500;
+  color: #5cb81a;
   font-weight: 500;
 }
 
@@ -418,7 +418,7 @@ html, body {
 }
 
 .compass-n {
-  fill: var(--ink);
+  fill: #ff7a00;
   font-size: 8px;
   font-family: "Hiragino Kaku Gothic ProN", sans-serif;
   font-weight: 700;
