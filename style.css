@@ -782,7 +782,7 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(to bottom, rgba(10, 30, 80, 0.88), rgba(20, 50, 110, 0.85));
+  background: linear-gradient(to bottom, rgba(12, 20, 70, 0.92), rgba(50, 40, 100, 0.88));
   padding: 20px;
 }
 .locked-card {
