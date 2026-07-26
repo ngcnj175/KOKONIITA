@@ -346,8 +346,8 @@ html, body {
   filter: grayscale(1);
   pointer-events: none;
   z-index: 0;
-  -webkit-mask-image: radial-gradient(circle closest-side at center, #000 80%, rgba(0,0,0,0.4) 90%, transparent 100%);
-  mask-image: radial-gradient(circle closest-side at center, #000 80%, rgba(0,0,0,0.4) 90%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 50% 30.83% at center, #000 80%, rgba(0,0,0,0.4) 90%, transparent 100%);
+  mask-image: radial-gradient(ellipse 50% 30.83% at center, #000 80%, rgba(0,0,0,0.4) 90%, transparent 100%);
 }
 .radar-map .maplibregl-canvas { outline: none; }
 .radar-map .maplibregl-ctrl-attrib,
