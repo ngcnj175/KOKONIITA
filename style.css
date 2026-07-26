@@ -141,7 +141,7 @@ html, body {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: #555555;
+  background: #718CFB;
   color: #fff;
   display: inline-flex;
   align-items: center;
@@ -179,6 +179,19 @@ html, body {
 .place-fab:disabled .place-fab__label,
 .place-fab.looks-disabled .place-fab__label {
   color: #888;
+}
+
+/* 「記憶を置く」: タップ可能時は N と同じオレンジで強調 */
+#place-btn:not(:disabled):not(.looks-disabled) .place-fab__icon {
+  background: #ff7a00;
+}
+#place-btn:not(:disabled):not(.looks-disabled) .place-fab__icon svg path[stroke] {
+  stroke: #ff7a00;
+}
+/* 「記憶を置く」: タップ不可時は + を外周帯と同色に沈める */
+#place-btn:disabled .place-fab__icon svg path[stroke],
+#place-btn.looks-disabled .place-fab__icon svg path[stroke] {
+  stroke: #c9c9c9;
 }
 
 /* ---------- レーダー ---------- */
