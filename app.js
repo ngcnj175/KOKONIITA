@@ -476,8 +476,12 @@ function updateSkyMode() {
   body.classList.add(next);
 }
 function onPositionError(err) {
-  gpsError = err.message || "位置情報を取得できません";
-  $("hud-status").textContent = `位置情報エラー: ${gpsError}`;
+  gpsError = err?.message || "位置情報を取得できません";
+  const status = $("hud-status");
+  if (status) {
+    status.textContent = "現在位置を取得できません";
+    status.classList.remove("is-hidden");
+  }
   setGpsSteps(0);
   updatePlaceButtonState();
 }
@@ -966,14 +970,20 @@ function updateHud() {
   const status = $("hud-status");
   if (!status) return;
   if (!myPos) {
-    status.textContent = "位置取得中…";
     setGpsSteps(0);
+    status.textContent = "現在位置を取得中…";
+    status.classList.remove("is-hidden");
     return;
   }
-  const acc = Math.round(myPos.accuracy);
   const steps = gpsStepsForAccuracy(myPos.accuracy);
   setGpsSteps(steps);
-  status.textContent = steps === 3 ? `現在地 ±${acc}m` : `位置取得中… ±${acc}m`;
+  if (steps >= 3) {
+    // 精度が安定したら文字案内は消す
+    status.classList.add("is-hidden");
+  } else {
+    status.textContent = "空を仰いで、少し立ち止まって。";
+    status.classList.remove("is-hidden");
+  }
 }
 
 // ---------- レーダー範囲切替 ----------
@@ -1241,19 +1251,6 @@ function updatePlaceButtonState() {
   if (!btn) return;
   const disabled = !myPos || myPos.accuracy > GPS_ACCURACY_THRESHOLD_M;
   btn.classList.toggle("looks-disabled", disabled);
-  updateHudHint(disabled);
-}
-
-function updateHudHint(show) {
-  const hint = $("hud-hint");
-  if (!hint) return;
-  if (show) {
-    hint.classList.remove("hidden");
-    requestAnimationFrame(() => hint.classList.add("visible"));
-  } else {
-    hint.classList.remove("visible");
-    setTimeout(() => hint.classList.add("hidden"), 800);
-  }
 }
 
 async function downscaleImage(file, maxDim) {

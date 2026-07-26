@@ -486,30 +486,23 @@ html, body {
   pointer-events: none;
 }
 .hud-line {
-  margin: 2px 0;
-  font-size: 11px;
-  color: var(--dim);
-  letter-spacing: 0.05em;
-}
-
-.hud-hint {
   margin: 8px 0 0;
   font-size: 12px;
   letter-spacing: 0.1em;
   color: var(--dim);
-  opacity: 0;
-  transition: opacity 800ms ease;
   font-family: "Klee One", serif;
+  opacity: 0.85;
+  transition: opacity 800ms ease;
+  min-height: 1em;
 }
-.hud-hint.visible { opacity: 0.75; }
-.hud-hint.hidden { display: none; }
+.hud-line.is-hidden { opacity: 0; }
 
-/* 精度リング: 3個のドット。取得中は全部グレー、精度が上がるほど緑が増える */
+/* 精度リング: 3個のドット。取得中は全部グレー、精度が上がるほど左から緑になる */
 .hud-steps {
   display: flex;
   justify-content: center;
-  gap: 6px;
-  margin: 4px 0 0;
+  gap: 8px;
+  margin: 0;
 }
 .hud-step {
   width: 6px; height: 6px;
