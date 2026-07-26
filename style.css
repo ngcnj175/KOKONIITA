@@ -1,13 +1,9 @@
 :root {
   --bg: #ffffff;
-  --panel: #F4F7FC;
-  --paper: #ffffff;
   --ink: #0F141D;
   --line: #0F141D;
   --line-soft: rgba(15, 20, 29, 0.35);
   --dim: #698FCF;
-  --accent: #0F141D;
-  --accent-soft: rgba(15, 20, 29, 0.25);
   --danger: #A74462;
   /* オーバーレイ共通スクリム：夜空アーチ最上部（--sky-c9 / --sky-c8）に色味を合わせた紺〜濃紫のグラデ */
   --scrim-night: linear-gradient(to bottom, rgba(10, 23, 119, 0.55), rgba(43, 47, 169, 0.5));
@@ -368,7 +364,7 @@ html, body {
 .radar-map .maplibregl-ctrl-logo { display: none !important; }
 .ring {
   fill: none;
-  stroke: #0F141D;
+  stroke: var(--line);
   stroke-width: 0.5;
 }
 .ring.outer-depth {
@@ -441,7 +437,7 @@ html, body {
 }
 /* 記憶ピン（動的生成される circle にクラス付与） */
 .memory-dot {
-  fill: #0F141D;
+  fill: var(--ink);
   cursor: default;
 }
 .memory-dot.near {
@@ -455,8 +451,8 @@ html, body {
   50% { opacity: 0.55; }
 }
 .memory-dot.cluster {
-  fill: #0F141D;
-  stroke: #0F141D;
+  fill: var(--ink);
+  stroke: var(--ink);
   stroke-width: 0.5;
 }
 .memory-dot.cluster.near {
@@ -489,7 +485,7 @@ html, body {
   pointer-events: none;
 }
 .edge-arrow {
-  fill: rgba(15, 20, 29, 0.35);
+  fill: var(--line-soft);
 }
 
 .radar-hud {
@@ -504,7 +500,7 @@ html, body {
   margin: 0 0 32px;
   font-size: 12px;
   letter-spacing: 0.1em;
-  color: #698FCF;
+  color: var(--dim);
   font-family: "Klee One", serif;
   opacity: 0.85;
   transition: opacity 800ms ease;
@@ -522,7 +518,7 @@ html, body {
 .hud-step {
   width: 8px; height: 8px;
   border-radius: 50%;
-  background: #698FCF;
+  background: var(--dim);
   opacity: 0.55;
   transform-origin: 50% 50%;
   transition: background 260ms ease, opacity 260ms ease, box-shadow 260ms ease;
