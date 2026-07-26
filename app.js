@@ -2097,7 +2097,7 @@ function setupViewerSwipe() {
   const DOUBLE_TAP_MS = 280;
 
   const setTransform = (x) => {
-    inner.style.transform = x ? `rotate(-4deg) translateX(${x}px)` : "";
+    inner.style.transform = x ? `translateX(${x}px)` : "";
   };
   const cancelPendingEnd = () => {
     if (pendingEnd) {

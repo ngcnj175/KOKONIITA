@@ -552,7 +552,6 @@ html, body {
   padding: 12px 12px 44px;
   box-shadow: 0 10px 24px rgba(17, 17, 17, 0.22), 0 3px 6px rgba(17, 17, 17, 0.12);
   border: 1px solid rgba(17, 17, 17, 0.08);
-  transform: rotate(-4deg);
   width: fit-content;
   max-width: 100%;
   margin: 0 auto;
@@ -592,10 +591,9 @@ html, body {
   position: relative;
   transition: transform 0.7s cubic-bezier(0.4, 0.0, 0.2, 1);
   transform-style: preserve-3d;
-  transform: rotate(-4deg);
 }
 .polaroid-flip.flipped .flip-inner {
-  transform: rotate(-4deg) rotateY(180deg);
+  transform: rotateY(180deg);
 }
 .flip-face {
   backface-visibility: hidden;
@@ -654,7 +652,6 @@ html, body {
   white-space: pre-wrap;
   word-break: break-word;
   letter-spacing: 0.03em;
-  transform: rotate(-0.8deg);
 }
 .polaroid-frame img {
   display: block;
