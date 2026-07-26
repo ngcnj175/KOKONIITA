@@ -1256,7 +1256,7 @@ button.ghost.danger { color: var(--danger); border-color: rgba(178, 58, 58, 0.4)
 /* ---------- レーダーの表示モード切替 ---------- */
 .radar-mode {
   position: absolute;
-  top: 10px;
+  top: 22px;
   left: 50%;
   transform: translateX(-50%) scale(1.2);
   transform-origin: top center;
