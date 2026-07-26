@@ -128,9 +128,12 @@
       <button id="history-btn" class="place-fab" type="button" aria-label="マイページ">
         <span class="place-fab__icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" width="26" height="26">
-            <rect x="5" y="3" width="14" height="18" rx="1.8" fill="currentColor"/>
-            <rect x="6.5" y="4.5" width="11" height="10" rx="1" fill="#111"/>
-            <path d="M12 6.7 12.68 8.57 14.66 8.63 13.09 9.86 13.65 11.77 12 10.65 10.35 11.77 10.91 9.86 9.34 8.63 11.32 8.57Z" fill="currentColor" stroke="currentColor" stroke-width="0.4" stroke-linejoin="round"/>
+            <!-- ポラロイド白地: 下側の余白を厚めにするため縦長 -->
+            <rect x="5" y="2.5" width="14" height="19" rx="1.8" fill="currentColor"/>
+            <!-- 写真部分: 正方形 (11×11)、中心 (12, 9.5) -->
+            <rect x="6.5" y="4" width="11" height="11" rx="1" fill="#111"/>
+            <!-- 星: 写真の中心に配置 -->
+            <path d="M12 7.0 12.68 8.87 14.66 8.93 13.09 10.16 13.65 12.07 12 10.95 10.35 12.07 10.91 10.16 9.34 8.93 11.32 8.87Z" fill="currentColor" stroke="currentColor" stroke-width="0.4" stroke-linejoin="round"/>
           </svg>
         </span>
         <span class="place-fab__label">マイページ</span>
