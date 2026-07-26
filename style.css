@@ -141,7 +141,7 @@ html, body {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: var(--ink);
+  background: #555555;
   color: #fff;
   display: inline-flex;
   align-items: center;
