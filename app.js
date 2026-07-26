@@ -38,6 +38,10 @@ let _bestFix = null;   // {lat, lng, accuracy, timestamp} — 直近の最良精
 let gpsError = null;   // 位置情報エラー
 let heading = 0;       // 度、0=北、時計回り
 
+// 精度リング(3ドット)の点灯数: 0=取得中 / 1=粗い / 2=絞込中 / 3=安定
+// 3個未満で投函しようとすると既存の accuracy-prompt が案内する。
+const GPS_COARSE_THRESHOLD_M = 60;
+
 // ---------- API ----------
 const API_BASE = (window.KOKONIITA_CONFIG?.API_BASE || "").replace(/\/$/, "");
 const TOKEN_STORAGE_KEY = "kokoniita.token.v1";
@@ -474,11 +478,13 @@ function updateSkyMode() {
 function onPositionError(err) {
   gpsError = err.message || "位置情報を取得できません";
   $("hud-status").textContent = `位置情報エラー: ${gpsError}`;
+  setGpsSteps(0);
   updatePlaceButtonState();
 }
 function watchLocation() {
   if (!navigator.geolocation) {
     $("hud-status").textContent = "位置情報に非対応";
+    setGpsSteps(0);
     return;
   }
   navigator.geolocation.watchPosition(
@@ -486,6 +492,19 @@ function watchLocation() {
     onPositionError,
     { enableHighAccuracy: true, maximumAge: 3000, timeout: 15000 }
   );
+}
+
+// 精度リングの点灯数(0〜3)を DOM に反映
+function setGpsSteps(n) {
+  const el = $("hud-steps");
+  if (el) el.setAttribute("data-step", String(Math.max(0, Math.min(3, n))));
+}
+// 現在の精度からドット数を決める
+function gpsStepsForAccuracy(acc) {
+  if (!Number.isFinite(acc)) return 0;
+  if (acc <= GPS_ACCURACY_THRESHOLD_M) return 3;
+  if (acc <= GPS_COARSE_THRESHOLD_M)   return 2;
+  return 1;
 }
 // タブ復帰時に watchPosition の次の fix を待たず、キャッシュ fix を即座に反映する
 // （OAuth ポップアップから戻った直後などに HUD が「取得しています…」で止まる問題対策）
@@ -944,9 +963,17 @@ function commitRadarKey() {
 }
 
 function updateHud() {
-  if (!myPos) return;
+  const status = $("hud-status");
+  if (!status) return;
+  if (!myPos) {
+    status.textContent = "位置取得中…";
+    setGpsSteps(0);
+    return;
+  }
   const acc = Math.round(myPos.accuracy);
-  $("hud-status").textContent = `現在地取得 (±${acc}m)`;
+  const steps = gpsStepsForAccuracy(myPos.accuracy);
+  setGpsSteps(steps);
+  status.textContent = steps === 3 ? `現在地 ±${acc}m` : `位置取得中… ±${acc}m`;
 }
 
 // ---------- レーダー範囲切替 ----------

@@ -77,7 +77,7 @@
         <g id="radar-rotate">
           <!-- 北マーカー（自分の向き基準、回転する）: scaleY(0.6) を打ち消し、リング頂点のすぐ外へ配置 -->
           <g transform="scale(1, 1.4)">
-            <text x="0" y="-55" class="compass-n" text-anchor="middle">N</text>
+            <text x="0" y="-65.5" class="compass-n" text-anchor="middle">N</text>
           </g>
         </g>
         <!-- 記憶ピン / 圏外インジケータ：mapの投影と同じ world 空間に置く -->
@@ -97,7 +97,12 @@
       </svg>
 
       <div class="radar-hud">
-        <p id="hud-status" class="hud-line">位置情報を取得しています…</p>
+        <p id="hud-status" class="hud-line">位置取得中…</p>
+        <div id="hud-steps" class="hud-steps" data-step="0" aria-hidden="true">
+          <span class="hud-step"></span>
+          <span class="hud-step"></span>
+          <span class="hud-step"></span>
+        </div>
         <p id="hud-hint" class="hud-hint hidden">空を仰いで、少し立ち止まって。</p>
       </div>
     </div>
