@@ -507,30 +507,27 @@ html, body {
 .hud-step {
   width: 8px; height: 8px;
   border-radius: 50%;
-  background: transparent;
-  border: 1.4px solid var(--dim);
-  box-sizing: border-box;
-  opacity: 0.65;
-  transition: background 260ms ease, border-color 260ms ease,
-              opacity 260ms ease, box-shadow 260ms ease;
+  background: var(--dim);
+  opacity: 0.55;
+  transform-origin: 50% 50%;
+  transition: background 260ms ease, opacity 260ms ease, box-shadow 260ms ease;
 }
 .hud-steps[data-step="1"] .hud-step:nth-child(-n+1),
 .hud-steps[data-step="2"] .hud-step:nth-child(-n+2),
 .hud-steps[data-step="3"] .hud-step {
   background: #7BC96F;
-  border-color: #7BC96F;
   opacity: 1;
 }
 .hud-steps[data-step="3"] .hud-step { box-shadow: 0 0 6px rgba(123, 201, 111, 0.55); }
-/* 取得中(=0個緑)は3つのドットが順にゆっくり点滅 */
-.hud-steps[data-step="0"] .hud-step {
-  animation: hud-step-blink 1.4s ease-in-out infinite;
+/* 取得中(step=1 or 2)は、点灯済みの緑ドットだけを脈打たせる */
+.hud-steps[data-step="1"] .hud-step:nth-child(-n+1),
+.hud-steps[data-step="2"] .hud-step:nth-child(-n+2) {
+  animation: hud-step-breathe 1.4s ease-in-out infinite;
 }
-.hud-steps[data-step="0"] .hud-step:nth-child(2) { animation-delay: 0.15s; }
-.hud-steps[data-step="0"] .hud-step:nth-child(3) { animation-delay: 0.3s; }
-@keyframes hud-step-blink {
-  0%, 100% { opacity: 0.35; }
-  50%      { opacity: 1;    }
+.hud-steps[data-step="2"] .hud-step:nth-child(2) { animation-delay: 0.2s; }
+@keyframes hud-step-breathe {
+  0%, 100% { transform: scale(0.75); opacity: 0.75; }
+  50%      { transform: scale(1.25); opacity: 1;    }
 }
 
 .accuracy-card { text-align: center; }
