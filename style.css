@@ -1477,18 +1477,14 @@ button.ghost.danger { color: var(--danger); border-color: rgba(167, 68, 98, 0.4)
 
 /* ビューア下部のアクションボタン群（回収 / 通報 / 閉じる） */
 .viewer-actions {
-  margin-top: 56px;
+  margin-top: 40px;
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   gap: 10px;
   width: min(360px, 88vw);
 }
-.viewer-delete,
-.viewer-report,
-.viewer-close,
-.viewer-actions .star-btn {
+.viewer-delete {
   box-sizing: border-box;
   min-width: 96px;
   height: 34px;
@@ -1504,10 +1500,23 @@ button.ghost.danger { color: var(--danger); border-color: rgba(167, 68, 98, 0.4)
   -webkit-tap-highlight-color: transparent;
   transition: background 0.2s ease;
 }
-.viewer-delete:hover,
+.viewer-delete:hover { background: #F9FBFD; }
+.viewer-report,
+.viewer-close {
+  background: transparent;
+  border: none;
+  padding: 8px 4px;
+  color: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  transition: opacity 0.2s ease;
+}
 .viewer-report:hover,
-.viewer-close:hover,
-.viewer-actions .star-btn:hover { background: #F9FBFD; }
+.viewer-close:hover { opacity: 0.75; }
 .viewer-delete:focus,
 .viewer-report:focus,
 .viewer-close:focus,
@@ -1515,34 +1524,35 @@ button.ghost.danger { color: var(--danger); border-color: rgba(167, 68, 98, 0.4)
 .viewer-report:focus-visible,
 .viewer-close:focus-visible { outline: none; }
 
-/* ---------- 星ボタン（いいね / 将来のお気に入り兼用） ---------- */
+/* ---------- 星ボタン（お気に入り） ---------- */
 .star-btn {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 22px;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  padding: 0;
   background: rgba(255, 255, 255, 0.92);
   border: 1px solid rgba(15, 20, 29, 0.08);
-  border-radius: 999px;
+  border-radius: 50%;
   color: #2C3C56;
-  font-family: inherit;
-  font-size: 13px;
-  letter-spacing: 0.12em;
-  line-height: 1;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   transition: transform 0.15s ease, background 0.2s ease;
   z-index: 5;
+  box-shadow: 0 2px 8px rgba(15, 20, 29, 0.18);
 }
 .star-btn:hover { background: #fff; }
 .star-btn:active { transform: scale(0.94); }
 .star-btn .star-icon {
-  width: 16px;
-  height: 16px;
+  width: 30px;
+  height: 30px;
   fill: none;
   stroke: #A9A635;
-  stroke-width: 1.5;
+  stroke-width: 2.8;
   stroke-linejoin: round;
+  stroke-linecap: round;
   transition: fill 0.2s ease, stroke 0.2s ease, transform 0.2s ease;
 }
 .star-btn[aria-pressed="true"] .star-icon {
@@ -1553,7 +1563,19 @@ button.ghost.danger { color: var(--danger); border-color: rgba(167, 68, 98, 0.4)
   cursor: default;
   pointer-events: none;
 }
-.star-count { font-variant-numeric: tabular-nums; font-weight: 600; }
+.star-count {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
 
 /* タップ演出: 星がぽんっと弾ける */
 .star-btn.is-popping .star-icon {
