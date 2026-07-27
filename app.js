@@ -2295,7 +2295,7 @@ async function onViewerReport() {
 }
 
 // ---------- 起動 ----------
-document.addEventListener("DOMContentLoaded", async () => {
+document.addEventListener("DOMContentLoaded", () => {
   // 自分が OAuth ポップアップとして開かれ、トークン付きで戻ってきたケース。
   // すぐに親へトークンを渡して閉じる（初期化処理はスキップ）。
   if (window.opener && window.opener !== window && location.hash.startsWith("#kk_token=")) {
@@ -2328,22 +2328,20 @@ document.addEventListener("DOMContentLoaded", async () => {
     history.replaceState(null, "", location.pathname + location.search);
     justLoggedIn = true;
   }
-  // 公開記憶の取得はログイン状態と独立に並行実行しておく
-  const memoriesPromise = refreshMemories();
-  // ボタン等のログイン依存 UI を初回表示から正しく出すため、ここでログイン状態を確定させる
-  await refreshMe();
-  if (_currentUser) {
-    refreshMyMemories();
-    checkRemovalNotifications();
-    // ログイン直後だけ「自分」レイヤーを自動ON
-    if (justLoggedIn && !_radarToggles.mine) {
-      _radarToggles.mine = true;
-      saveRadarToggles();
-      updateToggleButtons();
-      refreshMyMemories().then(renderRadar);
+  refreshMe().then(() => {
+    if (_currentUser) {
+      refreshMyMemories();
+      checkRemovalNotifications();
+      // ログイン直後だけ「自分」レイヤーを自動ON
+      if (justLoggedIn && !_radarToggles.mine) {
+        _radarToggles.mine = true;
+        saveRadarToggles();
+        updateToggleButtons();
+        refreshMyMemories().then(renderRadar);
+      }
     }
-  }
-  memoriesPromise.then(renderRadar);
+  });
+  refreshMemories().then(renderRadar);
   setInterval(() => refreshMemories().then(renderRadar), 60000);
 
   $("user-chip").addEventListener("click", async () => {
