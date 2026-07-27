@@ -1479,10 +1479,20 @@ button.ghost.danger { color: var(--danger); border-color: rgba(167, 68, 98, 0.4)
 .viewer-actions {
   margin-top: 40px;
   display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 16px;
+  width: min(360px, 88vw);
+}
+.viewer-fav-row {
+  display: flex;
+  justify-content: center;
+}
+.viewer-bottom-row {
+  display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  width: min(360px, 88vw);
 }
 .viewer-delete {
   box-sizing: border-box;
@@ -1503,6 +1513,9 @@ button.ghost.danger { color: var(--danger); border-color: rgba(167, 68, 98, 0.4)
 .viewer-delete:hover { background: #F9FBFD; }
 .viewer-report,
 .viewer-close {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   background: transparent;
   border: none;
   padding: 8px 4px;
@@ -1517,6 +1530,16 @@ button.ghost.danger { color: var(--danger); border-color: rgba(167, 68, 98, 0.4)
 }
 .viewer-report:hover,
 .viewer-close:hover { opacity: 0.75; }
+.viewer-report .report-icon {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: #fff;
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
+}
 .viewer-delete:focus,
 .viewer-report:focus,
 .viewer-close:focus,
@@ -1526,17 +1549,20 @@ button.ghost.danger { color: var(--danger); border-color: rgba(167, 68, 98, 0.4)
 
 /* ---------- 星ボタン（お気に入り） ---------- */
 .star-btn {
-  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 56px;
-  height: 56px;
-  padding: 0;
+  gap: 8px;
+  height: 44px;
+  padding: 0 20px;
   background: rgba(255, 255, 255, 0.92);
   border: 1px solid rgba(15, 20, 29, 0.08);
-  border-radius: 50%;
+  border-radius: 999px;
   color: #2C3C56;
+  font-family: inherit;
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  line-height: 1;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   transition: transform 0.15s ease, background 0.2s ease;
@@ -1546,11 +1572,11 @@ button.ghost.danger { color: var(--danger); border-color: rgba(167, 68, 98, 0.4)
 .star-btn:hover { background: #fff; }
 .star-btn:active { transform: scale(0.94); }
 .star-btn .star-icon {
-  width: 30px;
-  height: 30px;
+  width: 22px;
+  height: 22px;
   fill: none;
   stroke: #A9A635;
-  stroke-width: 2.8;
+  stroke-width: 1.4;
   stroke-linejoin: round;
   stroke-linecap: round;
   transition: fill 0.2s ease, stroke 0.2s ease, transform 0.2s ease;
@@ -1564,17 +1590,8 @@ button.ghost.danger { color: var(--danger); border-color: rgba(167, 68, 98, 0.4)
   pointer-events: none;
 }
 .star-count {
-  position: absolute;
-  top: -20px;
-  left: 50%;
-  transform: translateX(-50%);
-  color: #fff;
   font-variant-numeric: tabular-nums;
   font-weight: 600;
-  font-size: 13px;
-  letter-spacing: 0.06em;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
-  pointer-events: none;
 }
 
 /* タップ演出: 星がぽんっと弾ける */
