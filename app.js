@@ -1963,7 +1963,8 @@ function updateViewerDeleteButton(m) {
   if (!_currentUser || !m || !m.canDelete) { btn.classList.add("hidden"); return; }
   const isPoster = m.userId === _currentUser.id;
   btn.classList.remove("hidden");
-  btn.textContent = isPoster ? "回収" : "回収（オーナー削除）";
+  const label = btn.querySelector(".viewer-delete-label");
+  if (label) label.textContent = isPoster ? "回収する" : "回収する（オーナー削除）";
   btn.dataset.mode = isPoster ? "self" : "owner";
 }
 

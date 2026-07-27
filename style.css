@@ -1493,46 +1493,33 @@ button.ghost.danger { color: var(--danger); border-color: rgba(167, 68, 98, 0.4)
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+  margin-top: 18px;
 }
-.viewer-delete {
-  box-sizing: border-box;
-  min-width: 96px;
-  height: 34px;
-  padding: 0 20px;
-  border: 1px solid rgba(15, 20, 29, 0.08);
-  background: #fff;
-  color: #2C3C56;
-  font-family: inherit;
-  font-size: 13px;
-  letter-spacing: 0.12em;
-  border-radius: 999px;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  transition: background 0.2s ease;
-}
-.viewer-delete:hover { background: #F9FBFD; }
+.viewer-delete,
 .viewer-report,
 .viewer-close {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
   background: transparent;
   border: none;
-  padding: 8px 4px;
+  padding: 10px 4px;
   color: #fff;
   font-family: inherit;
-  font-size: 13px;
+  font-size: 15.6px;
   letter-spacing: 0.08em;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
   transition: opacity 0.2s ease;
 }
+.viewer-delete:hover,
 .viewer-report:hover,
 .viewer-close:hover { opacity: 0.75; }
-.viewer-report .report-icon {
-  width: 14px;
-  height: 14px;
+.viewer-report .report-icon,
+.viewer-delete .delete-icon {
+  width: 17px;
+  height: 17px;
   fill: none;
   stroke: #fff;
   stroke-width: 1.6;

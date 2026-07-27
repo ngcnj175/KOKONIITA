@@ -289,7 +289,14 @@
             </svg>
             <span>報告する</span>
           </button>
-          <button id="viewer-delete" class="viewer-delete hidden" type="button"></button>
+          <button id="viewer-delete" class="viewer-delete hidden" type="button" aria-label="回収する">
+            <svg class="delete-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 3 L12 15" />
+              <path d="M7 10 L12 15 L17 10" />
+              <path d="M5 20 L19 20" />
+            </svg>
+            <span class="viewer-delete-label"></span>
+          </button>
           <button id="viewer-close" class="viewer-close" type="button" aria-label="閉じる">✕ 閉じる</button>
         </div>
       </div>
