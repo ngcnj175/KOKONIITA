@@ -806,7 +806,7 @@ html, body {
 .viewer-meta {
   position: absolute;
   right: 16px;
-  bottom: 18px;
+  bottom: 6px;
   font-size: 11px;
   letter-spacing: 0.08em;
   color: var(--dim);
@@ -1585,7 +1585,7 @@ button.ghost.danger { color: var(--danger); border-color: rgba(167, 68, 98, 0.4)
 }
 .star-count {
   font-variant-numeric: tabular-nums;
-  font-weight: 600;
+  font-weight: 400;
 }
 
 /* タップ演出: 星がぽんっと弾ける */
