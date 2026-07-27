@@ -1468,7 +1468,7 @@ button.ghost.danger { color: var(--danger); border-color: rgba(167, 68, 98, 0.4)
 /* ビューア上部の記憶カウンタ（近接クラスタ時のみ表示） */
 .viewer-counter {
   margin: 0 0 12px;
-  font-size: 12px;
+  font-size: 14.4px;
   letter-spacing: 0.15em;
   color: rgba(255, 255, 255, 0.75);
   text-align: center;
@@ -1505,10 +1505,10 @@ button.ghost.danger { color: var(--danger); border-color: rgba(167, 68, 98, 0.4)
 }
 
 .viewer-actions {
-  margin-top: 40px;
+  margin: 30px auto 0;
   display: flex;
   flex-direction: column;
-  gap: 34px;
+  gap: 44px;
   width: min(360px, 88vw);
 }
 .viewer-fav-row {
@@ -1571,7 +1571,7 @@ button.ghost.danger { color: var(--danger); border-color: rgba(167, 68, 98, 0.4)
   gap: 8px;
   height: 44px;
   padding: 0 20px;
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.6);
   border: 1px solid rgba(15, 20, 29, 0.08);
   border-radius: 999px;
   color: #2C3C56;
