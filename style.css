@@ -805,13 +805,14 @@ html, body {
 }
 .viewer-meta {
   position: absolute;
-  right: 14px;
-  bottom: 10px;
-  font-size: 10px;
+  right: 16px;
+  bottom: 18px;
+  font-size: 11px;
   letter-spacing: 0.08em;
   color: var(--dim);
   font-family: "Klee One", "Hiragino Kaku Gothic ProN", sans-serif;
 }
+.polaroid-flip .polaroid-frame.small,
 .polaroid-flip .polaroid-frame.small.back {
   position: relative;
 }
