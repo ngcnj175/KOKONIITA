@@ -1477,6 +1477,33 @@ button.ghost.danger { color: var(--danger); border-color: rgba(167, 68, 98, 0.4)
 }
 
 /* ビューア下部のアクションボタン群（回収 / 通報 / 閉じる） */
+.viewer-flip-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.viewer-nav-btn {
+  background: transparent;
+  border: none;
+  padding: 8px 6px;
+  color: #fff;
+  font-family: inherit;
+  font-size: 32px;
+  line-height: 1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  transition: opacity 0.2s ease;
+}
+.viewer-nav-btn:hover { opacity: 0.75; }
+.viewer-nav-btn:focus,
+.viewer-nav-btn:focus-visible { outline: none; }
+.viewer-nav-btn:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
 .viewer-actions {
   margin-top: 40px;
   display: flex;

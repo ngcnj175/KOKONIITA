@@ -2039,6 +2039,18 @@ function updateViewerCounter() {
   el.textContent = _viewerList.length > 1
     ? `${_viewerIndex + 1} / ${_viewerList.length}`
     : " ";
+  updateViewerNav();
+}
+
+function updateViewerNav() {
+  const prev = $("viewer-prev");
+  const next = $("viewer-next");
+  if (!prev || !next) return;
+  const multi = _viewerList.length > 1;
+  prev.classList.toggle("hidden", !multi);
+  next.classList.toggle("hidden", !multi);
+  prev.disabled = _viewerIndex <= 0;
+  next.disabled = _viewerIndex >= _viewerList.length - 1;
 }
 
 function viewerStep(delta) {
@@ -2389,6 +2401,14 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.target === $("viewer")) closeViewer();
   });
   setupViewerSwipe();
+  $("viewer-prev")?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    viewerStep(-1);
+  });
+  $("viewer-next")?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    viewerStep(1);
+  });
   $("viewer-delete").addEventListener("click", (e) => {
     e.stopPropagation();
     onViewerDelete();

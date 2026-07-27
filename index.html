@@ -257,20 +257,24 @@
     </div>
     <div id="viewer-open" class="hidden">
       <p id="viewer-counter" class="viewer-counter hidden" aria-live="polite"></p>
-      <div class="polaroid-flip" id="polaroid-flip">
-        <div class="flip-inner">
-          <div class="flip-face flip-front">
-            <div class="polaroid-frame small">
-              <img id="viewer-img" alt="memory" />
-              <span id="viewer-meta" class="viewer-meta"></span>
+      <div class="viewer-flip-nav">
+        <button id="viewer-prev" class="viewer-nav-btn hidden" type="button" aria-label="前の記憶">‹</button>
+        <div class="polaroid-flip" id="polaroid-flip">
+          <div class="flip-inner">
+            <div class="flip-face flip-front">
+              <div class="polaroid-frame small">
+                <img id="viewer-img" alt="memory" />
+                <span id="viewer-meta" class="viewer-meta"></span>
+              </div>
             </div>
-          </div>
-          <div class="flip-face flip-back">
-            <div class="polaroid-frame small back">
-              <p id="viewer-note" class="handwritten"></p>
+            <div class="flip-face flip-back">
+              <div class="polaroid-frame small back">
+                <p id="viewer-note" class="handwritten"></p>
+              </div>
             </div>
           </div>
         </div>
+        <button id="viewer-next" class="viewer-nav-btn hidden" type="button" aria-label="次の記憶">›</button>
       </div>
       <div class="viewer-actions">
         <div class="viewer-fav-row">
