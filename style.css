@@ -560,7 +560,7 @@ html, body {
 
 .polaroid-frame {
   background: #FAF9FA;
-  padding: 12px 12px 44px;
+  padding: 12px 12px 56px;
   box-shadow: 0 10px 24px rgba(15, 20, 29, 0.22), 0 3px 6px rgba(15, 20, 29, 0.12);
   border: 1px solid rgba(15, 20, 29, 0.08);
   width: fit-content;
@@ -573,7 +573,7 @@ html, body {
   justify-content: center;
   cursor: pointer;
 }
-.polaroid-frame.small { padding: 8px 8px 30px; min-width: 0; min-height: 0; transform: none; }
+.polaroid-frame.small { padding: 8px 8px 38px; min-width: 0; min-height: 0; transform: none; }
 .polaroid-frame.back {
   background: #F6F5F8;
   min-height: 220px;
@@ -623,7 +623,7 @@ html, body {
 
 /* flip 時に表裏サイズを完全一致させる */
 .polaroid-flip .polaroid-frame.small {
-  padding: 11px 11px 44px;
+  padding: 11px 11px 56px;
   width: 312px;
   min-height: 0;
   transform: none;
@@ -923,7 +923,7 @@ button.primary { background: var(--ink); color: #fff; border: 1px solid var(--in
 }
 .ar-item .polaroid-frame {
   box-shadow: 0 6px 14px rgba(0, 65, 185, 0.55);
-  padding: 8% 8% 22%;
+  padding: 8% 8% 28%;
   min-width: 0;
   min-height: 0;
   width: 100%;
