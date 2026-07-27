@@ -1473,6 +1473,8 @@ button.ghost.danger { color: var(--danger); border-color: rgba(167, 68, 98, 0.4)
   letter-spacing: 0.15em;
   color: rgba(255, 255, 255, 0.75);
   text-align: center;
+  min-height: 1em;
+  line-height: 1;
 }
 
 /* ビューア下部のアクションボタン群（回収 / 通報 / 閉じる） */

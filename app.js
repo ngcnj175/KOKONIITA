@@ -2035,12 +2035,10 @@ function renderViewerAt(idx) {
 function updateViewerCounter() {
   const el = $("viewer-counter");
   if (!el) return;
-  if (_viewerList.length > 1) {
-    el.textContent = `${_viewerIndex + 1} / ${_viewerList.length}`;
-    el.classList.remove("hidden");
-  } else {
-    el.classList.add("hidden");
-  }
+  el.classList.remove("hidden");
+  el.textContent = _viewerList.length > 1
+    ? `${_viewerIndex + 1} / ${_viewerList.length}`
+    : " ";
 }
 
 function viewerStep(delta) {
