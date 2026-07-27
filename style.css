@@ -1491,12 +1491,15 @@ button.ghost.danger { color: var(--danger); border-color: rgba(167, 68, 98, 0.4)
   justify-content: center;
 }
 .viewer-bottom-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
   align-items: center;
-  justify-content: space-between;
   gap: 10px;
   margin-top: 18px;
 }
+.viewer-bottom-row .viewer-report { grid-column: 1; justify-self: start; }
+.viewer-bottom-row .viewer-delete { grid-column: 2; justify-self: center; }
+.viewer-bottom-row .viewer-close  { grid-column: 3; justify-self: end; }
 .viewer-delete,
 .viewer-report,
 .viewer-close {
@@ -1560,6 +1563,8 @@ button.ghost.danger { color: var(--danger); border-color: rgba(167, 68, 98, 0.4)
 }
 .star-btn:hover { background: #fff; }
 .star-btn:active { transform: scale(0.94); }
+.star-btn:focus,
+.star-btn:focus-visible { outline: none; }
 .star-btn .star-icon {
   width: 22px;
   height: 22px;
