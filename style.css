@@ -1472,6 +1472,9 @@ button.ghost.danger { color: var(--danger); border-color: rgba(167, 68, 98, 0.4)
 .key-mode-status.err { color: #9E3C56; }
 
 /* ビューア上部の記憶カウンタ（近接クラスタ時のみ表示） */
+#viewer-open {
+  transform: translateY(24px);
+}
 .viewer-counter {
   margin: 0 0 12px;
   font-size: 14.4px;
