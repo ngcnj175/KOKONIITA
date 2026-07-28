@@ -1673,7 +1673,10 @@ async function openHistory() {
   renderHistoryList();
   const sheet = $("history-sheet");
   sheet.classList.remove("hidden");
-  requestAnimationFrame(() => sheet.classList.add("open"));
+  requestAnimationFrame(() => {
+    sheet.classList.add("open");
+    sheet.querySelector(".sheet-panel")?.focus({ preventScroll: true });
+  });
 }
 async function refreshCurrentHistoryTab() {
   if (_historyTab === "finds") await refreshMyFinds();

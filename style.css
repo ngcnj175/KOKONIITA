@@ -1045,6 +1045,7 @@ button.primary { background: var(--ink); color: #fff; border: 1px solid var(--in
   pointer-events: auto;
 }
 .sheet.open .sheet-panel { transform: translateY(0); }
+.sheet-panel:focus { outline: none; }
 
 .sheet-handle {
   width: 40px;
