@@ -240,13 +240,16 @@
         <button id="history-close" class="chip" type="button">閉じる</button>
       </header>
       <div class="history-tabs" role="tablist">
-        <button id="history-tab-mine" class="history-tab active" type="button" role="tab" aria-selected="true">投稿</button>
-        <button id="history-tab-finds" class="history-tab" type="button" role="tab" aria-selected="false">お気に入り</button>
+        <button id="history-tab-mine" class="history-tab active" type="button" role="tab" aria-selected="true">
+          <span class="history-tab-label">投稿</span>
+          <span class="history-tab-caret" aria-hidden="true">▾</span>
+        </button>
+        <button id="history-tab-finds" class="history-tab" type="button" role="tab" aria-selected="false">
+          <span class="history-tab-label">お気に入り</span>
+          <span class="history-tab-caret" aria-hidden="true">▾</span>
+        </button>
       </div>
-      <div class="history-sortbar">
-        <label class="history-sort-label" for="history-sort">並び替え</label>
-        <select id="history-sort" class="history-sort"></select>
-      </div>
+      <div id="history-sort-menu" class="history-sort-menu hidden" role="menu"></div>
       <div id="history-list" class="history-list"></div>
       <p id="history-empty" class="history-empty dim hidden">まだ記憶は置かれていません</p>
     </div>

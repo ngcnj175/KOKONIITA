@@ -1668,7 +1668,7 @@ const HISTORY_SORT_OPTIONS = {
     { value: "created_desc", label: "新しい順" },
     { value: "created_asc",  label: "古い順" },
     { value: "dist_asc",     label: "近い順" },
-    { value: "finds_desc",   label: "見つけられた数が多い順" },
+    { value: "finds_desc",   label: "★が多い順" },
   ],
   finds: [
     { value: "favorited_desc", label: "保存が新しい順" },
@@ -1694,18 +1694,53 @@ function sortHistoryMemories(memories, key) {
   return arr;
 }
 
-function updateHistorySortUI() {
-  const sel = $("history-sort");
-  if (!sel) return;
-  const opts = HISTORY_SORT_OPTIONS[_historyTab] || [];
-  sel.innerHTML = "";
+function closeHistorySortMenu() {
+  const menu = $("history-sort-menu");
+  if (menu) menu.classList.add("hidden");
+  document.removeEventListener("click", _onHistorySortOutside, true);
+  document.removeEventListener("keydown", _onHistorySortKey, true);
+}
+function _onHistorySortOutside(e) {
+  const menu = $("history-sort-menu");
+  if (!menu) return;
+  if (menu.contains(e.target)) return;
+  if (e.target.closest(".history-tab")) return;
+  closeHistorySortMenu();
+}
+function _onHistorySortKey(e) {
+  if (e.key === "Escape") closeHistorySortMenu();
+}
+function openHistorySortMenu(tabKey) {
+  const menu = $("history-sort-menu");
+  const tabBtn = $(tabKey === "finds" ? "history-tab-finds" : "history-tab-mine");
+  if (!menu || !tabBtn) return;
+  const opts = HISTORY_SORT_OPTIONS[tabKey] || [];
+  const current = _historySort[tabKey];
+  menu.innerHTML = "";
   for (const o of opts) {
-    const el = document.createElement("option");
-    el.value = o.value;
-    el.textContent = o.label;
-    sel.appendChild(el);
+    const item = document.createElement("button");
+    item.type = "button";
+    item.className = "history-sort-item" + (o.value === current ? " selected" : "");
+    item.setAttribute("role", "menuitem");
+    item.textContent = o.label;
+    item.addEventListener("click", (e) => {
+      e.stopPropagation();
+      _historySort[tabKey] = o.value;
+      closeHistorySortMenu();
+      renderHistoryList();
+    });
+    menu.appendChild(item);
   }
-  sel.value = _historySort[_historyTab];
+  menu.classList.remove("hidden");
+  const parent = menu.offsetParent || menu.parentElement;
+  const parentRect = parent.getBoundingClientRect();
+  const btnRect = tabBtn.getBoundingClientRect();
+  menu.style.top = `${btnRect.bottom - parentRect.top + 2}px`;
+  menu.style.left = `${btnRect.left - parentRect.left}px`;
+  setTimeout(() => {
+    document.addEventListener("click", _onHistorySortOutside, true);
+    document.addEventListener("keydown", _onHistorySortKey, true);
+  }, 0);
 }
 
 async function openHistory() {
@@ -1715,7 +1750,6 @@ async function openHistory() {
   }
   await refreshCurrentHistoryTab();
   updateHistoryTabsUI();
-  updateHistorySortUI();
   renderHistoryList();
   const sheet = $("history-sheet");
   sheet.classList.remove("hidden");
@@ -1742,11 +1776,11 @@ async function switchHistoryTab(next) {
   if (_historyTab === next) return;
   _historyTab = next;
   updateHistoryTabsUI();
-  updateHistorySortUI();
   await refreshCurrentHistoryTab();
   renderHistoryList();
 }
 function closeHistory() {
+  closeHistorySortMenu();
   const sheet = $("history-sheet");
   sheet.classList.remove("open");
   setTimeout(() => sheet.classList.add("hidden"), 320);
@@ -2438,12 +2472,19 @@ document.addEventListener("DOMContentLoaded", () => {
   $("history-btn").addEventListener("click", openHistory);
   $("history-close").addEventListener("click", closeHistory);
   $("history-backdrop").addEventListener("click", closeHistory);
-  $("history-tab-mine")?.addEventListener("click", () => switchHistoryTab("mine"));
-  $("history-tab-finds")?.addEventListener("click", () => switchHistoryTab("finds"));
-  $("history-sort")?.addEventListener("change", (e) => {
-    _historySort[_historyTab] = e.target.value;
-    renderHistoryList();
-  });
+  const onTabClick = (key) => (e) => {
+    e.stopPropagation();
+    if (_historyTab === key) {
+      const menu = $("history-sort-menu");
+      if (menu && !menu.classList.contains("hidden")) closeHistorySortMenu();
+      else openHistorySortMenu(key);
+    } else {
+      closeHistorySortMenu();
+      switchHistoryTab(key);
+    }
+  };
+  $("history-tab-mine")?.addEventListener("click", onTabClick("mine"));
+  $("history-tab-finds")?.addEventListener("click", onTabClick("finds"));
   $("ar-btn").addEventListener("click", openAR);
   $("ar-back").addEventListener("click", closeAR);
   $("ar-error-back").addEventListener("click", closeAR);

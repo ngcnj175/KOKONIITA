@@ -1073,6 +1073,7 @@ button.primary { background: var(--ink); color: #fff; border: 1px solid var(--in
 }
 
 .history-tabs {
+  position: relative;
   display: flex;
   gap: 4px;
   padding: 4px 12px 8px;
@@ -1089,6 +1090,15 @@ button.primary { background: var(--ink); color: #fff; border: 1px solid var(--in
   border-radius: 8px;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+.history-tab-caret {
+  font-size: 10px;
+  line-height: 1;
+  opacity: 0.7;
 }
 .history-tab.active {
   color: rgba(15, 20, 29, 0.95);
@@ -1097,30 +1107,35 @@ button.primary { background: var(--ink); color: #fff; border: 1px solid var(--in
 .history-tab:not(.active):hover {
   background: rgba(15, 20, 29, 0.03);
 }
-.history-sortbar {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-  padding: 8px 12px 4px;
-}
-.history-sort-label {
-  font-size: 12px;
-  color: rgba(15, 20, 29, 0.55);
-}
-.history-sort {
-  font-size: 13px;
-  padding: 4px 24px 4px 8px;
-  border: 1px solid rgba(15, 20, 29, 0.15);
-  border-radius: 6px;
+.history-sort-menu {
+  position: absolute;
+  z-index: 20;
+  min-width: 180px;
   background: #fff;
+  border: 1px solid rgba(15, 20, 29, 0.12);
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(15, 20, 29, 0.12);
+  padding: 4px 0;
+  display: flex;
+  flex-direction: column;
+}
+.history-sort-item {
+  border: none;
+  background: transparent;
+  text-align: left;
+  padding: 8px 14px;
+  font-size: 13px;
   color: rgba(15, 20, 29, 0.85);
   cursor: pointer;
-  appearance: none;
-  -webkit-appearance: none;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='none' stroke='%230f141d' stroke-opacity='0.55' stroke-width='1.5' d='M1 1l4 4 4-4'/></svg>");
-  background-repeat: no-repeat;
-  background-position: right 8px center;
+  white-space: nowrap;
+}
+.history-sort-item:hover {
+  background: rgba(15, 20, 29, 0.05);
+}
+.history-sort-item.selected {
+  color: rgba(15, 20, 29, 0.95);
+  font-weight: 600;
+  background: rgba(15, 20, 29, 0.04);
 }
 .history-list {
   overflow-y: auto;
