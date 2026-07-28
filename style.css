@@ -767,8 +767,8 @@ html, body {
   align-items: center;
   justify-content: center;
   background: transparent;
-  backdrop-filter: blur(8px) saturate(0.7) brightness(0.9);
-  -webkit-backdrop-filter: blur(8px) saturate(0.7) brightness(0.9);
+  backdrop-filter: blur(8px) saturate(0.7) brightness(0.6);
+  -webkit-backdrop-filter: blur(8px) saturate(0.7) brightness(0.6);
   padding: 20px;
 }
 .modal-card {
@@ -795,8 +795,8 @@ html, body {
   align-items: center;
   justify-content: center;
   background: transparent;
-  backdrop-filter: blur(8px) saturate(0.7) brightness(0.9);
-  -webkit-backdrop-filter: blur(8px) saturate(0.7) brightness(0.9);
+  backdrop-filter: blur(8px) saturate(0.7) brightness(0.6);
+  -webkit-backdrop-filter: blur(8px) saturate(0.7) brightness(0.6);
   padding: 20px;
 }
 .locked-card {
@@ -1021,8 +1021,8 @@ button.primary { background: var(--ink); color: #fff; border: 1px solid var(--in
   position: absolute;
   inset: 0;
   background: transparent;
-  backdrop-filter: blur(8px) saturate(0.7) brightness(0.9);
-  -webkit-backdrop-filter: blur(8px) saturate(0.7) brightness(0.9);
+  backdrop-filter: blur(8px) saturate(0.7) brightness(0.6);
+  -webkit-backdrop-filter: blur(8px) saturate(0.7) brightness(0.6);
   opacity: 0;
   transition: opacity 0.25s ease;
   pointer-events: auto;
