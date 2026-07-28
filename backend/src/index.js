@@ -110,6 +110,7 @@ function toMemoryRow(r, opts = {}) {
     findCount: Number(r.find_count || 0),
     foundByMe: !!Number(r.found_by_me || 0),
   };
+  if (r.favorited_at != null) row.favoritedAt = r.favorited_at;
   // access_key は所有者向けレスポンス（履歴/投稿完了時）でのみ含める
   if (opts.includeKey && visibility === "keyed") {
     row.accessKey = r.access_key || null;
@@ -301,6 +302,7 @@ app.get("/api/me/finds", async (c) => {
   if (!s) return c.json({ error: "unauthorized" }, 401);
   const { results } = await c.env.DB.prepare(
     `SELECT m.id, m.user_id, m.lat, m.lng, m.accuracy, m.note, m.visibility, m.access_key, m.created_at,
+            f.created_at AS favorited_at,
             (SELECT COUNT(*) FROM finds f2 WHERE f2.memory_id = m.id) AS find_count,
             1 AS found_by_me
      FROM finds f

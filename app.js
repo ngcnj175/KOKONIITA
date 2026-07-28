@@ -1663,6 +1663,51 @@ function onArItemTap(m, dist) {
 // ---------- マイページ（ボトムシート） ----------
 let _historyTab = "mine"; // "mine" | "finds"
 
+const HISTORY_SORT_OPTIONS = {
+  mine: [
+    { value: "created_desc", label: "新しい順" },
+    { value: "created_asc",  label: "古い順" },
+    { value: "dist_asc",     label: "近い順" },
+    { value: "finds_desc",   label: "見つけられた数が多い順" },
+  ],
+  finds: [
+    { value: "favorited_desc", label: "保存が新しい順" },
+    { value: "favorited_asc",  label: "保存が古い順" },
+    { value: "created_desc",   label: "投稿が新しい順" },
+    { value: "dist_asc",       label: "近い順" },
+  ],
+};
+const _historySort = { mine: "created_desc", finds: "favorited_desc" };
+
+function sortHistoryMemories(memories, key) {
+  const arr = memories.slice();
+  const distOf = (m) => (myPos ? distanceMeters(myPos, { lat: m.lat, lng: m.lng }) : Infinity);
+  switch (key) {
+    case "created_asc":    arr.sort((a, b) => a.createdAt - b.createdAt); break;
+    case "dist_asc":       arr.sort((a, b) => distOf(a) - distOf(b)); break;
+    case "finds_desc":     arr.sort((a, b) => Number(b.findCount || 0) - Number(a.findCount || 0) || b.createdAt - a.createdAt); break;
+    case "favorited_desc": arr.sort((a, b) => (b.favoritedAt || 0) - (a.favoritedAt || 0)); break;
+    case "favorited_asc":  arr.sort((a, b) => (a.favoritedAt || 0) - (b.favoritedAt || 0)); break;
+    case "created_desc":
+    default:               arr.sort((a, b) => b.createdAt - a.createdAt); break;
+  }
+  return arr;
+}
+
+function updateHistorySortUI() {
+  const sel = $("history-sort");
+  if (!sel) return;
+  const opts = HISTORY_SORT_OPTIONS[_historyTab] || [];
+  sel.innerHTML = "";
+  for (const o of opts) {
+    const el = document.createElement("option");
+    el.value = o.value;
+    el.textContent = o.label;
+    sel.appendChild(el);
+  }
+  sel.value = _historySort[_historyTab];
+}
+
 async function openHistory() {
   if (!_currentUser) {
     if (confirm("マイページを見るにはGoogleでログインが必要です。ログインしますか？")) goToLogin();
@@ -1670,6 +1715,7 @@ async function openHistory() {
   }
   await refreshCurrentHistoryTab();
   updateHistoryTabsUI();
+  updateHistorySortUI();
   renderHistoryList();
   const sheet = $("history-sheet");
   sheet.classList.remove("hidden");
@@ -1696,6 +1742,7 @@ async function switchHistoryTab(next) {
   if (_historyTab === next) return;
   _historyTab = next;
   updateHistoryTabsUI();
+  updateHistorySortUI();
   await refreshCurrentHistoryTab();
   renderHistoryList();
 }
@@ -1710,7 +1757,7 @@ function renderHistoryList() {
   const empty = $("history-empty");
   const isFindsTab = _historyTab === "finds";
   const source = isFindsTab ? _findsCache : loadMyMemories();
-  const memories = source.slice().sort((a, b) => b.createdAt - a.createdAt);
+  const memories = sortHistoryMemories(source, _historySort[_historyTab]);
   list.innerHTML = "";
   if (memories.length === 0) {
     empty.textContent = isFindsTab
@@ -2393,6 +2440,10 @@ document.addEventListener("DOMContentLoaded", () => {
   $("history-backdrop").addEventListener("click", closeHistory);
   $("history-tab-mine")?.addEventListener("click", () => switchHistoryTab("mine"));
   $("history-tab-finds")?.addEventListener("click", () => switchHistoryTab("finds"));
+  $("history-sort")?.addEventListener("change", (e) => {
+    _historySort[_historyTab] = e.target.value;
+    renderHistoryList();
+  });
   $("ar-btn").addEventListener("click", openAR);
   $("ar-back").addEventListener("click", closeAR);
   $("ar-error-back").addEventListener("click", closeAR);
