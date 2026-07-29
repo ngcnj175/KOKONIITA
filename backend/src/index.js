@@ -90,6 +90,46 @@ function geohash(lat, lng, precision = 6) {
 }
 
 // ---------- ユーティリティ ----------
+// 手書きストロークJSONのバリデーション＆正規化。
+// 形式: [{ c: 色HEX, w: 太さ(0..1), t: "ink"|"erase", p: [[x,y],...] }]
+// x,y は 0..1 の正規化座標。
+function sanitizeStrokes(input) {
+  let arr;
+  if (typeof input === "string") {
+    try { arr = JSON.parse(input); } catch { return null; }
+  } else if (Array.isArray(input)) arr = input;
+  else return null;
+  if (!Array.isArray(arr)) return null;
+  const MAX_STROKES = 200;
+  const MAX_POINTS = 500;
+  const HEX = /^#[0-9a-f]{6}$/i;
+  const out = [];
+  for (const s of arr.slice(0, MAX_STROKES)) {
+    if (!s || typeof s !== "object") continue;
+    const c = typeof s.c === "string" && HEX.test(s.c) ? s.c : "#000000";
+    const w = Math.max(0, Math.min(1, Number(s.w) || 0));
+    const t = s.t === "erase" ? "erase" : "ink";
+    if (!Array.isArray(s.p)) continue;
+    const p = [];
+    for (const pt of s.p.slice(0, MAX_POINTS)) {
+      if (!Array.isArray(pt) || pt.length < 2) continue;
+      const x = Number(pt[0]); const y = Number(pt[1]);
+      if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+      p.push([
+        Math.round(Math.max(0, Math.min(1, x)) * 10000) / 10000,
+        Math.round(Math.max(0, Math.min(1, y)) * 10000) / 10000,
+      ]);
+    }
+    if (p.length >= 2) out.push({ c, w, t, p });
+  }
+  return out;
+}
+function parseStrokes(text) {
+  if (!text) return null;
+  try { const v = JSON.parse(text); return Array.isArray(v) && v.length ? v : null; }
+  catch { return null; }
+}
+
 function toMemoryRow(r, opts = {}) {
   const visibility = r.visibility || "public";
   const base = `/api/memories/${r.id}/image`;
@@ -103,6 +143,7 @@ function toMemoryRow(r, opts = {}) {
     lng: r.lng,
     accuracy: r.accuracy,
     note: r.note || "",
+    strokes: parseStrokes(r.strokes),
     imageUrl,
     createdAt: r.created_at,
     userId: r.user_id,
@@ -256,7 +297,7 @@ app.get("/api/memories", async (c) => {
   if (key) {
     const [{ results }, ak] = await Promise.all([
       c.env.DB.prepare(
-        `SELECT id, user_id, lat, lng, accuracy, note, visibility, access_key, created_at,
+        `SELECT id, user_id, lat, lng, accuracy, note, strokes, visibility, access_key, created_at,
                 (SELECT COUNT(*) FROM finds f WHERE f.memory_id = memories.id) AS find_count,
                 EXISTS(SELECT 1 FROM finds f2 WHERE f2.memory_id = memories.id AND f2.user_id = ?) AS found_by_me
          FROM memories
@@ -273,7 +314,7 @@ app.get("/api/memories", async (c) => {
   }
   // 「公開」モードは public のみ。自分の private / keyed は「プライベート」モードから見る
   const { results } = await c.env.DB.prepare(
-    `SELECT id, user_id, lat, lng, accuracy, note, visibility, access_key, created_at,
+    `SELECT id, user_id, lat, lng, accuracy, note, strokes, visibility, access_key, created_at,
             (SELECT COUNT(*) FROM finds f WHERE f.memory_id = memories.id) AS find_count,
             EXISTS(SELECT 1 FROM finds f2 WHERE f2.memory_id = memories.id AND f2.user_id = ?) AS found_by_me
      FROM memories
@@ -288,7 +329,7 @@ app.get("/api/me/memories", async (c) => {
   const s = await requireSession(c);
   if (!s) return c.json({ error: "unauthorized" }, 401);
   const { results } = await c.env.DB.prepare(
-    `SELECT id, user_id, lat, lng, accuracy, note, visibility, access_key, created_at,
+    `SELECT id, user_id, lat, lng, accuracy, note, strokes, visibility, access_key, created_at,
             (SELECT COUNT(*) FROM finds f WHERE f.memory_id = memories.id) AS find_count,
             0 AS found_by_me
      FROM memories WHERE user_id = ? AND deleted_at IS NULL ORDER BY created_at DESC`
@@ -301,7 +342,7 @@ app.get("/api/me/finds", async (c) => {
   const s = await requireSession(c);
   if (!s) return c.json({ error: "unauthorized" }, 401);
   const { results } = await c.env.DB.prepare(
-    `SELECT m.id, m.user_id, m.lat, m.lng, m.accuracy, m.note, m.visibility, m.access_key, m.created_at,
+    `SELECT m.id, m.user_id, m.lat, m.lng, m.accuracy, m.note, m.strokes, m.visibility, m.access_key, m.created_at,
             f.created_at AS favorited_at,
             (SELECT COUNT(*) FROM finds f2 WHERE f2.memory_id = m.id) AS find_count,
             1 AS found_by_me
@@ -384,6 +425,9 @@ app.post("/api/memories", async (c) => {
   const lng = parseFloat(form.get("lng"));
   const accuracy = parseFloat(form.get("accuracy") || "0");
   const note = (form.get("note") || "").toString().slice(0, 200);
+  const strokesInput = form.get("strokes");
+  const strokesArr = strokesInput ? sanitizeStrokes(strokesInput.toString()) : null;
+  const strokesJson = strokesArr && strokesArr.length ? JSON.stringify(strokesArr) : null;
   const vRaw = (form.get("visibility") || "").toString();
   const visibility = vRaw === "private" ? "private"
     : vRaw === "keyed" ? "keyed"
@@ -434,10 +478,10 @@ app.post("/api/memories", async (c) => {
   const now = Date.now();
 
   await c.env.DB.prepare(
-    `INSERT INTO memories(id, user_id, lat, lng, accuracy, note, image_blob, image_type, image_size, geohash, visibility, access_key, created_at)
-     VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO memories(id, user_id, lat, lng, accuracy, note, strokes, image_blob, image_type, image_size, geohash, visibility, access_key, created_at)
+     VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(
-    id, s.userId, lat, lng, accuracy, note,
+    id, s.userId, lat, lng, accuracy, note, strokesJson,
     bytes, image.type || "image/jpeg", image.size, gh, visibility, accessKey, now
   ).run();
 
@@ -457,6 +501,7 @@ app.post("/api/memories", async (c) => {
     : undefined;
   return c.json({
     id, lat, lng, accuracy, note, visibility,
+    strokes: strokesArr && strokesArr.length ? strokesArr : undefined,
     accessKey: accessKey || undefined,
     accessKeyIssued: accessKeyIssued || undefined,
     keyMode: keyMode || undefined,

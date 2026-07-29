@@ -154,13 +154,14 @@ async function refreshMe() {
   } catch (e) { console.warn("refreshMe", e); }
 }
 
-async function postMemoryToApi({ blob, lat, lng, accuracy, note, visibility, accessKey, keyMode }) {
+async function postMemoryToApi({ blob, lat, lng, accuracy, note, visibility, accessKey, keyMode, strokes }) {
   const fd = new FormData();
   fd.append("image", blob, "memory.jpg");
   fd.append("lat", String(lat));
   fd.append("lng", String(lng));
   fd.append("accuracy", String(accuracy));
   fd.append("note", note || "");
+  if (strokes) fd.append("strokes", strokes);
   const v = visibility === "private" || visibility === "keyed" ? visibility : "public";
   fd.append("visibility", v);
   if (v === "keyed" && accessKey) fd.append("access_key", accessKey);
@@ -1068,7 +1069,10 @@ async function handleMediaPick(e) {
   setComposeVisibility("public");
   openComposeSheet();
   // シートが開ききってから cropper サイズを測る
-  requestAnimationFrame(() => requestAnimationFrame(() => loadCropper(dataUrl)));
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    loadCropper(dataUrl);
+    drawerInit();
+  }));
 }
 
 function openComposeSheet() {
@@ -1381,6 +1385,264 @@ function setupCropperEvents() {
   });
 }
 
+// ---------- 手書きレイヤー ----------
+// ストロークは { c: 色, w: 太さ0-1, t: 'ink'|'erase', p: [[x,y],...] } の配列。
+// x,y は compose-polaroid（写真＋余白）の幅・高さを 0..1 に正規化した座標。
+const drawer = {
+  strokes: [],
+  cur: null,
+  mode: "move",       // 'move' | 'draw' | 'erase'
+  color: "#242a29",
+  size: 0.018,        // 正規化太さ
+  canvas: null,
+  dpr: 1,
+  W: 0, H: 0,
+};
+
+function drawerInit() {
+  const polaroid = $("compose-polaroid");
+  const canvas = $("draw-canvas");
+  if (!polaroid || !canvas) return;
+  drawer.canvas = canvas;
+  drawer.strokes = [];
+  drawer.cur = null;
+  drawerSetMode("move");
+  drawerResize();
+
+  polaroid.querySelectorAll(".draw-mode").forEach(btn => {
+    btn.onclick = () => drawerSetMode(btn.dataset.mode);
+  });
+  polaroid.querySelectorAll(".draw-color").forEach(btn => {
+    btn.onclick = () => {
+      drawer.color = btn.dataset.color;
+      polaroid.querySelectorAll(".draw-color").forEach(b => b.classList.toggle("is-active", b === btn));
+      if (drawer.mode === "erase") drawerSetMode("draw");
+    };
+  });
+  polaroid.querySelectorAll(".draw-size").forEach(btn => {
+    btn.onclick = () => {
+      drawer.size = parseFloat(btn.dataset.size);
+      polaroid.querySelectorAll(".draw-size").forEach(b => b.classList.toggle("is-active", b === btn));
+    };
+  });
+  const undo = document.getElementById("draw-undo");
+  if (undo) undo.onclick = () => { drawer.strokes.pop(); drawerRender(); };
+  const clear = document.getElementById("draw-clear");
+  if (clear) clear.onclick = () => {
+    if (drawer.strokes.length && !confirm("書き込みを全て消しますか？")) return;
+    drawer.strokes = []; drawerRender();
+  };
+
+  canvas.onpointerdown = drawerPointerDown;
+  canvas.onpointermove = drawerPointerMove;
+  canvas.onpointerup = drawerPointerUp;
+  canvas.onpointercancel = drawerPointerUp;
+  canvas.onpointerleave = drawerPointerUp;
+}
+
+function drawerSetMode(m) {
+  drawer.mode = m;
+  const polaroid = $("compose-polaroid");
+  if (!polaroid) return;
+  polaroid.classList.remove("mode-move", "mode-draw", "mode-erase");
+  polaroid.classList.add(`mode-${m}`);
+  polaroid.querySelectorAll(".draw-mode").forEach(b => b.classList.toggle("is-active", b.dataset.mode === m));
+  const hint = document.getElementById("draw-hint");
+  if (hint) {
+    hint.textContent =
+      m === "move" ? "移動モード：ドラッグで写真の位置、スライダーで拡大"
+      : m === "draw" ? "描画モード：写真と余白をまたいで描けます"
+      : "消しゴム：なぞって書き込みを消します";
+  }
+}
+
+function drawerResize() {
+  const polaroid = $("compose-polaroid");
+  const canvas = drawer.canvas;
+  if (!polaroid || !canvas) return;
+  const rect = polaroid.getBoundingClientRect();
+  drawer.W = rect.width;
+  drawer.H = rect.height;
+  drawer.dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.round(drawer.W * drawer.dpr);
+  canvas.height = Math.round(drawer.H * drawer.dpr);
+  drawerRender();
+}
+
+function drawerRender() {
+  const canvas = drawer.canvas;
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.scale(drawer.dpr, drawer.dpr);
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  const all = drawer.cur ? drawer.strokes.concat([drawer.cur]) : drawer.strokes;
+  for (const s of all) drawStrokeOnCtx(ctx, s, drawer.W, drawer.H);
+}
+
+function drawStrokeOnCtx(ctx, s, W, H) {
+  if (!s || !Array.isArray(s.p) || s.p.length < 2) {
+    if (s && Array.isArray(s.p) && s.p.length === 1) {
+      const [x, y] = s.p[0];
+      ctx.save();
+      ctx.globalCompositeOperation = s.t === "erase" ? "destination-out" : "source-over";
+      ctx.fillStyle = s.c;
+      ctx.beginPath();
+      ctx.arc(x * W, y * H, Math.max(1, (s.w * W) / 2), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+    return;
+  }
+  ctx.save();
+  ctx.globalCompositeOperation = s.t === "erase" ? "destination-out" : "source-over";
+  ctx.strokeStyle = s.c;
+  ctx.lineWidth = Math.max(1, s.w * W);
+  ctx.beginPath();
+  ctx.moveTo(s.p[0][0] * W, s.p[0][1] * H);
+  for (let i = 1; i < s.p.length; i++) ctx.lineTo(s.p[i][0] * W, s.p[i][1] * H);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawerNormPoint(e) {
+  const rect = drawer.canvas.getBoundingClientRect();
+  const x = (e.clientX - rect.left) / rect.width;
+  const y = (e.clientY - rect.top) / rect.height;
+  return [
+    Math.max(0, Math.min(1, x)),
+    Math.max(0, Math.min(1, y)),
+  ];
+}
+
+function drawerPointerDown(e) {
+  if (drawer.mode === "move") return;
+  e.preventDefault();
+  drawer.canvas.setPointerCapture(e.pointerId);
+  drawer.cur = {
+    c: drawer.color,
+    w: drawer.size,
+    t: drawer.mode === "erase" ? "erase" : "ink",
+    p: [drawerNormPoint(e)],
+  };
+  drawerRender();
+}
+function drawerPointerMove(e) {
+  if (!drawer.cur) return;
+  const p = drawerNormPoint(e);
+  const last = drawer.cur.p[drawer.cur.p.length - 1];
+  const dx = p[0] - last[0], dy = p[1] - last[1];
+  if (dx * dx + dy * dy < 0.000004) return; // ~0.2% ノイズ除去
+  drawer.cur.p.push(p);
+  drawerRender();
+}
+function drawerPointerUp() {
+  if (!drawer.cur) return;
+  if (drawer.cur.p.length >= 1) drawer.strokes.push(drawer.cur);
+  drawer.cur = null;
+  drawerRender();
+}
+
+function drawerGetStrokesJson() {
+  return drawer.strokes.length ? JSON.stringify(drawer.strokes) : "";
+}
+
+// ---------- ストローク SVG レンダリング ----------
+// polaroid の実寸に対して viewBox を張り、正規化座標で SVG に描画する。
+// preserveAspectRatio="none" で polaroid の実際のアスペクトへ引き伸ばす。
+const POLAROID_VB = { w: 316, h: 361 };
+
+function strokesFromMemory(m) {
+  const s = m && m.strokes;
+  if (!s) return null;
+  if (Array.isArray(s)) return s.length ? s : null;
+  if (typeof s === "string") {
+    try { const v = JSON.parse(s); return Array.isArray(v) && v.length ? v : null; }
+    catch { return null; }
+  }
+  return null;
+}
+
+function svgEscapeColor(c) {
+  return /^#[0-9a-f]{6}$/i.test(c || "") ? c : "#242A29";
+}
+
+function polaroidStrokesSVG(strokes) {
+  if (!strokes || !strokes.length) return "";
+  const W = POLAROID_VB.w, H = POLAROID_VB.h;
+  const inkPaths = [];
+  const eraseMaskPaths = [];
+  let hasErase = false;
+  for (const s of strokes) {
+    if (!s || !Array.isArray(s.p) || s.p.length < 1) continue;
+    const isErase = s.t === "erase";
+    if (isErase) hasErase = true;
+    const w = Math.max(0.5, Number(s.w) * W);
+    let d;
+    if (s.p.length === 1) {
+      const [x, y] = s.p[0];
+      const r = Math.max(0.5, w / 2);
+      d = `M ${x*W-r} ${y*H} a ${r} ${r} 0 1 0 ${r*2} 0 a ${r} ${r} 0 1 0 ${-r*2} 0`;
+    } else {
+      d = `M ${s.p[0][0]*W} ${s.p[0][1]*H}`;
+      for (let i = 1; i < s.p.length; i++) d += ` L ${s.p[i][0]*W} ${s.p[i][1]*H}`;
+    }
+    if (isErase) {
+      eraseMaskPaths.push(`<path d="${d}" stroke="#000" stroke-width="${w}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`);
+    } else {
+      inkPaths.push(`<path d="${d}" stroke="${svgEscapeColor(s.c)}" stroke-width="${w}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`);
+    }
+  }
+  const maskId = "pmask-" + Math.random().toString(36).slice(2, 8);
+  const mask = hasErase
+    ? `<defs><mask id="${maskId}"><rect width="${W}" height="${H}" fill="#fff"/>${eraseMaskPaths.join("")}</mask></defs>`
+    : "";
+  const groupAttr = hasErase ? ` mask="url(#${maskId})"` : "";
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">${mask}<g${groupAttr}>${inkPaths.join("")}</g></svg>`;
+}
+
+// 写真エリアだけを見せる縮小サムネイル向け（mypage）。
+// polaroid の photo 領域（13,13,290,290）にビューボックスをクロップ。
+function photoStrokesSVG(strokes) {
+  if (!strokes || !strokes.length) return "";
+  const inner = polaroidStrokesSVG(strokes);
+  if (!inner) return "";
+  return inner.replace(
+    `viewBox="0 0 ${POLAROID_VB.w} ${POLAROID_VB.h}"`,
+    `viewBox="13 13 290 290"`
+  );
+}
+function applyPhotoStrokes(container, memory) {
+  if (!container) return;
+  const prev = container.querySelector(":scope > .polaroid-strokes");
+  if (prev) prev.remove();
+  const strokes = strokesFromMemory(memory);
+  if (!strokes) return;
+  const svg = photoStrokesSVG(strokes);
+  if (!svg) return;
+  const layer = document.createElement("div");
+  layer.className = "polaroid-strokes";
+  layer.innerHTML = svg;
+  container.appendChild(layer);
+}
+
+// polaroid-frame 要素にストロークオーバーレイを挿入。既存オーバーレイは差し替える。
+function applyPolaroidStrokes(frameEl, memory) {
+  if (!frameEl) return;
+  const prev = frameEl.querySelector(":scope > .polaroid-strokes");
+  if (prev) prev.remove();
+  const strokes = strokesFromMemory(memory);
+  if (!strokes) return;
+  const svg = polaroidStrokesSVG(strokes);
+  if (!svg) return;
+  const layer = document.createElement("div");
+  layer.className = "polaroid-strokes";
+  layer.innerHTML = svg;
+  frameEl.appendChild(layer);
+}
+
 function cropToBlob() {
   const canvas = document.createElement("canvas");
   canvas.width = OUTPUT_SIZE;
@@ -1426,11 +1688,13 @@ async function savePlaced() {
   try {
     const blob = await cropToBlob();
     const keyMode = visibility === "keyed" ? getSelectedKeyMode() : undefined;
+    const strokes = drawerGetStrokesJson();
     const result = await postMemoryToApi({
       blob,
       lat: myPos.lat, lng: myPos.lng, accuracy: myPos.accuracy, note, visibility,
       accessKey: userKey || undefined,
       keyMode,
+      strokes: strokes || undefined,
     });
     await Promise.all([refreshMemories(), refreshMyMemories()]);
     renderRadar();
@@ -1623,6 +1887,8 @@ function renderArFrame() {
       }
       // 裏面はAR中は常に無地（メッセージは詳細ビューアで見せる）
       backSlot.innerHTML = `<div class="ar-placeholder blank"></div>`;
+      const arFrontFrame = el.querySelector(".ar-front .polaroid-frame");
+      applyPolaroidStrokes(arFrontFrame, m);
       el.dataset.stage = stage;
     }
 
@@ -1816,10 +2082,14 @@ function renderHistoryList() {
     const item = document.createElement("div");
     item.className = "history-item";
 
+    const thumbWrap = document.createElement("div");
+    thumbWrap.className = "history-thumb-wrap";
     const img = document.createElement("img");
     img.className = "history-thumb";
     img.alt = "";
     setImageSrc(img, m);
+    thumbWrap.appendChild(img);
+    applyPhotoStrokes(thumbWrap, m);
 
     const body = document.createElement("div");
     body.className = "history-body";
@@ -1917,7 +2187,7 @@ function renderHistoryList() {
       });
     }
 
-    item.appendChild(img);
+    item.appendChild(thumbWrap);
     item.appendChild(body);
     item.appendChild(rightControl || visLabel);
     const swipe = document.createElement("div");
@@ -2102,6 +2372,8 @@ function renderViewerAt(idx) {
   if (unlocked) {
     setImageSrc($("viewer-img"), m);
     $("viewer-note").textContent = m.note || "";
+    const viewerFrontFrame = $("viewer-img")?.closest(".polaroid-frame");
+    applyPolaroidStrokes(viewerFrontFrame, m);
     $("polaroid-flip").classList.remove("flipped");
     const d = new Date(m.createdAt);
     $("viewer-meta").textContent = `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()}`;

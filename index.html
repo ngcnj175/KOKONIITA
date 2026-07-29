@@ -155,16 +155,56 @@
       </header>
       <div class="compose-body">
         <div class="cropper-wrap">
-          <div class="cropper" id="cropper">
-            <img id="cropper-img" alt="" />
-            <div class="cropper-grid" aria-hidden="true"></div>
+          <div class="compose-polaroid" id="compose-polaroid">
+            <div class="cropper" id="cropper">
+              <img id="cropper-img" alt="" />
+              <div class="cropper-grid" aria-hidden="true"></div>
+            </div>
+            <div class="compose-polaroid-caption" aria-hidden="true"></div>
+            <canvas id="draw-canvas" class="draw-canvas" aria-label="手書きレイヤー"></canvas>
+          </div>
+          <div class="draw-toolbar" role="toolbar" aria-label="描画ツール">
+            <div class="draw-modes" role="group" aria-label="モード">
+              <button type="button" class="draw-mode is-active" data-mode="move" aria-label="移動">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 L12 21 M3 12 L21 12 M12 3 L9 6 M12 3 L15 6 M12 21 L9 18 M12 21 L15 18 M3 12 L6 9 M3 12 L6 15 M21 12 L18 9 M21 12 L18 15"/></svg>
+              </button>
+              <button type="button" class="draw-mode" data-mode="draw" aria-label="描く">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20 L15 9 L18 12 L7 23 L3 24 Z" transform="translate(0,-3)"/><path d="M15 6 L18 9" transform="translate(0,-3)"/></svg>
+              </button>
+              <button type="button" class="draw-mode" data-mode="erase" aria-label="消しゴム">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17 L11 10 L18 17 L14 21 L8 21 Z"/><path d="M11 10 L16 5 L21 10 L18 13"/></svg>
+              </button>
+            </div>
+            <div class="draw-colors" role="group" aria-label="色">
+              <button type="button" class="draw-color is-active" data-color="#242a29" style="--sw:#242a29" aria-label="黒"></button>
+              <button type="button" class="draw-color" data-color="#f7f6f2" style="--sw:#f7f6f2" aria-label="白"></button>
+              <button type="button" class="draw-color" data-color="#e05a5a" style="--sw:#e05a5a" aria-label="赤"></button>
+              <button type="button" class="draw-color" data-color="#e6b23a" style="--sw:#e6b23a" aria-label="黄"></button>
+              <button type="button" class="draw-color" data-color="#4a86c9" style="--sw:#4a86c9" aria-label="青"></button>
+              <button type="button" class="draw-color" data-color="#6aa870" style="--sw:#6aa870" aria-label="緑"></button>
+              <button type="button" class="draw-color" data-color="#8f6ab7" style="--sw:#8f6ab7" aria-label="紫"></button>
+              <button type="button" class="draw-color" data-color="#e089b1" style="--sw:#e089b1" aria-label="ピンク"></button>
+            </div>
+            <div class="draw-sizes" role="group" aria-label="太さ">
+              <button type="button" class="draw-size" data-size="0.008" aria-label="細"><span class="dot" style="width:6px;height:6px"></span></button>
+              <button type="button" class="draw-size is-active" data-size="0.018" aria-label="中"><span class="dot" style="width:11px;height:11px"></span></button>
+              <button type="button" class="draw-size" data-size="0.032" aria-label="太"><span class="dot" style="width:16px;height:16px"></span></button>
+            </div>
+            <div class="draw-actions">
+              <button type="button" class="draw-action" id="draw-undo" aria-label="ひとつ戻す">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6 L3 12 L9 18"/><path d="M3 12 L14 12 A6 6 0 0 1 20 18 L20 20"/></svg>
+              </button>
+              <button type="button" class="draw-action" id="draw-clear" aria-label="全て消す">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7 L19 7"/><path d="M8 7 L8 20 L16 20 L16 7"/><path d="M10 4 L14 4 L14 7 L10 7 Z"/></svg>
+              </button>
+            </div>
           </div>
           <div class="zoom-row">
             <span class="dim small">−</span>
             <input type="range" id="zoom-slider" min="1" max="4" step="0.01" value="1" />
             <span class="dim small">＋</span>
           </div>
-          <p class="dim small crop-hint">ドラッグで移動・ピンチ／スライダーで拡大</p>
+          <p class="dim small crop-hint" id="draw-hint">移動モード：ドラッグで写真の位置、スライダーで拡大</p>
         </div>
         <label class="field">
           <span>メッセージ（任意）</span>

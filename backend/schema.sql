@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS memories (
   visibility   TEXT NOT NULL DEFAULT 'public',  -- 'public' | 'private' | 'keyed'
   access_key   TEXT,                             -- visibility='keyed' の合言葉（6桁英数字）
   created_at   INTEGER NOT NULL,
+  strokes        TEXT,                           -- ポラロイド上の手書きストローク（JSON配列）
   deleted_at     INTEGER,                        -- NULL=生存 / 値あり=soft delete 済
   deleted_reason TEXT,                           -- 'reported' | 'self' | 'owner'
   FOREIGN KEY (user_id) REFERENCES users(id)
