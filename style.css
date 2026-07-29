@@ -561,6 +561,7 @@ html, body {
 .polaroid-frame {
   background: #FAF9FA;
   padding: 14px 14px 58px;
+  border-radius: 3px;
   box-shadow: 0 10px 24px rgba(15, 20, 29, 0.22), 0 3px 6px rgba(15, 20, 29, 0.12);
   border: 1px solid rgba(15, 20, 29, 0.08);
   width: fit-content;
