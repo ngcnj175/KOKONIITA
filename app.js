@@ -1410,29 +1410,38 @@ function drawerInit() {
   drawerSetMode("move");
   drawerResize();
 
+  const bindTap = (el, fn) => {
+    if (!el) return;
+    let handled = false;
+    el.onpointerdown = (e) => {
+      e.preventDefault();
+      handled = true;
+      fn();
+      setTimeout(() => { handled = false; }, 400);
+    };
+    el.onclick = (e) => { if (handled) return; fn(); };
+  };
   scope.querySelectorAll(".draw-mode").forEach(btn => {
-    btn.onclick = () => drawerSetMode(btn.dataset.mode);
+    bindTap(btn, () => drawerSetMode(btn.dataset.mode));
   });
   scope.querySelectorAll(".draw-color").forEach(btn => {
-    btn.onclick = () => {
+    bindTap(btn, () => {
       drawer.color = btn.dataset.color;
       scope.querySelectorAll(".draw-color").forEach(b => b.classList.toggle("is-active", b === btn));
       if (drawer.mode === "erase") drawerSetMode("draw");
-    };
+    });
   });
   scope.querySelectorAll(".draw-size").forEach(btn => {
-    btn.onclick = () => {
+    bindTap(btn, () => {
       drawer.size = parseFloat(btn.dataset.size);
       scope.querySelectorAll(".draw-size").forEach(b => b.classList.toggle("is-active", b === btn));
-    };
+    });
   });
-  const undo = document.getElementById("draw-undo");
-  if (undo) undo.onclick = () => { drawer.strokes.pop(); drawerRender(); };
-  const clear = document.getElementById("draw-clear");
-  if (clear) clear.onclick = () => {
+  bindTap(document.getElementById("draw-undo"), () => { drawer.strokes.pop(); drawerRender(); });
+  bindTap(document.getElementById("draw-clear"), () => {
     if (drawer.strokes.length && !confirm("書き込みを全て消しますか？")) return;
     drawer.strokes = []; drawerRender();
-  };
+  });
 
   canvas.onpointerdown = drawerPointerDown;
   canvas.onpointermove = drawerPointerMove;
@@ -1447,7 +1456,8 @@ function drawerSetMode(m) {
   if (!polaroid) return;
   polaroid.classList.remove("mode-move", "mode-draw", "mode-erase");
   polaroid.classList.add(`mode-${m}`);
-  polaroid.querySelectorAll(".draw-mode").forEach(b => b.classList.toggle("is-active", b.dataset.mode === m));
+  const scope = polaroid.closest(".cropper-wrap") || document;
+  scope.querySelectorAll(".draw-mode").forEach(b => b.classList.toggle("is-active", b.dataset.mode === m));
   const hint = document.getElementById("draw-hint");
   if (hint) {
     hint.textContent =

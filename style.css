@@ -91,6 +91,8 @@ html, body {
 .chip:active { background: rgba(15, 20, 29, 0.08); }
 .chip:focus { outline: none; }
 .chip:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.sheet-head .chip { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+.sheet-head .chip:focus-visible { outline: none; }
 .chip.back { color: var(--dim); border-color: rgba(15, 20, 29, 0.25); }
 
 .bottombar {
@@ -774,7 +776,14 @@ html, body {
   cursor: pointer;
   padding: 0;
   color: #242A29;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
 }
+.draw-mode:focus, .draw-size:focus, .draw-action:focus,
+.draw-color:focus, .draw-mode:focus-visible, .draw-size:focus-visible,
+.draw-action:focus-visible, .draw-color:focus-visible { outline: none; }
 .draw-mode svg, .draw-action svg {
   width: 20px; height: 20px;
   fill: none; stroke: currentColor; stroke-width: 1.8;
@@ -797,6 +806,10 @@ html, body {
   border: 2px solid rgba(15, 20, 29, 0.15);
   padding: 0; cursor: pointer;
   box-shadow: inset 0 0 0 1px rgba(255,255,255,0.25);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
 }
 .draw-color.is-active {
   outline: 2px solid #242A29;
@@ -1389,6 +1402,7 @@ button.primary { background: var(--ink); color: #fff; border: 1px solid var(--in
   flex-direction: column;
   gap: 16px;
   -webkit-overflow-scrolling: touch;
+  touch-action: manipulation;
 }
 /* ---------- トースト ---------- */
 .toast {
