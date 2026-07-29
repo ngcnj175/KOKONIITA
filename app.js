@@ -1403,26 +1403,27 @@ function drawerInit() {
   const polaroid = $("compose-polaroid");
   const canvas = $("draw-canvas");
   if (!polaroid || !canvas) return;
+  const scope = polaroid.closest(".cropper-wrap") || document;
   drawer.canvas = canvas;
   drawer.strokes = [];
   drawer.cur = null;
   drawerSetMode("move");
   drawerResize();
 
-  polaroid.querySelectorAll(".draw-mode").forEach(btn => {
+  scope.querySelectorAll(".draw-mode").forEach(btn => {
     btn.onclick = () => drawerSetMode(btn.dataset.mode);
   });
-  polaroid.querySelectorAll(".draw-color").forEach(btn => {
+  scope.querySelectorAll(".draw-color").forEach(btn => {
     btn.onclick = () => {
       drawer.color = btn.dataset.color;
-      polaroid.querySelectorAll(".draw-color").forEach(b => b.classList.toggle("is-active", b === btn));
+      scope.querySelectorAll(".draw-color").forEach(b => b.classList.toggle("is-active", b === btn));
       if (drawer.mode === "erase") drawerSetMode("draw");
     };
   });
-  polaroid.querySelectorAll(".draw-size").forEach(btn => {
+  scope.querySelectorAll(".draw-size").forEach(btn => {
     btn.onclick = () => {
       drawer.size = parseFloat(btn.dataset.size);
-      polaroid.querySelectorAll(".draw-size").forEach(b => b.classList.toggle("is-active", b === btn));
+      scope.querySelectorAll(".draw-size").forEach(b => b.classList.toggle("is-active", b === btn));
     };
   });
   const undo = document.getElementById("draw-undo");
