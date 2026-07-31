@@ -104,7 +104,7 @@ html, body {
   gap: 28px;
 }
 .place-btn {
-  background: var(--ink);
+  background: #619FFE;
   color: #fff;
   border: none;
   padding: 12px 28px;
@@ -113,7 +113,7 @@ html, body {
   font-size: 14px;
   letter-spacing: 0.15em;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 65, 185, 0.17);
+  box-shadow: 0 2px 8px rgba(0, 65, 185, 0.25);
 }
 .place-btn.wide { width: 100%; padding: 14px; }
 .place-btn:disabled {
@@ -700,8 +700,8 @@ html, body {
   padding: 13px 13px 58px;
   background: #FAF9FA;
   border-radius: 3px;
-  border: 1px solid rgba(15, 20, 29, 0.08);
-  box-shadow: 0 10px 24px rgba(15, 20, 29, 0.18), 0 3px 6px rgba(15, 20, 29, 0.10);
+  border: 1px solid rgba(0, 65, 185, 0.08);
+  box-shadow: 0 10px 24px rgba(0, 65, 185, 0.20), 0 3px 6px rgba(0, 65, 185, 0.10);
   box-sizing: border-box;
 }
 .compose-polaroid .cropper {
@@ -762,7 +762,7 @@ html, body {
   display: inline-flex; align-items: center; justify-content: center;
   background: transparent;
   border: none; padding: 0; cursor: pointer;
-  color: #a7abae;
+  color: #698FCF;
   border-radius: 8px;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
@@ -775,8 +775,8 @@ html, body {
   stroke-linecap: round; stroke-linejoin: round;
 }
 .pan-toggle.is-active {
-  background: #e6e7e9;
-  color: #242A29;
+  background: #E8EEF6;
+  color: var(--ink);
 }
 .pan-toggle:focus, .pan-toggle:focus-visible { outline: none; }
 
@@ -803,7 +803,7 @@ html, body {
   border-radius: 8px;
   cursor: pointer;
   padding: 0;
-  color: #a7abae;
+  color: #698FCF;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
@@ -816,11 +816,11 @@ html, body {
   stroke-linecap: round; stroke-linejoin: round;
 }
 .draw-tool.is-active {
-  background: #e6e7e9;
-  color: #242A29;
+  background: #E8EEF6;
+  color: var(--ink);
 }
-.draw-tool:not(:disabled):active { background: #eeeff1; }
-.draw-tool:disabled { color: #d4d7d9; cursor: default; }
+.draw-tool:not(:disabled):active { background: #F1F5FB; }
+.draw-tool:disabled { color: #CAD8F1; cursor: default; }
 .draw-tool:focus, .draw-tool:focus-visible { outline: none; }
 
 .size-row {
