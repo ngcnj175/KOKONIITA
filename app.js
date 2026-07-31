@@ -1393,7 +1393,7 @@ const drawer = {
   redo: [],
   cur: null,
   mode: "move",       // 'move' | 'draw' | 'erase'
-  color: "#242a29",
+  color: "#111111",
   size: 0.018,        // 正規化太さ
   canvas: null,
   dpr: 1,
