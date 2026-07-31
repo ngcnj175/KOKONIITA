@@ -762,7 +762,7 @@ html, body {
   display: inline-flex; align-items: center; justify-content: center;
   background: transparent;
   border: none; padding: 0; cursor: pointer;
-  color: rgba(15, 20, 29, 0.35);
+  color: #a7abae;
   border-radius: 8px;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
@@ -775,7 +775,7 @@ html, body {
   stroke-linecap: round; stroke-linejoin: round;
 }
 .pan-toggle.is-active {
-  background: rgba(15, 20, 29, 0.08);
+  background: #e6e7e9;
   color: #242A29;
 }
 .pan-toggle:focus, .pan-toggle:focus-visible { outline: none; }
@@ -803,7 +803,7 @@ html, body {
   border-radius: 8px;
   cursor: pointer;
   padding: 0;
-  color: rgba(15, 20, 29, 0.32);
+  color: #a7abae;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
@@ -816,11 +816,11 @@ html, body {
   stroke-linecap: round; stroke-linejoin: round;
 }
 .draw-tool.is-active {
-  background: rgba(15, 20, 29, 0.10);
+  background: #e6e7e9;
   color: #242A29;
 }
-.draw-tool:not(:disabled):active { background: rgba(15, 20, 29, 0.06); }
-.draw-tool:disabled { color: rgba(15, 20, 29, 0.18); cursor: default; }
+.draw-tool:not(:disabled):active { background: #eeeff1; }
+.draw-tool:disabled { color: #d4d7d9; cursor: default; }
 .draw-tool:focus, .draw-tool:focus-visible { outline: none; }
 
 .size-row {

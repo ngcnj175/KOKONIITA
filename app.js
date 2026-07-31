@@ -1495,9 +1495,10 @@ function drawerUpdateActionButtons() {
   const redo = document.getElementById("draw-redo");
   const clear = document.getElementById("draw-clear");
   const has = drawer.strokes.length > 0;
-  if (undo) undo.disabled = !has;
-  if (redo) redo.disabled = drawer.redo.length === 0;
-  if (clear) clear.disabled = !has;
+  const canRedo = drawer.redo.length > 0;
+  if (undo) { undo.disabled = !has; undo.classList.toggle("is-active", has); }
+  if (redo) { redo.disabled = !canRedo; redo.classList.toggle("is-active", canRedo); }
+  if (clear) { clear.disabled = !has; clear.classList.toggle("is-active", has); }
 }
 
 function drawerSetMode(m) {
