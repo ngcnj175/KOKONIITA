@@ -1390,6 +1390,7 @@ function setupCropperEvents() {
 // x,y は compose-polaroid（写真＋余白）の幅・高さを 0..1 に正規化した座標。
 const drawer = {
   strokes: [],
+  redo: [],
   cur: null,
   mode: "move",       // 'move' | 'draw' | 'erase'
   color: "#242a29",
@@ -1406,6 +1407,7 @@ function drawerInit() {
   const scope = polaroid.closest(".cropper-wrap") || document;
   drawer.canvas = canvas;
   drawer.strokes = [];
+  drawer.redo = [];
   drawer.cur = null;
   drawerSetMode("move");
   drawerResize();
@@ -1450,7 +1452,14 @@ function drawerInit() {
   drawerUpdateSizePreview();
 
   bindTap(document.getElementById("draw-undo"), () => {
-    drawer.strokes.pop();
+    const s = drawer.strokes.pop();
+    if (s) drawer.redo.push(s);
+    drawerRender();
+    drawerUpdateActionButtons();
+  });
+  bindTap(document.getElementById("draw-redo"), () => {
+    const s = drawer.redo.pop();
+    if (s) drawer.strokes.push(s);
     drawerRender();
     drawerUpdateActionButtons();
   });
@@ -1458,6 +1467,7 @@ function drawerInit() {
     if (!drawer.strokes.length) return;
     if (!confirm("書き込みを全て消しますか？")) return;
     drawer.strokes = [];
+    drawer.redo = [];
     drawerRender();
     drawerUpdateActionButtons();
   });
@@ -1482,9 +1492,11 @@ function drawerUpdateSizePreview() {
 
 function drawerUpdateActionButtons() {
   const undo = document.getElementById("draw-undo");
+  const redo = document.getElementById("draw-redo");
   const clear = document.getElementById("draw-clear");
   const has = drawer.strokes.length > 0;
   if (undo) undo.disabled = !has;
+  if (redo) redo.disabled = drawer.redo.length === 0;
   if (clear) clear.disabled = !has;
 }
 
@@ -1567,6 +1579,7 @@ function drawerPointerDown(e) {
   if (drawer.mode === "move") return;
   e.preventDefault();
   drawer.canvas.setPointerCapture(e.pointerId);
+  drawer.redo = [];
   drawer.cur = {
     c: drawer.color,
     w: drawer.size,
