@@ -1414,34 +1414,54 @@ function drawerInit() {
     if (!el) return;
     let handled = false;
     el.onpointerdown = (e) => {
+      if (el.disabled) return;
       e.preventDefault();
       handled = true;
       fn();
       setTimeout(() => { handled = false; }, 400);
     };
-    el.onclick = (e) => { if (handled) return; fn(); };
+    el.onclick = () => { if (handled || el.disabled) return; fn(); };
   };
-  scope.querySelectorAll(".draw-mode").forEach(btn => {
-    bindTap(btn, () => drawerSetMode(btn.dataset.mode));
+
+  bindTap(document.getElementById("pan-toggle"), () => drawerSetMode("move"));
+  bindTap(document.getElementById("tool-pen"), () => {
+    drawerSetMode(drawer.mode === "draw" ? "move" : "draw");
   });
+  bindTap(document.getElementById("tool-erase"), () => {
+    drawerSetMode(drawer.mode === "erase" ? "move" : "erase");
+  });
+
   scope.querySelectorAll(".draw-color").forEach(btn => {
     bindTap(btn, () => {
       drawer.color = btn.dataset.color;
       scope.querySelectorAll(".draw-color").forEach(b => b.classList.toggle("is-active", b === btn));
-      if (drawer.mode === "erase") drawerSetMode("draw");
+      if (drawer.mode !== "draw") drawerSetMode("draw");
     });
   });
-  scope.querySelectorAll(".draw-size").forEach(btn => {
-    bindTap(btn, () => {
-      drawer.size = parseFloat(btn.dataset.size);
-      scope.querySelectorAll(".draw-size").forEach(b => b.classList.toggle("is-active", b === btn));
-    });
+
+  const slider = document.getElementById("size-slider");
+  if (slider) {
+    slider.value = String(drawer.size);
+    slider.oninput = (e) => {
+      drawer.size = parseFloat(e.target.value);
+      drawerUpdateSizePreview();
+    };
+  }
+  drawerUpdateSizePreview();
+
+  bindTap(document.getElementById("draw-undo"), () => {
+    drawer.strokes.pop();
+    drawerRender();
+    drawerUpdateActionButtons();
   });
-  bindTap(document.getElementById("draw-undo"), () => { drawer.strokes.pop(); drawerRender(); });
   bindTap(document.getElementById("draw-clear"), () => {
-    if (drawer.strokes.length && !confirm("書き込みを全て消しますか？")) return;
-    drawer.strokes = []; drawerRender();
+    if (!drawer.strokes.length) return;
+    if (!confirm("書き込みを全て消しますか？")) return;
+    drawer.strokes = [];
+    drawerRender();
+    drawerUpdateActionButtons();
   });
+  drawerUpdateActionButtons();
 
   canvas.onpointerdown = drawerPointerDown;
   canvas.onpointermove = drawerPointerMove;
@@ -1450,21 +1470,36 @@ function drawerInit() {
   canvas.onpointerleave = drawerPointerUp;
 }
 
+function drawerUpdateSizePreview() {
+  const dot = document.getElementById("size-dot");
+  if (!dot) return;
+  // 実寸プレビュー：ポラロイド幅(316)に対する太さを、プレビュー枠(24px)内に収まる形で表現。
+  // 上限 20px（サイズ最大 0.05 → 15.8px）だが少し余白を持たせる。
+  const px = Math.max(2, Math.min(20, drawer.size * POLAROID_VB.w));
+  dot.style.width = `${px}px`;
+  dot.style.height = `${px}px`;
+}
+
+function drawerUpdateActionButtons() {
+  const undo = document.getElementById("draw-undo");
+  const clear = document.getElementById("draw-clear");
+  const has = drawer.strokes.length > 0;
+  if (undo) undo.disabled = !has;
+  if (clear) clear.disabled = !has;
+}
+
 function drawerSetMode(m) {
   drawer.mode = m;
   const polaroid = $("compose-polaroid");
   if (!polaroid) return;
   polaroid.classList.remove("mode-move", "mode-draw", "mode-erase");
   polaroid.classList.add(`mode-${m}`);
-  const scope = polaroid.closest(".cropper-wrap") || document;
-  scope.querySelectorAll(".draw-mode").forEach(b => b.classList.toggle("is-active", b.dataset.mode === m));
-  const hint = document.getElementById("draw-hint");
-  if (hint) {
-    hint.textContent =
-      m === "move" ? "移動モード：ドラッグで写真の位置、スライダーで拡大"
-      : m === "draw" ? "描画モード：写真と余白をまたいで描けます"
-      : "消しゴム：なぞって書き込みを消します";
-  }
+  const pan = document.getElementById("pan-toggle");
+  const pen = document.getElementById("tool-pen");
+  const erase = document.getElementById("tool-erase");
+  if (pan) { pan.classList.toggle("is-active", m === "move"); pan.setAttribute("aria-pressed", m === "move" ? "true" : "false"); }
+  if (pen) { pen.classList.toggle("is-active", m === "draw"); pen.setAttribute("aria-pressed", m === "draw" ? "true" : "false"); }
+  if (erase) { erase.classList.toggle("is-active", m === "erase"); erase.setAttribute("aria-pressed", m === "erase" ? "true" : "false"); }
 }
 
 function drawerResize() {
@@ -1554,6 +1589,7 @@ function drawerPointerUp() {
   if (drawer.cur.p.length >= 1) drawer.strokes.push(drawer.cur);
   drawer.cur = null;
   drawerRender();
+  drawerUpdateActionButtons();
 }
 
 function drawerGetStrokesJson() {

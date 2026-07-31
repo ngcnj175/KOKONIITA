@@ -748,74 +748,136 @@ html, body {
 .cropper:active { cursor: grabbing; }
 
 /* ---------- 描画ツールバー ---------- */
-.draw-toolbar {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: 100%;
-  max-width: 316px;
-  padding: 8px 8px 6px;
-  background: rgba(255, 255, 255, 0.55);
-  border: 1px solid rgba(15, 20, 29, 0.08);
-  border-radius: 8px;
-  box-sizing: border-box;
-}
-.draw-modes, .draw-colors, .draw-sizes, .draw-actions {
+.cropper-wrap { width: 100%; max-width: 316px; margin: 0 auto; }
+.zoom-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 10px;
+  width: 100%;
+  max-width: 316px;
+  margin: 0 auto;
 }
-.draw-colors { flex-wrap: wrap; }
-.draw-mode, .draw-size, .draw-action {
-  width: 34px; height: 34px;
-  display: inline-flex;
-  align-items: center; justify-content: center;
-  background: #fff;
-  border: 1px solid rgba(15, 20, 29, 0.15);
-  border-radius: 6px;
-  cursor: pointer;
-  padding: 0;
-  color: #242A29;
+.pan-toggle {
+  width: 32px; height: 32px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: transparent;
+  border: none; padding: 0; cursor: pointer;
+  color: rgba(15, 20, 29, 0.35);
+  border-radius: 8px;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
-  user-select: none;
-  -webkit-user-select: none;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
 }
-.draw-mode:focus, .draw-size:focus, .draw-action:focus,
-.draw-color:focus, .draw-mode:focus-visible, .draw-size:focus-visible,
-.draw-action:focus-visible, .draw-color:focus-visible { outline: none; }
-.draw-mode svg, .draw-action svg {
+.pan-toggle svg {
   width: 20px; height: 20px;
   fill: none; stroke: currentColor; stroke-width: 1.8;
   stroke-linecap: round; stroke-linejoin: round;
 }
-.draw-mode.is-active, .draw-size.is-active {
-  background: #242A29;
-  color: #FAF9FA;
-  border-color: #242A29;
+.pan-toggle.is-active {
+  background: rgba(15, 20, 29, 0.08);
+  color: #242A29;
 }
-.draw-size .dot {
-  display: inline-block;
-  border-radius: 50%;
-  background: currentColor;
+.pan-toggle:focus, .pan-toggle:focus-visible { outline: none; }
+
+.draw-toolbar {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  max-width: 316px;
+  margin: 0 auto;
 }
-.draw-color {
-  width: 26px; height: 26px;
-  border-radius: 50%;
-  background: var(--sw, #242a29);
-  border: 2px solid rgba(15, 20, 29, 0.15);
-  padding: 0; cursor: pointer;
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.25);
+.draw-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  width: 100%;
+}
+.draw-tool {
+  width: 44px; height: 40px;
+  display: inline-flex;
+  align-items: center; justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  padding: 0;
+  color: rgba(15, 20, 29, 0.32);
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
   -webkit-user-select: none;
+  transition: background 0.15s, color 0.15s;
+}
+.draw-tool svg {
+  width: 22px; height: 22px;
+  fill: none; stroke: currentColor; stroke-width: 1.8;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.draw-tool.is-active {
+  background: rgba(15, 20, 29, 0.10);
+  color: #242A29;
+}
+.draw-tool:not(:disabled):active { background: rgba(15, 20, 29, 0.06); }
+.draw-tool:disabled { color: rgba(15, 20, 29, 0.18); cursor: default; }
+.draw-tool:focus, .draw-tool:focus-visible { outline: none; }
+
+.size-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 316px;
+  margin: 0 auto;
+  padding: 2px 4px;
+  box-sizing: border-box;
+}
+.size-preview {
+  width: 24px; height: 24px;
+  display: inline-flex;
+  align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.size-dot {
+  display: inline-block;
+  background: #242A29;
+  border-radius: 50%;
+  transition: width 0.08s, height 0.08s;
+}
+.size-row input[type="range"] {
+  flex: 1;
+  accent-color: var(--ink);
+}
+
+.draw-colors {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  width: 100%;
+  max-width: 316px;
+  margin: 0 auto;
+}
+.draw-color {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--sw, #242a29);
+  border: 1px solid rgba(15, 20, 29, 0.12);
+  padding: 0; cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+  position: relative;
+  transition: transform 0.12s;
 }
 .draw-color.is-active {
-  outline: 2px solid #242A29;
-  outline-offset: 2px;
+  transform: scale(1.15);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.25), 0 0 0 2px #242A29;
 }
-.draw-actions { margin-left: auto; }
+.draw-color:focus, .draw-color:focus-visible { outline: none; }
 .cropper img {
   position: absolute;
   left: 0;
@@ -834,13 +896,6 @@ html, body {
   background:
     linear-gradient(to right, transparent 33.33%, rgba(255,255,255,0.35) 33.33%, rgba(255,255,255,0.35) 33.5%, transparent 33.5%, transparent 66.66%, rgba(255,255,255,0.35) 66.66%, rgba(255,255,255,0.35) 66.83%, transparent 66.83%),
     linear-gradient(to bottom, transparent 33.33%, rgba(255,255,255,0.35) 33.33%, rgba(255,255,255,0.35) 33.5%, transparent 33.5%, transparent 66.66%, rgba(255,255,255,0.35) 66.66%, rgba(255,255,255,0.35) 66.83%, transparent 66.83%);
-}
-.zoom-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  max-width: 300px;
 }
 .zoom-row input[type="range"] {
   flex: 1;
