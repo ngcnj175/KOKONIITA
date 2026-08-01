@@ -738,8 +738,8 @@ html, body {
   max-width: 300px;
   aspect-ratio: 1 / 1;
   overflow: hidden;
-  background: #000;
-  border: 1px solid rgba(15, 20, 29, 0.15);
+  background: transparent;
+  border: none;
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
