@@ -1459,9 +1459,6 @@ button.primary { background: var(--ink); color: #fff; border: 1px solid var(--in
 }
 
 /* ---------- 記憶を置くボトムシート ---------- */
-/* 投稿画面はポラロイド(#FAF9FA)や白パレットを浮かせるため、
-   直近のブルー基調と地続きの淡いブルーグレーを地色に敷く */
-#compose-sheet .sheet-panel { background: #EEF3FA; }
 .compose-body {
   overflow-y: auto;
   padding: 16px 20px 24px;
