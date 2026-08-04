@@ -174,10 +174,11 @@ async function reverseGeocode(lat, lng) {
       const country = admins.find(a => a.adminLevel === 2)?.name;
       const prefecture = admins.find(a => a.adminLevel === 4)?.name;
       const cityOrWard = [...admins]
-        .filter(a => a.adminLevel >= 5 && a.adminLevel <= 7 && a.name)
+        .filter(a => a.adminLevel >= 5 && a.adminLevel <= 7 && a.name && a.name !== prefecture)
         .sort((a, b) => b.adminLevel - a.adminLevel)[0]?.name;
-      const name = cityOrWard || prefecture || country;
-      if (name) return String(name).slice(0, 100);
+      // 「都道府県 市区町村」形式。海外で prefecture 相当がなければ国+市。
+      const name = [prefecture || country, cityOrWard].filter(Boolean).join(" ");
+      if (name) return name.slice(0, 100);
     }
     // フォールバック: 従来のトップレベルフィールド
     const name = j.city || j.locality || j.principalSubdivision || j.countryName || null;
