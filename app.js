@@ -467,9 +467,6 @@ function createStars(count = 70) {
     const yBias = Math.pow(Math.random(), 1.6);
     s.style.top  = (topPct + yBias * (bottomPct - topPct)).toFixed(2) + "%";
     s.style.setProperty("--base",  (0.35 + Math.random() * 0.55).toFixed(2));
-    s.style.setProperty("--dur",   (6 + Math.random() * 8).toFixed(2) + "s");
-    // 負の delay でランダムに開始位相をずらす（同時にきらめかないように）
-    s.style.setProperty("--delay", (-Math.random() * 14).toFixed(2) + "s");
     frag.appendChild(s);
   }
   field.appendChild(frag);
