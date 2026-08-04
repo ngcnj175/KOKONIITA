@@ -439,7 +439,7 @@ function onPositionFix(pos) {
   updateSkyMode();
 }
 
-// ---------- 星（夜モード時に薄く瞬く） ----------
+// ---------- 星（夜モードで表示、明るさのみ乱数、固定表示） ----------
 // star-field は空アーチと同じ 260vmax 要素なので、要素の 0-100% は
 // 大半が画面外。実測 rect から可視領域を要素座標(%)に換算して配置する。
 // 表示/非表示は CSS 側（body.sky-night .star-field { opacity: 1 }）に任せる。
@@ -466,7 +466,7 @@ function createStars(count = 70) {
     // 上空ほど密になるよう y を偏らせる（Math.pow で下端 = 地平線側を薄く）
     const yBias = Math.pow(Math.random(), 1.6);
     s.style.top  = (topPct + yBias * (bottomPct - topPct)).toFixed(2) + "%";
-    s.style.setProperty("--base",  (0.35 + Math.random() * 0.55).toFixed(2));
+    s.style.opacity = (0.35 + Math.random() * 0.55).toFixed(2);
     frag.appendChild(s);
   }
   field.appendChild(frag);
