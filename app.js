@@ -154,10 +154,9 @@ async function refreshMe() {
   } catch (e) { console.warn("refreshMe", e); }
 }
 
-// 逆ジオコーディング（BigDataCloud client-side, 無料・キー不要・無制限・商用可）
-// 市区町村レベルの地名を返す。取得失敗時は null。
-// 東京23区など city フィールドが都名になるケースがあるため、
-// localityInfo.administrative[] を辿って最も細かい行政区分を採用する。
+// 「都道府県 市区町村」形式の地名を返す（BigDataCloud client-side, 無料・キー不要）。
+// トップレベル city は東京23区で都名になる仕様のため administrative 配列から拾う。
+// adminLevel: 国=2, 都道府県=4, 市区町村=6〜7。
 async function reverseGeocode(lat, lng) {
   try {
     const url = `https://api-bdc.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=ja`;
@@ -166,23 +165,15 @@ async function reverseGeocode(lat, lng) {
     const r = await fetch(url, { signal: ctrl.signal });
     clearTimeout(to);
     if (!r.ok) return null;
-    const j = await r.json();
-    const admins = j.localityInfo?.administrative;
-    if (Array.isArray(admins) && admins.length) {
-      // adminLevel が大きいほど細かい（国=2, 都道府県=4, 市区=6〜7, 町丁=8〜）
-      // 市区町村レベル（level 6-7）を優先、なければ最も深いもの
-      const country = admins.find(a => a.adminLevel === 2)?.name;
-      const prefecture = admins.find(a => a.adminLevel === 4)?.name;
-      const cityOrWard = [...admins]
-        .filter(a => a.adminLevel >= 5 && a.adminLevel <= 7 && a.name && a.name !== prefecture)
-        .sort((a, b) => b.adminLevel - a.adminLevel)[0]?.name;
-      // 「都道府県 市区町村」形式。海外で prefecture 相当がなければ国+市。
-      const name = [prefecture || country, cityOrWard].filter(Boolean).join(" ");
-      if (name) return name.slice(0, 100);
-    }
-    // フォールバック: 従来のトップレベルフィールド
-    const name = j.city || j.locality || j.principalSubdivision || j.countryName || null;
-    return name ? String(name).slice(0, 100) : null;
+    const admins = (await r.json())?.localityInfo?.administrative;
+    if (!Array.isArray(admins) || !admins.length) return null;
+    const prefecture = admins.find(a => a.adminLevel === 4)?.name;
+    const country = admins.find(a => a.adminLevel === 2)?.name;
+    const cityOrWard = admins
+      .filter(a => a.adminLevel >= 5 && a.adminLevel <= 7 && a.name && a.name !== prefecture)
+      .sort((a, b) => b.adminLevel - a.adminLevel)[0]?.name;
+    const name = [prefecture || country, cityOrWard].filter(Boolean).join(" ");
+    return name ? name.slice(0, 100) : null;
   } catch {
     return null;
   }
