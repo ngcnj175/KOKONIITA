@@ -150,6 +150,7 @@ function toMemoryRow(r, opts = {}) {
     visibility,
     findCount: Number(r.find_count || 0),
     foundByMe: !!Number(r.found_by_me || 0),
+    placeName: r.place_name || null,
   };
   if (r.favorited_at != null) row.favoritedAt = r.favorited_at;
   // access_key は所有者向けレスポンス（履歴/投稿完了時）でのみ含める
@@ -297,7 +298,7 @@ app.get("/api/memories", async (c) => {
   if (key) {
     const [{ results }, ak] = await Promise.all([
       c.env.DB.prepare(
-        `SELECT id, user_id, lat, lng, accuracy, note, strokes, visibility, access_key, created_at,
+        `SELECT id, user_id, lat, lng, accuracy, note, strokes, visibility, access_key, place_name, created_at,
                 (SELECT COUNT(*) FROM finds f WHERE f.memory_id = memories.id) AS find_count,
                 EXISTS(SELECT 1 FROM finds f2 WHERE f2.memory_id = memories.id AND f2.user_id = ?) AS found_by_me
          FROM memories
@@ -314,7 +315,7 @@ app.get("/api/memories", async (c) => {
   }
   // 「公開」モードは public のみ。自分の private / keyed は「プライベート」モードから見る
   const { results } = await c.env.DB.prepare(
-    `SELECT id, user_id, lat, lng, accuracy, note, strokes, visibility, access_key, created_at,
+    `SELECT id, user_id, lat, lng, accuracy, note, strokes, visibility, access_key, place_name, created_at,
             (SELECT COUNT(*) FROM finds f WHERE f.memory_id = memories.id) AS find_count,
             EXISTS(SELECT 1 FROM finds f2 WHERE f2.memory_id = memories.id AND f2.user_id = ?) AS found_by_me
      FROM memories
@@ -329,7 +330,7 @@ app.get("/api/me/memories", async (c) => {
   const s = await requireSession(c);
   if (!s) return c.json({ error: "unauthorized" }, 401);
   const { results } = await c.env.DB.prepare(
-    `SELECT id, user_id, lat, lng, accuracy, note, strokes, visibility, access_key, created_at,
+    `SELECT id, user_id, lat, lng, accuracy, note, strokes, visibility, access_key, place_name, created_at,
             (SELECT COUNT(*) FROM finds f WHERE f.memory_id = memories.id) AS find_count,
             0 AS found_by_me
      FROM memories WHERE user_id = ? AND deleted_at IS NULL ORDER BY created_at DESC`
@@ -342,7 +343,7 @@ app.get("/api/me/finds", async (c) => {
   const s = await requireSession(c);
   if (!s) return c.json({ error: "unauthorized" }, 401);
   const { results } = await c.env.DB.prepare(
-    `SELECT m.id, m.user_id, m.lat, m.lng, m.accuracy, m.note, m.strokes, m.visibility, m.access_key, m.created_at,
+    `SELECT m.id, m.user_id, m.lat, m.lng, m.accuracy, m.note, m.strokes, m.visibility, m.access_key, m.place_name, m.created_at,
             f.created_at AS favorited_at,
             (SELECT COUNT(*) FROM finds f2 WHERE f2.memory_id = m.id) AS find_count,
             1 AS found_by_me
@@ -425,6 +426,7 @@ app.post("/api/memories", async (c) => {
   const lng = parseFloat(form.get("lng"));
   const accuracy = parseFloat(form.get("accuracy") || "0");
   const note = (form.get("note") || "").toString().slice(0, 200);
+  const placeName = (form.get("place_name") || "").toString().slice(0, 100) || null;
   const strokesInput = form.get("strokes");
   const strokesArr = strokesInput ? sanitizeStrokes(strokesInput.toString()) : null;
   const strokesJson = strokesArr && strokesArr.length ? JSON.stringify(strokesArr) : null;
@@ -478,11 +480,11 @@ app.post("/api/memories", async (c) => {
   const now = Date.now();
 
   await c.env.DB.prepare(
-    `INSERT INTO memories(id, user_id, lat, lng, accuracy, note, strokes, image_blob, image_type, image_size, geohash, visibility, access_key, created_at)
-     VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO memories(id, user_id, lat, lng, accuracy, note, strokes, image_blob, image_type, image_size, geohash, visibility, access_key, place_name, created_at)
+     VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(
     id, s.userId, lat, lng, accuracy, note, strokesJson,
-    bytes, image.type || "image/jpeg", image.size, gh, visibility, accessKey, now
+    bytes, image.type || "image/jpeg", image.size, gh, visibility, accessKey, placeName, now
   ).run();
 
   // 新規キーなら access_keys 行を作る（所有者=投稿者, mode=リクエスト値）
@@ -500,7 +502,7 @@ app.post("/api/memories", async (c) => {
     ? (accessKeyNew ? keyModeReq : existingKey?.mode)
     : undefined;
   return c.json({
-    id, lat, lng, accuracy, note, visibility,
+    id, lat, lng, accuracy, note, placeName, visibility,
     strokes: strokesArr && strokesArr.length ? strokesArr : undefined,
     accessKey: accessKey || undefined,
     accessKeyIssued: accessKeyIssued || undefined,

@@ -154,13 +154,33 @@ async function refreshMe() {
   } catch (e) { console.warn("refreshMe", e); }
 }
 
-async function postMemoryToApi({ blob, lat, lng, accuracy, note, visibility, accessKey, keyMode, strokes }) {
+// 逆ジオコーディング（BigDataCloud client-side, 無料・キー不要・無制限・商用可）
+// 市区町村レベルの地名を返す。取得失敗時は null。
+async function reverseGeocode(lat, lng) {
+  try {
+    const url = `https://api-bdc.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=ja`;
+    const ctrl = new AbortController();
+    const to = setTimeout(() => ctrl.abort(), 3000);
+    const r = await fetch(url, { signal: ctrl.signal });
+    clearTimeout(to);
+    if (!r.ok) return null;
+    const j = await r.json();
+    // city（市区町村）優先。海外で city 空なら locality → 都道府県/州 → 国名。
+    const name = j.city || j.locality || j.principalSubdivision || j.countryName || null;
+    return name ? String(name).slice(0, 100) : null;
+  } catch {
+    return null;
+  }
+}
+
+async function postMemoryToApi({ blob, lat, lng, accuracy, note, visibility, accessKey, keyMode, strokes, placeName }) {
   const fd = new FormData();
   fd.append("image", blob, "memory.jpg");
   fd.append("lat", String(lat));
   fd.append("lng", String(lng));
   fd.append("accuracy", String(accuracy));
   fd.append("note", note || "");
+  if (placeName) fd.append("place_name", placeName);
   if (strokes) fd.append("strokes", strokes);
   const v = visibility === "private" || visibility === "keyed" ? visibility : "public";
   fd.append("visibility", v);
@@ -1747,15 +1767,20 @@ async function savePlaced() {
   }
 
   try {
-    const blob = await cropToBlob();
     const keyMode = visibility === "keyed" ? getSelectedKeyMode() : undefined;
     const strokes = drawerGetStrokesJson();
+    // 画像生成と逆ジオを並列。逆ジオ失敗時は placeName=null のまま投稿続行。
+    const [blob, placeName] = await Promise.all([
+      cropToBlob(),
+      reverseGeocode(myPos.lat, myPos.lng),
+    ]);
     const result = await postMemoryToApi({
       blob,
       lat: myPos.lat, lng: myPos.lng, accuracy: myPos.accuracy, note, visibility,
       accessKey: userKey || undefined,
       keyMode,
       strokes: strokes || undefined,
+      placeName: placeName || undefined,
     });
     await Promise.all([refreshMemories(), refreshMyMemories()]);
     renderRadar();
@@ -2160,14 +2185,15 @@ function renderHistoryList() {
     msg.textContent = noteText.length > 8 ? noteText.slice(0, 8) + "…" : noteText;
     const dist = document.createElement("p");
     dist.className = "history-dist";
+    const parts = [];
+    if (m.placeName) parts.push(m.placeName);
     if (myPos) {
       const meters = distanceMeters(myPos, { lat: m.lat, lng: m.lng });
-      dist.textContent = meters < 1000
+      parts.push(meters < 1000
         ? `${Math.round(meters)}m`
-        : `${(meters / 1000).toFixed(1)}km`;
-    } else {
-      dist.textContent = "—";
+        : `${(meters / 1000).toFixed(1)}km`);
     }
+    dist.textContent = parts.length ? parts.join(" · ") : "—";
     const meta = document.createElement("p");
     meta.className = "history-meta";
     const d = new Date(m.createdAt);
