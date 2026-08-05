@@ -1067,37 +1067,15 @@ button.primary { background: var(--ink); color: #fff; border: 1px solid var(--in
   pointer-events: auto;
   transition: opacity 0.4s, left 0.6s linear, top 0.6s linear, width 0.6s ease-out;
   will-change: transform, left, top, width;
-  -webkit-perspective: 800px;
-  perspective: 800px;
 }
 .ar-flipper {
   position: relative;
   width: 100%;
   aspect-ratio: 100 / 114;
-  transform-style: preserve-3d;
-  -webkit-transform-style: preserve-3d;
+  transform-origin: 50% 0;
   will-change: transform;
-  -webkit-animation: ar-rotate-y 12s linear infinite;
-  animation: ar-rotate-y 12s linear infinite;
-}
-.ar-face {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-  -webkit-transform: translateZ(0.5px);
-  transform: translateZ(0.5px);
-}
-.ar-face.ar-back {
-  -webkit-transform: rotateY(180deg) translateZ(0.5px);
-  transform: rotateY(180deg) translateZ(0.5px);
-}
-.ar-face > .polaroid-frame {
-  width: 100%;
-  height: 100%;
-  box-sizing: border-box;
+  -webkit-animation: ar-swing var(--ar-swing-dur, 3.4s) ease-in-out var(--ar-swing-delay, 0s) infinite;
+  animation: ar-swing var(--ar-swing-dur, 3.4s) ease-in-out var(--ar-swing-delay, 0s) infinite;
 }
 .ar-item .polaroid-frame {
   box-shadow: 0 6px 14px rgba(0, 65, 185, 0.55);
@@ -1107,20 +1085,6 @@ button.primary { background: var(--ink); color: #fff; border: 1px solid var(--in
   width: 100%;
   background: #FAF9FA;
   transform: none;
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-}
-.ar-item .polaroid-frame.back {
-  background: #F6F5F8;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 100%;
-}
-.ar-item .polaroid-frame.back .handwritten {
-  font-size: 14px;
-  padding: 8px 4px;
-  margin: 0;
 }
 .ar-slot {
   width: 100%;
@@ -1132,14 +1096,44 @@ button.primary { background: var(--ink); color: #fff; border: 1px solid var(--in
   height: auto;
   display: block;
 }
-@-webkit-keyframes ar-rotate-y {
-  from { -webkit-transform: rotateZ(-15deg) rotateY(0deg); transform: rotateZ(-15deg) rotateY(0deg); }
-  to   { -webkit-transform: rotateZ(-15deg) rotateY(360deg); transform: rotateZ(-15deg) rotateY(360deg); }
+@-webkit-keyframes ar-swing {
+  0%   { -webkit-transform: rotate(-6deg); transform: rotate(-6deg); }
+  50%  { -webkit-transform: rotate(6deg);  transform: rotate(6deg); }
+  100% { -webkit-transform: rotate(-6deg); transform: rotate(-6deg); }
 }
-@keyframes ar-rotate-y {
-  from { transform: rotateZ(-15deg) rotateY(0deg); }
-  to   { transform: rotateZ(-15deg) rotateY(360deg); }
+@keyframes ar-swing {
+  0%   { transform: rotate(-6deg); }
+  50%  { transform: rotate(6deg); }
+  100% { transform: rotate(-6deg); }
 }
+
+/* ピン（振り子の支点＝ポラロイド上端中央） */
+.ar-pin {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 14%;
+  aspect-ratio: 1 / 1;
+  transform: translate(-50%, -30%);
+  border-radius: 50%;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 32% 28%,
+      rgba(255,255,255,0.92) 0%,
+      var(--pin-hi, #7fb2ff) 22%,
+      var(--pin-mid, #3b7bd8) 60%,
+      var(--pin-lo, #1a3f80) 100%);
+  box-shadow:
+    0 1px 1px rgba(0,0,0,0.35),
+    0 4px 6px rgba(0,0,0,0.45),
+    0 8px 10px rgba(0,0,0,0.25),
+    inset -1px -2px 3px rgba(0,0,0,0.30),
+    inset 1px 1px 2px rgba(255,255,255,0.35);
+}
+.ar-pin-blue   { --pin-hi:#a8ccff; --pin-mid:#3b7bd8; --pin-lo:#1a3f80; }
+.ar-pin-yellow { --pin-hi:#ffe89a; --pin-mid:#e8b53a; --pin-lo:#8a6510; }
+.ar-pin-pink   { --pin-hi:#ffc7db; --pin-mid:#e56791; --pin-lo:#8a2d4d; }
 
 /* プレースホルダ（画像未解放時のアイコン） */
 .ar-placeholder {

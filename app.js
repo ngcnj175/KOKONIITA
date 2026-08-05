@@ -1881,6 +1881,21 @@ function verticalRatioForId(id) {
   return 0.35 + norm * 0.30;
 }
 
+// 記憶ID→ピン色 & 振り子のduration/delay（idごとに固定）
+const AR_PIN_COLORS = ["blue", "yellow", "pink"];
+const AR_SWING_DURATIONS = [2.8, 3.4, 4.1, 4.8];
+const AR_SWING_DELAYS = [0, -0.8, -1.7, -2.5];
+function arVariantForId(id) {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = ((h << 5) - h + id.charCodeAt(i)) | 0;
+  h = Math.abs(h);
+  return {
+    color: AR_PIN_COLORS[h % AR_PIN_COLORS.length],
+    duration: AR_SWING_DURATIONS[Math.floor(h / 3) % AR_SWING_DURATIONS.length],
+    delay: AR_SWING_DELAYS[Math.floor(h / 12) % AR_SWING_DELAYS.length],
+  };
+}
+
 function arLoop() {
   if (!arActive) return;
   renderArFrame();
@@ -1937,23 +1952,20 @@ function renderArFrame() {
 
     let el = existing.get(m.id);
     if (!el) {
+      const v = arVariantForId(m.id);
       el = document.createElement("div");
-      el.className = `ar-item ${stage}`;
+      el.className = `ar-item ${stage} ar-pin-${v.color}`;
       el.dataset.id = m.id;
+      el.style.setProperty("--ar-swing-dur", `${v.duration}s`);
+      el.style.setProperty("--ar-swing-delay", `${v.delay}s`);
       el.innerHTML = `
         <div class="ar-flipper">
-          <div class="ar-face ar-front">
-            <div class="polaroid-frame">
-              <div class="ar-slot"></div>
-              <div class="ar-dist-tag"></div>
-            </div>
+          <div class="polaroid-frame">
+            <div class="ar-slot"></div>
+            <div class="ar-dist-tag"></div>
           </div>
-          <div class="ar-face ar-back">
-            <div class="polaroid-frame back">
-              <div class="ar-back-slot"></div>
-            </div>
-          </div>
-        </div>`;
+        </div>
+        <div class="ar-pin"></div>`;
       overlay.appendChild(el);
     } else {
       if (!el.classList.contains(stage)) {
@@ -1967,17 +1979,14 @@ function renderArFrame() {
     // 中身の描画（段階変化時のみ）
     if (el.dataset.stage !== stage) {
       const frontSlot = el.querySelector(".ar-slot");
-      const backSlot = el.querySelector(".ar-back-slot");
       if (stage === "ar-near") {
         frontSlot.innerHTML = `<img alt="" />`;
         frontSlot.querySelector("img").src = m.image;
       } else {
         frontSlot.innerHTML = `<div class="ar-placeholder"></div>`;
       }
-      // 裏面はAR中は常に無地（メッセージは詳細ビューアで見せる）
-      backSlot.innerHTML = `<div class="ar-placeholder blank"></div>`;
-      const arFrontFrame = el.querySelector(".ar-front .polaroid-frame");
-      applyPolaroidStrokes(arFrontFrame, m);
+      const arFrame = el.querySelector(".polaroid-frame");
+      applyPolaroidStrokes(arFrame, m);
       el.dataset.stage = stage;
     }
 
