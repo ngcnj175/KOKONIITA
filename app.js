@@ -1717,6 +1717,7 @@ function applyPolaroidStrokes(frameEl, memory) {
   if (!frameEl) return;
   const prev = frameEl.querySelector(":scope > .polaroid-strokes");
   if (prev) prev.remove();
+  if (!memory) return;
   const strokes = strokesFromMemory(memory);
   if (!strokes) return;
   const svg = polaroidStrokesSVG(strokes);
@@ -1986,7 +1987,7 @@ function renderArFrame() {
         frontSlot.innerHTML = `<div class="ar-placeholder"></div>`;
       }
       const arFrame = el.querySelector(".polaroid-frame");
-      applyPolaroidStrokes(arFrame, m);
+      applyPolaroidStrokes(arFrame, stage === "ar-near" ? m : null);
       el.dataset.stage = stage;
     }
 

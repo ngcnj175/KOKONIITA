@@ -1141,9 +1141,6 @@ button.primary { background: var(--ink); color: #fff; border: 1px solid var(--in
   aspect-ratio: 1 / 1;
   background: #000;
 }
-.ar-placeholder.blank {
-  background: #fff;
-}
 
 /* 距離段階（100m以内でアイコン表示、20m以内で画像解放） */
 .ar-item.ar-icon {
