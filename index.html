@@ -19,6 +19,11 @@
     <header class="topbar">
       <h1 class="brand">KOKONI-ITA</h1>
       <div class="topbar-right">
+        <button id="admin-chip" class="chip admin-chip hidden" type="button" aria-label="星の記録">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+            <path d="M12 2.5 L14.85 9.05 L22 9.75 L16.5 14.55 L18.2 21.5 L12 17.8 L5.8 21.5 L7.5 14.55 L2 9.75 L9.15 9.05 Z" fill="currentColor"/>
+          </svg>
+        </button>
         <button id="user-chip" class="chip user-chip hidden" type="button">
           <img id="user-avatar" class="user-avatar hidden" alt="" />
           <span id="user-label" class="user-label">サインイン</span>
@@ -291,6 +296,46 @@
       <div id="history-sort-menu" class="history-sort-menu hidden" role="menu"></div>
       <div id="history-list" class="history-list"></div>
       <p id="history-empty" class="history-empty dim hidden">まだ記憶は置かれていません</p>
+    </div>
+  </div>
+
+  <!-- 星の記録（管理者専用） -->
+  <div id="admin-sheet" class="sheet hidden" role="dialog" aria-modal="true">
+    <div class="sheet-backdrop" id="admin-backdrop"></div>
+    <div class="sheet-panel" tabindex="-1">
+      <div class="sheet-handle"></div>
+      <header class="sheet-head">
+        <h2 class="sheet-title">星の記録</h2>
+        <button id="admin-close" class="chip" type="button">閉じる</button>
+      </header>
+      <div class="admin-body">
+        <p id="admin-loading" class="dim small admin-loading">読み込み中…</p>
+        <div id="admin-content" class="hidden">
+          <section class="admin-section">
+            <h3 class="admin-h">容量</h3>
+            <div class="admin-capacity">
+              <div class="admin-capacity-bar">
+                <div id="admin-capacity-fill" class="admin-capacity-fill"></div>
+              </div>
+              <p id="admin-capacity-text" class="admin-capacity-text"></p>
+              <p id="admin-capacity-sub" class="dim small"></p>
+            </div>
+          </section>
+          <section class="admin-section">
+            <h3 class="admin-h">投函の流れ <span class="dim small">（30日）</span></h3>
+            <div class="admin-spark">
+              <svg id="admin-sparkline" viewBox="0 0 300 80" preserveAspectRatio="none" aria-hidden="true"></svg>
+              <p id="admin-spark-sub" class="dim small"></p>
+            </div>
+          </section>
+          <section class="admin-section">
+            <h3 class="admin-h">地域 <span class="dim small">TOP10</span></h3>
+            <ol id="admin-places" class="admin-places"></ol>
+            <p id="admin-places-empty" class="dim small hidden">まだ地名の記録はありません</p>
+          </section>
+        </div>
+        <p id="admin-error" class="admin-error dim small hidden"></p>
+      </div>
     </div>
   </div>
 

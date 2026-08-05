@@ -193,11 +193,23 @@ async function getAccessKey(db, key) {
 // 認証
 // ==========================================================
 
+function isAdminEmail(email, env) {
+  if (!email) return false;
+  const list = (env.ADMIN_EMAILS || "")
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+  return list.includes(String(email).toLowerCase());
+}
+
 app.get("/api/me", async (c) => {
   const s = await getSession(c);
   if (!s) return c.json({ user: null });
   return c.json({
-    user: { id: s.userId, email: s.email, name: s.name, picture: s.picture || null },
+    user: {
+      id: s.userId, email: s.email, name: s.name, picture: s.picture || null,
+      isAdmin: isAdminEmail(s.email, c.env),
+    },
   });
 });
 
@@ -708,6 +720,54 @@ app.get("/api/me/notifications", async (c) => {
   ).bind(s.userId).all();
   const removed = (results || []).map(r => ({ id: r.id, deletedAt: r.deleted_at }));
   return c.json({ removed });
+});
+
+// 管理画面（星の記録）: 容量・投函数・30日推移・地域TOP10
+app.get("/api/admin/stats", async (c) => {
+  const s = await requireSession(c);
+  if (!s) return c.json({ error: "unauthorized" }, 401);
+  if (!isAdminEmail(s.email, c.env)) return c.json({ error: "forbidden" }, 403);
+
+  const db = c.env.DB;
+  const since = Date.now() - 30 * 24 * 60 * 60 * 1000;
+  const [cap, alive, timeline, places] = await Promise.all([
+    db.prepare(
+      `SELECT COALESCE(SUM(image_size), 0) AS bytes,
+              COUNT(*) AS total,
+              AVG(image_size) AS avg
+         FROM memories`
+    ).first(),
+    db.prepare(
+      `SELECT COUNT(*) AS n FROM memories WHERE deleted_at IS NULL`
+    ).first(),
+    db.prepare(
+      `SELECT date((created_at/1000) + 9*3600, 'unixepoch') AS d, COUNT(*) AS n
+         FROM memories
+        WHERE created_at >= ?
+        GROUP BY d
+        ORDER BY d`
+    ).bind(since).all(),
+    db.prepare(
+      `SELECT place_name, COUNT(*) AS n
+         FROM memories
+        WHERE deleted_at IS NULL AND place_name IS NOT NULL AND place_name != ''
+        GROUP BY place_name
+        ORDER BY n DESC
+        LIMIT 10`
+    ).all(),
+  ]);
+
+  return c.json({
+    capacity: {
+      bytes: Number(cap?.bytes || 0),
+      max: MAX_TOTAL_BYTES,
+      total: Number(cap?.total || 0),
+      alive: Number(alive?.n || 0),
+      avg: Number(cap?.avg || 0),
+    },
+    timeline: (timeline?.results || []).map((r) => ({ d: r.d, n: Number(r.n) })),
+    places: (places?.results || []).map((r) => ({ name: r.place_name, n: Number(r.n) })),
+  });
 });
 
 // 容量統計（デバッグ用）

@@ -395,6 +395,11 @@ function updateUserChip() {
     label.classList.remove("hidden");
     label.textContent = "サインイン";
   }
+  const adminChip = document.getElementById("admin-chip");
+  if (adminChip) {
+    if (_currentUser?.isAdmin) adminChip.classList.remove("hidden");
+    else adminChip.classList.add("hidden");
+  }
 }
 
 // ---------- 幾何 ----------
@@ -2151,6 +2156,133 @@ function closeHistory() {
   setTimeout(() => sheet.classList.add("hidden"), 320);
 }
 
+// 星の記録（管理者専用ダッシュボード）
+async function openAdmin() {
+  if (!_currentUser?.isAdmin) return;
+  const sheet = $("admin-sheet");
+  const loading = $("admin-loading");
+  const content = $("admin-content");
+  const err = $("admin-error");
+  loading?.classList.remove("hidden");
+  content?.classList.add("hidden");
+  err?.classList.add("hidden");
+  sheet.classList.remove("hidden");
+  requestAnimationFrame(() => {
+    sheet.classList.add("open");
+    sheet.querySelector(".sheet-panel")?.focus({ preventScroll: true });
+  });
+  try {
+    const r = await apiFetch("/api/admin/stats");
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    renderAdminStats(await r.json());
+    loading?.classList.add("hidden");
+    content?.classList.remove("hidden");
+  } catch (e) {
+    loading?.classList.add("hidden");
+    if (err) {
+      err.textContent = "読み込めませんでした";
+      err.classList.remove("hidden");
+    }
+  }
+}
+function closeAdmin() {
+  const sheet = $("admin-sheet");
+  sheet.classList.remove("open");
+  setTimeout(() => sheet.classList.add("hidden"), 320);
+}
+function formatBytes(n) {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  if (n < 1024 * 1024 * 1024) return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(n / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+}
+function renderAdminStats(stats) {
+  const { capacity, timeline, places } = stats;
+  const ratio = capacity.max ? capacity.bytes / capacity.max : 0;
+  const pct = Math.min(100, ratio * 100);
+  const fill = $("admin-capacity-fill");
+  if (fill) {
+    fill.style.width = `${pct.toFixed(1)}%`;
+    fill.dataset.level = ratio > 0.8 ? "high" : ratio > 0.5 ? "mid" : "low";
+  }
+  const capText = $("admin-capacity-text");
+  if (capText) {
+    capText.innerHTML =
+      `<strong>${formatBytes(capacity.bytes)}</strong> / ${formatBytes(capacity.max)} ` +
+      `<span class="dim">(${pct.toFixed(1)}%)</span>`;
+  }
+  const capSub = $("admin-capacity-sub");
+  if (capSub) {
+    const alive = capacity.alive.toLocaleString();
+    const total = capacity.total.toLocaleString();
+    const avg = capacity.avg ? formatBytes(Math.round(capacity.avg)) : "-";
+    const removed = capacity.total - capacity.alive;
+    capSub.textContent = `生存 ${alive}枚 / 全 ${total}枚（回収 ${removed.toLocaleString()}枚） · 平均 ${avg}`;
+  }
+  renderSparkline(timeline);
+  const list = $("admin-places");
+  const empty = $("admin-places-empty");
+  if (list) list.innerHTML = "";
+  if (!places.length) {
+    empty?.classList.remove("hidden");
+  } else {
+    empty?.classList.add("hidden");
+    const max = places[0].n || 1;
+    places.forEach((p, i) => {
+      const li = document.createElement("li");
+      li.className = "admin-place";
+      const barPct = Math.max(4, (p.n / max) * 100);
+      li.innerHTML =
+        `<span class="admin-place-rank">${i + 1}</span>` +
+        `<span class="admin-place-name">${escapeHtml(p.name)}</span>` +
+        `<span class="admin-place-bar"><span style="width:${barPct.toFixed(1)}%"></span></span>` +
+        `<span class="admin-place-n">${p.n.toLocaleString()}</span>`;
+      list?.appendChild(li);
+    });
+  }
+}
+function renderSparkline(timeline) {
+  const svg = $("admin-sparkline");
+  const sub = $("admin-spark-sub");
+  if (!svg) return;
+  svg.innerHTML = "";
+  const days = 30;
+  const now = Date.now();
+  const map = new Map(timeline.map((r) => [r.d, r.n]));
+  const points = [];
+  let total = 0;
+  let peak = 0;
+  for (let i = days - 1; i >= 0; i--) {
+    const t = now - i * 86400_000 + 9 * 3600_000;
+    const iso = new Date(t).toISOString().slice(0, 10);
+    const n = map.get(iso) || 0;
+    points.push(n);
+    total += n;
+    if (n > peak) peak = n;
+  }
+  const W = 300, H = 80, P = 4;
+  const maxY = Math.max(1, peak);
+  const step = (W - P * 2) / (points.length - 1);
+  const coords = points.map((v, i) => [P + i * step, H - P - (v / maxY) * (H - P * 2)]);
+  const area = `M${coords[0][0]},${H} ` +
+    coords.map(([x, y]) => `L${x},${y}`).join(" ") +
+    ` L${coords[coords.length - 1][0]},${H} Z`;
+  const line = `M` + coords.map(([x, y]) => `${x},${y}`).join(" L");
+  svg.innerHTML =
+    `<path d="${area}" class="spark-area"/>` +
+    `<path d="${line}" class="spark-line"/>` +
+    coords.map(([x, y], i) =>
+      points[i] > 0 && i === coords.length - 1
+        ? `<circle cx="${x}" cy="${y}" r="2.5" class="spark-dot"/>` : ""
+    ).join("");
+  if (sub) sub.textContent = `合計 ${total.toLocaleString()}枚 · 1日ピーク ${peak.toLocaleString()}枚`;
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  }[c]));
+}
+
 function renderHistoryList() {
   const list = $("history-list");
   const empty = $("history-empty");
@@ -2844,6 +2976,9 @@ document.addEventListener("DOMContentLoaded", () => {
   $("history-btn").addEventListener("click", openHistory);
   $("history-close").addEventListener("click", closeHistory);
   $("history-backdrop").addEventListener("click", closeHistory);
+  document.getElementById("admin-chip")?.addEventListener("click", openAdmin);
+  document.getElementById("admin-close")?.addEventListener("click", closeAdmin);
+  document.getElementById("admin-backdrop")?.addEventListener("click", closeAdmin);
   const onTabClick = (key) => (e) => {
     e.stopPropagation();
     if (_historyTab === key) {

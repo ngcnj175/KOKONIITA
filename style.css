@@ -1906,3 +1906,132 @@ button.ghost.danger { color: var(--danger); border-color: rgba(167, 68, 98, 0.4)
 }
 .history-keybtn:active { background: rgba(15, 20, 29, 0.06); }
 .history-keybtn .history-visibility-icon { opacity: 1; }
+
+/* ==========================================================
+   星の記録（管理者専用ダッシュボード）
+   ========================================================== */
+.admin-chip {
+  padding: 6px 8px;
+  min-width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--dim);
+  border: 1px solid rgba(105, 143, 207, 0.35);
+  background: rgba(255, 255, 255, 0.85);
+}
+.admin-chip:hover { color: var(--ink); }
+
+.admin-body {
+  overflow-y: auto;
+  flex: 1;
+  padding: 12px 18px 32px;
+  -webkit-overflow-scrolling: touch;
+}
+.admin-loading { margin: 24px 4px; }
+.admin-error   { margin: 24px 4px; color: var(--danger); }
+
+.admin-section {
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(15, 20, 29, 0.06);
+}
+.admin-section:last-child { border-bottom: none; }
+
+.admin-h {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  color: rgba(15, 20, 29, 0.65);
+  text-transform: uppercase;
+  font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+}
+.admin-h .dim { font-size: 11px; letter-spacing: 0.1em; margin-left: 6px; }
+
+.admin-capacity-bar {
+  position: relative;
+  height: 10px;
+  background: rgba(105, 143, 207, 0.14);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.admin-capacity-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 0;
+  background: linear-gradient(90deg, rgba(136, 158, 241, 0.85), rgba(83, 108, 233, 0.95));
+  border-radius: 6px;
+  transition: width 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.admin-capacity-fill[data-level="mid"]  { background: linear-gradient(90deg, rgba(219, 173, 96, 0.85), rgba(207, 138, 55, 0.95)); }
+.admin-capacity-fill[data-level="high"] { background: linear-gradient(90deg, rgba(207, 96, 122, 0.85), rgba(167, 68, 98, 0.95)); }
+
+.admin-capacity-text {
+  margin: 10px 0 2px;
+  font-size: 14px;
+  color: var(--ink);
+}
+.admin-capacity-text strong {
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.02em;
+}
+
+.admin-spark { padding: 4px 0; }
+#admin-sparkline {
+  width: 100%;
+  height: 80px;
+  display: block;
+}
+#admin-sparkline .spark-area { fill: rgba(105, 143, 207, 0.16); }
+#admin-sparkline .spark-line { fill: none; stroke: rgba(83, 108, 233, 0.9); stroke-width: 1.4; stroke-linejoin: round; stroke-linecap: round; }
+#admin-sparkline .spark-dot  { fill: rgba(52, 70, 223, 1); }
+#admin-spark-sub { margin: 8px 0 0; }
+
+.admin-places {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.admin-place {
+  display: grid;
+  grid-template-columns: 22px 1fr 80px 44px;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  padding: 4px 0;
+}
+.admin-place-rank {
+  color: rgba(105, 143, 207, 0.85);
+  font-family: "Klee One", serif;
+  font-weight: 600;
+  text-align: center;
+}
+.admin-place-name {
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.admin-place-bar {
+  position: relative;
+  height: 6px;
+  background: rgba(105, 143, 207, 0.14);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.admin-place-bar > span {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  background: rgba(83, 108, 233, 0.6);
+  border-radius: 4px;
+}
+.admin-place-n {
+  text-align: right;
+  color: rgba(15, 20, 29, 0.75);
+  font-variant-numeric: tabular-nums;
+}
