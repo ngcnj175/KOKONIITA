@@ -995,23 +995,41 @@ function commitRadarKey() {
   applyRadarKey(raw);
 }
 
+const HUD_ALT_MESSAGES = ["あなたの位置を取得中", "空の下で、ちょっと立ち止まって"];
+let _hudAltIdx = 0;
+let _hudAltTimer = null;
+function startHudAlt(status) {
+  if (_hudAltTimer) return;
+  status.textContent = HUD_ALT_MESSAGES[_hudAltIdx];
+  _hudAltTimer = setInterval(() => {
+    _hudAltIdx = (_hudAltIdx + 1) % HUD_ALT_MESSAGES.length;
+    const el = $("hud-status");
+    if (el) el.textContent = HUD_ALT_MESSAGES[_hudAltIdx];
+  }, 3000);
+}
+function stopHudAlt() {
+  if (_hudAltTimer) { clearInterval(_hudAltTimer); _hudAltTimer = null; }
+  _hudAltIdx = 0;
+}
+
 function updateHud() {
   const status = $("hud-status");
   if (!status) return;
   if (!myPos) {
     setGpsSteps(0);
-    status.textContent = "現在位置を取得中…";
     status.classList.remove("is-hidden");
+    startHudAlt(status);
     return;
   }
   const steps = gpsStepsForAccuracy(myPos.accuracy);
   setGpsSteps(steps);
   if (steps >= 3) {
     // 精度が安定したら文字案内は消す
+    stopHudAlt();
     status.classList.add("is-hidden");
   } else {
-    status.textContent = "空を仰いで、少し立ち止まって。";
     status.classList.remove("is-hidden");
+    startHudAlt(status);
   }
 }
 
@@ -1068,13 +1086,15 @@ function onPlaceButtonTap() {
   $("media-input").click();
 }
 
+let _accuracyPromptTimer = null;
 function openAccuracyPrompt() {
   const el = $("accuracy-prompt");
-  const cur = $("accuracy-current");
-  if (cur && myPos) cur.textContent = `現在の精度: ±${Math.round(myPos.accuracy)}m`;
   el.classList.remove("hidden");
+  if (_accuracyPromptTimer) clearTimeout(_accuracyPromptTimer);
+  _accuracyPromptTimer = setTimeout(closeAccuracyPrompt, 4000);
 }
 function closeAccuracyPrompt() {
+  if (_accuracyPromptTimer) { clearTimeout(_accuracyPromptTimer); _accuracyPromptTimer = null; }
   $("accuracy-prompt").classList.add("hidden");
 }
 
@@ -2969,10 +2989,7 @@ document.addEventListener("DOMContentLoaded", () => {
   updateRangeZoomButtons();
   updateMeMarkerScale();
   $("place-btn").addEventListener("click", onPlaceButtonTap);
-  $("accuracy-close").addEventListener("click", closeAccuracyPrompt);
-  $("accuracy-prompt").addEventListener("click", (e) => {
-    if (e.target === $("accuracy-prompt")) closeAccuracyPrompt();
-  });
+  $("accuracy-prompt").addEventListener("click", closeAccuracyPrompt);
   $("history-btn").addEventListener("click", openHistory);
   $("history-close").addEventListener("click", closeHistory);
   $("history-backdrop").addEventListener("click", closeHistory);
