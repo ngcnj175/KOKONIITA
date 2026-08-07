@@ -121,14 +121,14 @@
         </span>
         <span class="place-fab__label">AR</span>
       </button>
-      <button id="place-btn" class="place-fab" type="button" aria-label="記憶を置く">
+      <button id="place-btn" class="place-fab" type="button" aria-label="ここにピン">
         <span class="place-fab__icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" width="26" height="26" fill="none">
             <path d="M12 2C7.58 2 4 5.58 4 10c0 5.25 8 12 8 12s8-6.75 8-12c0-4.42-3.58-8-8-8z" fill="currentColor"/>
             <path d="M12 6.5v6M9 9.5h6" stroke="#619FFE" stroke-width="1.8" stroke-linecap="round"/>
           </svg>
         </span>
-        <span class="place-fab__label">記憶を置く</span>
+        <span class="place-fab__label">ここにピン</span>
       </button>
       <button id="history-btn" class="place-fab" type="button" aria-label="マイページ">
         <span class="place-fab__icon" aria-hidden="true">
@@ -155,7 +155,7 @@
     <div class="sheet-panel">
       <div class="sheet-handle"></div>
       <header class="sheet-head">
-        <h2 class="sheet-title">記憶を置く</h2>
+        <h2 class="sheet-title">新しい記憶</h2>
         <button id="compose-cancel" class="chip" type="button">やめる</button>
       </header>
       <div class="compose-body">
@@ -249,7 +249,7 @@
             <p id="key-mode-status" class="dim small key-mode-status hidden"></p>
           </div>
         </div>
-        <button id="save-btn" class="place-btn wide" type="button">ここに置く</button>
+        <button id="save-btn" class="place-btn wide" type="button">ピンする</button>
       </div>
     </div>
   </div>
@@ -295,7 +295,7 @@
       </div>
       <div id="history-sort-menu" class="history-sort-menu hidden" role="menu"></div>
       <div id="history-list" class="history-list"></div>
-      <p id="history-empty" class="history-empty dim hidden">まだ記憶は置かれていません</p>
+      <p id="history-empty" class="history-empty dim hidden">まだピンした記憶はありません</p>
     </div>
   </div>
 
@@ -415,7 +415,7 @@
   <!-- 位置精度ガイド -->
   <div id="accuracy-prompt" class="modal hidden">
     <div class="modal-card accuracy-card">
-      <p class="accuracy-title">現在地が定まったら、この場所に置けます。</p>
+      <p class="accuracy-title">現在地が定まったら、ここにピンできます。</p>
       <p class="accuracy-sub">WifiとBluetoothをONにしておくと尚良し。</p>
     </div>
   </div>

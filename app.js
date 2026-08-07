@@ -1070,7 +1070,7 @@ function showScreen(id) {
 // ＋記憶を置くボタン押下：GPS精度チェック→OKなら写真選択起動
 function onPlaceButtonTap() {
   if (!_currentUser) {
-    if (confirm("記憶を置くにはGoogleでログインが必要です。ログインしますか？")) goToLogin();
+    if (confirm("ここにピンするにはGoogleでログインが必要です。ログインしますか？")) goToLogin();
     return;
   }
   if (!myPos) {
@@ -1290,7 +1290,7 @@ async function copyKey(key) {
   }
 }
 async function shareKey(key) {
-  const text = `グループキー「${key}」を「ココニイタ。」のグループモードに入れると、置いた記憶を見つけられます。`;
+  const text = `グループキー「${key}」を「ココニイタ。」のグループモードに入れると、ピンした記憶を見つけられます。`;
   if (navigator.share) {
     try { await navigator.share({ text }); return; }
     catch { /* キャンセル時は無視 */ }
@@ -1771,12 +1771,12 @@ async function savePlaced() {
   if (_saving) return;
   if (!cropper.ready || !myPos) return;
   if (myPos.accuracy > GPS_ACCURACY_THRESHOLD_M) {
-    showToast("位置精度が低くなったため置けませんでした");
+    showToast("位置精度が低くなったためピンできませんでした");
     return;
   }
   if (!_currentUser) {
     closeComposeSheet();
-    if (confirm("記憶を置くにはGoogleでログインが必要です。ログインしますか？")) goToLogin();
+    if (confirm("ここにピンするにはGoogleでログインが必要です。ログインしますか？")) goToLogin();
     return;
   }
   _saving = true;
@@ -1821,7 +1821,7 @@ async function savePlaced() {
       // 既存キーへの追加
       showToast(`グループキー「${result.accessKey}」に追加しました`);
     } else {
-      showToast("記憶を置きました");
+      showToast("ピンしました");
     }
   } catch (e) {
     if (e.message === "unauthorized") {
@@ -2313,7 +2313,7 @@ function renderHistoryList() {
   if (memories.length === 0) {
     empty.textContent = isFindsTab
       ? "まだお気に入りはありません"
-      : "まだ記憶は置かれていません";
+      : "まだピンした記憶はありません";
     empty.classList.remove("hidden");
     return;
   }
