@@ -656,7 +656,7 @@ html, body {
 
 /* ---------- 手書き文字 ---------- */
 .handwritten {
-  font-family: "Yomogi", "Klee One", "Hiragino Maru Gothic ProN", cursive;
+  font-family: "Klee One", "Hiragino Maru Gothic ProN", cursive;
   font-size: 17px;
   line-height: 1.7;
   color: #242A29;
