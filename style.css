@@ -44,11 +44,16 @@ html, body {
   margin-right: auto;
 }
 .lang-chip {
-  padding: 4px 6px;
-  min-height: 32px;
+  appearance: none;
+  background: transparent;
+  border: none;
+  padding: 2px;
   line-height: 0;
+  color: #ffffff;
+  cursor: pointer;
 }
 .lang-chip svg { display: block; }
+.lang-chip:active { opacity: 0.7; }
 #user-chip[data-state="in"] {
   opacity: 0.85;
   padding: 3px;
