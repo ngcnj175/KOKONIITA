@@ -1,12 +1,12 @@
 {
-  "name": "kokoniita-api",
+  "name": "kiokupin-api",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "db:init": "wrangler d1 execute kokoniita --file=./schema.sql --remote",
-    "db:init:local": "wrangler d1 execute kokoniita --file=./schema.sql --local",
+    "db:init": "wrangler d1 execute kiokupin --file=./schema.sql --remote",
+    "db:init:local": "wrangler d1 execute kiokupin --file=./schema.sql --local",
     "tail": "wrangler tail"
   },
   "dependencies": {

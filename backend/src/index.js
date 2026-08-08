@@ -1,4 +1,4 @@
-// ココニイタ。API - Cloudflare Workers (Hono)
+// KIOKU PIN API - Cloudflare Workers (Hono)
 // 認証: Google OAuth + HttpOnlyクッキーセッション(KV保管)
 // データ: D1(memories/users) + R2(画像)
 
@@ -785,7 +785,7 @@ app.get("/api/stats", async (c) => {
 // ==========================================================
 // ヘルスチェック
 // ==========================================================
-app.get("/", (c) => c.text("kokoniita API"));
+app.get("/", (c) => c.text("KIOKU PIN API"));
 app.get("/api/health", (c) => c.json({ ok: true, ts: Date.now() }));
 
 export default app;

@@ -1,4 +1,4 @@
-name = "kokoniita-api"
+name = "kiokupin-api"
 main = "src/index.js"
 compatibility_date = "2025-01-15"
 workers_dev = true
@@ -6,24 +6,24 @@ workers_dev = true
 # フロントエンドのオリジン（GitHub Pagesなど）
 [vars]
 FRONTEND_ORIGIN = "https://ngcnj175.github.io"
-FRONTEND_URL = "https://ngcnj175.github.io/KOKONIITA/"
-# 例: https://kokoniita-api.<your-subdomain>.workers.dev/api/auth/google/callback
-GOOGLE_REDIRECT_URI = "https://kokoniita-api.ngcnj175.workers.dev/api/auth/google/callback"
+FRONTEND_URL = "https://ngcnj175.github.io/kioku-pin/"
+# 例: https://kiokupin-api.<your-subdomain>.workers.dev/api/auth/google/callback
+GOOGLE_REDIRECT_URI = "https://kiokupin-api.ngcnj175.workers.dev/api/auth/google/callback"
 # 管理画面（星の記録）へのアクセスを許可するメール（カンマ区切り）
 ADMIN_EMAILS = "ngcnj175@ybb.ne.jp"
 
 # --- D1 (SQLite) ---
-# `wrangler d1 create kokoniita` で作成後、出力の database_id を貼る
+# `wrangler d1 create kiokupin` で作成後、出力の database_id を貼る
 [[d1_databases]]
 binding = "DB"
-database_name = "kokoniita"
-database_id = "530c2cb8-9514-4342-9c65-e242c211f332"
+database_name = "kiokupin"
+database_id = "740b7e9a-d94d-4219-ae04-ac959991d82d"
 
 # --- KV (セッション) ---
-# `wrangler kv namespace create kokoniita-sessions` で作成後、id を貼る
+# `wrangler kv namespace create kiokupin-sessions` で作成後、id を貼る
 [[kv_namespaces]]
 binding = "SESSIONS"
-id = "99151ed09b87466283db9fe9e19bcf0e"
+id = "f072edcb8112473d9b53274ed95c4cc0"
 
 # シークレット（wrangler secret put で設定）:
 #   GOOGLE_CLIENT_ID

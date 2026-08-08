@@ -1,5 +1,5 @@
-// ココニイタ。クライアント設定
+// KIOKU PIN クライアント設定
 // バックエンドAPIのオリジンURL。
-window.KOKONIITA_CONFIG = {
-  API_BASE: "https://kokoniita-api.ngcnj175.workers.dev",
+window.KIOKU_PIN_CONFIG = {
+  API_BASE: "https://kiokupin-api.ngcnj175.workers.dev",
 };

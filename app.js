@@ -1,5 +1,5 @@
-// ココニイタ。— レーダー / AR / 記憶投稿
-// KOKONIITA_CONFIG.API_BASE が設定されているとAPIモードで動作する。
+// KIOKU PIN — レーダー / AR / 記憶投稿
+// KIOKU_PIN_CONFIG.API_BASE が設定されているとAPIモードで動作する。
 
 const VIS_ICON_SVG = {
   public: '<svg viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round"><circle cx="12" cy="12" r="9.2"/><ellipse cx="12" cy="12" rx="4.2" ry="9.2"/><line x1="2.8" y1="12" x2="21.2" y2="12"/><line x1="12" y1="2.8" x2="12" y2="21.2"/><path d="M4.1 7.4h15.8M4.1 16.6h15.8"/></svg>',
@@ -43,8 +43,8 @@ let heading = 0;       // 度、0=北、時計回り
 const GPS_COARSE_THRESHOLD_M = 60;
 
 // ---------- API ----------
-const API_BASE = (window.KOKONIITA_CONFIG?.API_BASE || "").replace(/\/$/, "");
-const TOKEN_STORAGE_KEY = "kokoniita.token.v1";
+const API_BASE = (window.KIOKU_PIN_CONFIG?.API_BASE || "").replace(/\/$/, "");
+const TOKEN_STORAGE_KEY = "kiokupin.token.v1";
 
 let _publicCache = [];    // 全公開記憶
 let _myCache = [];        // 自分の記憶
@@ -55,8 +55,8 @@ let _currentUser = null;  // {id, name, email, picture} | null
 // レーダーの表示レイヤー（複数ON可）。デフォルトは public のみ ON。
 let _radarToggles = { public: true, mine: false, keyed: false };
 let _radarKey = "";       // keyed レイヤーの合言葉（小文字）
-const RADAR_KEY_STORAGE = "kokoniita.radar.key.v1";
-const RADAR_TOGGLES_STORAGE = "kokoniita.radar.toggles.v1";
+const RADAR_KEY_STORAGE = "kiokupin.radar.key.v1";
+const RADAR_TOGGLES_STORAGE = "kiokupin.radar.toggles.v1";
 
 // 投稿時の可視性: 'public' | 'private' | 'keyed'
 let _composeVisibility = "public";
@@ -1290,7 +1290,7 @@ async function copyKey(key) {
   }
 }
 async function shareKey(key) {
-  const text = `グループキー「${key}」を「ココニイタ。」のグループモードに入れると、ピンした記憶を見つけられます。`;
+  const text = `グループキー「${key}」を「KIOKU PIN」のグループモードに入れると、ピンした記憶を見つけられます。`;
   if (navigator.share) {
     try { await navigator.share({ text }); return; }
     catch { /* キャンセル時は無視 */ }

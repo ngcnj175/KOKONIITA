@@ -1,4 +1,4 @@
-# ココニイタ。バックエンド
+# KIOKU PIN バックエンド
 
 Cloudflare Workers + D1 + R2 + KV。全て無料枠内で動作します。
 
@@ -40,10 +40,10 @@ npx wrangler login
 ### 4. Cloudflareリソースを作成
 ```powershell
 cd backend
-npx wrangler d1 create kokoniita
+npx wrangler d1 create kiokupin
 # → 出力の database_id を wrangler.toml の REPLACE_WITH_D1_ID に貼る
 
-npx wrangler kv namespace create kokoniita-sessions
+npx wrangler kv namespace create kiokupin-sessions
 # → 出力の id を wrangler.toml の REPLACE_WITH_KV_ID に貼る
 ```
 
@@ -56,19 +56,19 @@ npm run db:init         # 本番D1に投入
 ### 6. 初回デプロイ (Worker URL確定用)
 ```powershell
 npm run deploy
-# → 出力に https://kokoniita-api.<your-subdomain>.workers.dev が表示される
+# → 出力に https://kiokupin-api.<your-subdomain>.workers.dev が表示される
 ```
 
 ### 7. wrangler.toml を仕上げる
 `GOOGLE_REDIRECT_URI` を実URLに置換:
 ```toml
-GOOGLE_REDIRECT_URI = "https://kokoniita-api.<your-subdomain>.workers.dev/api/auth/google/callback"
+GOOGLE_REDIRECT_URI = "https://kiokupin-api.<your-subdomain>.workers.dev/api/auth/google/callback"
 ```
 
 ### 8. Google Cloud Console に戻ってリダイレクトURIを追加
 手順3で作ったOAuthクライアントの「承認済みリダイレクトURI」に:
 ```
-https://kokoniita-api.<your-subdomain>.workers.dev/api/auth/google/callback
+https://kiokupin-api.<your-subdomain>.workers.dev/api/auth/google/callback
 ```
 
 ### 9. シークレットを設定
@@ -85,8 +85,8 @@ npm run deploy
 ### 11. フロントエンド設定
 プロジェクトルートの `config.js` を編集:
 ```js
-window.KOKONIITA_CONFIG = {
-  API_BASE: "https://kokoniita-api.<your-subdomain>.workers.dev",
+window.KIOKU_PIN_CONFIG = {
+  API_BASE: "https://kiokupin-api.<your-subdomain>.workers.dev",
 };
 ```
 git push → GitHub Pagesが再ビルド → 完了。
@@ -95,7 +95,7 @@ git push → GitHub Pagesが再ビルド → 完了。
 
 ```powershell
 # ヘルスチェック
-curl https://kokoniita-api.<your-subdomain>.workers.dev/api/health
+curl https://kiokupin-api.<your-subdomain>.workers.dev/api/health
 
 # ログを流し見
 npm run tail

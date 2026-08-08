@@ -1,4 +1,4 @@
-# ココニイタ。(KOKONIITA)
+# KIOKU PIN
 
 現実世界の場所に「記憶」を置くWebサービス。
 
@@ -47,7 +47,7 @@ GitHub Pages にデプロイして実機テストするのが最短です。
 
 1. このディレクトリを GitHub リポジトリにpush
 2. リポジトリ Settings → Pages → Source を `main` ブランチに設定
-3. 数分後に `https://<username>.github.io/KOKONIITA/` が公開される
+3. 数分後に `https://<username>.github.io/kioku-pin/` が公開される
 4. スマホで開き、位置情報と方位センサーの許可を与える
 
 ## ファイル構成
