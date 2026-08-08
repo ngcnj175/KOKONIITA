@@ -22,6 +22,7 @@
       account_default: "アカウント",
       admin_label: "星の記録",
       logout_confirm: (v) => `${v.name} からログアウトしますか？`,
+      lang_switch: "言語を切り替え",
     },
 
     radar: {
@@ -137,6 +138,7 @@
       report_self: "自分の投稿は通報できません",
       report_missing: "この写真は見つかりません",
       report_failed: "通報に失敗しました",
+      lang_switched: "日本語に切り替えました",
     },
 
     confirm: {
@@ -203,7 +205,6 @@
       key_show_title: "タップでグループキーを表示",
       key_show_aria: "グループキーを表示",
       private_title: "プライベート",
-      lang: "言語",
     },
 
     admin: {

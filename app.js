@@ -3110,25 +3110,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // ---------- 言語切替 ----------
 function setupLangToggle() {
-  const buttons = document.querySelectorAll(".lang-seg-btn");
-  const paint = () => {
+  const chip = $("lang-chip");
+  if (!chip) return;
+  chip.addEventListener("click", () => {
+    const supported = window.i18n?.SUPPORTED || ["ja"];
     const cur = window.i18n?.getLocale?.() || "ja";
-    buttons.forEach((b) => b.classList.toggle("is-active", b.dataset.lang === cur));
-  };
-  buttons.forEach((b) => {
-    b.addEventListener("click", () => {
-      window.i18n?.setLocale?.(b.dataset.lang);
-    });
+    const next = supported[(supported.indexOf(cur) + 1) % supported.length];
+    if (next === cur) return;
+    window.i18n?.setLocale?.(next);
   });
-  paint();
   window.addEventListener("i18n:changed", () => {
-    paint();
     // 動的に描画されるUIを再描画
     updateUserChip();
     updatePlaceButtonState();
     if (!$("history-sheet").classList.contains("hidden")) renderHistoryList();
-    if (!$("compose-sheet").classList.contains("hidden")) {
-      populateMyKeysDatalist();
-    }
+    if (!$("compose-sheet").classList.contains("hidden")) populateMyKeysDatalist();
+    // 切替直後の言語で通知
+    showToast(t("toast.lang_switched"));
   });
 }

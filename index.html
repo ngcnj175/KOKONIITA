@@ -17,6 +17,20 @@
   <!-- レーダー画面 -->
   <section id="radar-screen" class="screen">
     <header class="topbar">
+      <div class="topbar-left">
+        <button id="lang-chip" class="chip lang-chip" type="button" data-i18n-attr="aria-label:topbar.lang_switch" aria-label="言語を切り替え">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <!-- 後ろカード（文） -->
+            <rect x="8" y="8" width="13" height="13" rx="2.2" fill="currentColor"/>
+            <text x="14.5" y="18.6" text-anchor="middle" font-size="9.5" font-weight="700" fill="#ffffff"
+                  font-family="'Hiragino Kaku Gothic ProN','Yu Gothic','Meiryo',sans-serif">文</text>
+            <!-- 前カード（A） -->
+            <rect x="3" y="3" width="13" height="13" rx="2.2" fill="currentColor" stroke="#ffffff" stroke-width="1.4"/>
+            <text x="9.5" y="13" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff"
+                  font-family="'Helvetica Neue',Arial,sans-serif">A</text>
+          </svg>
+        </button>
+      </div>
       <h1 class="brand" data-i18n="brand">KIOKU PIN</h1>
       <div class="topbar-right">
         <button id="admin-chip" class="chip admin-chip hidden" type="button" data-i18n-attr="aria-label:topbar.admin_label" aria-label="星の記録">
@@ -297,13 +311,6 @@
       <div id="history-sort-menu" class="history-sort-menu hidden" role="menu"></div>
       <div id="history-list" class="history-list"></div>
       <p id="history-empty" class="history-empty dim hidden" data-i18n="history.empty_mine">まだピンした記憶はありません</p>
-      <div class="history-lang-row">
-        <span class="dim small" data-i18n="history.lang">言語</span>
-        <div class="lang-seg" role="radiogroup">
-          <button id="lang-ja" class="lang-seg-btn" type="button" data-lang="ja">日本語</button>
-          <button id="lang-en" class="lang-seg-btn" type="button" data-lang="en">English</button>
-        </div>
-      </div>
     </div>
   </div>
 

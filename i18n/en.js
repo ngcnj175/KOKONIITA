@@ -20,6 +20,7 @@
       account_default: null,
       admin_label: null,
       logout_confirm: null,      // (v) => `Sign out of ${v.name}?`
+      lang_switch: "Switch language",
     },
 
     radar: {
@@ -135,6 +136,7 @@
       report_self: null,
       report_missing: null,
       report_failed: null,
+      lang_switched: "Switched to English",
     },
 
     confirm: {
@@ -201,7 +203,6 @@
       key_show_title: null,
       key_show_aria: null,
       private_title: null,
-      lang: "Language",
     },
 
     admin: {

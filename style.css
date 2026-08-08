@@ -37,6 +37,18 @@ html, body {
   gap: 8px;
   align-items: center;
 }
+.topbar-left {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-right: auto;
+}
+.lang-chip {
+  padding: 4px 6px;
+  min-height: 32px;
+  line-height: 0;
+}
+.lang-chip svg { display: block; }
 #user-chip[data-state="in"] {
   opacity: 0.85;
   padding: 3px;
@@ -1433,35 +1445,6 @@ button.primary { background: var(--ink); color: #fff; border: 1px solid var(--in
   text-align: center;
   padding: 40px 20px;
   font-size: 13px;
-}
-
-.history-lang-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 14px 20px 20px;
-  border-top: 1px solid rgba(0,0,0,0.06);
-  margin-top: 8px;
-}
-.lang-seg {
-  display: inline-flex;
-  border: 1px solid rgba(0,0,0,0.15);
-  border-radius: 999px;
-  overflow: hidden;
-}
-.lang-seg-btn {
-  appearance: none;
-  border: none;
-  background: transparent;
-  padding: 6px 14px;
-  font-size: 13px;
-  color: inherit;
-  cursor: pointer;
-  min-height: 32px;
-}
-.lang-seg-btn.is-active {
-  background: #111;
-  color: #fff;
 }
 
 /* ---------- 記憶を置くボトムシート ---------- */
