@@ -6,3 +6,4 @@ node_modules/
 .env
 .env.local
 NOTES.md
+i18n/_translation_sheet/
