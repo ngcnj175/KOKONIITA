@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS memories (
   strokes        TEXT,                           -- ポラロイド上の手書きストローク（JSON配列）
   deleted_at     INTEGER,                        -- NULL=生存 / 値あり=soft delete 済
   deleted_reason TEXT,                           -- 'reported' | 'self' | 'owner'
+  place_name     TEXT,                           -- 逆ジオコーディングで取得した地名
   FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
