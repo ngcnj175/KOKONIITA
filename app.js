@@ -319,8 +319,8 @@ async function checkRemovalNotifications() {
     const fresh = removed.filter(x => !acks.has(x.id));
     if (fresh.length === 0) return;
     const msg = fresh.length === 1
-      ? "あなたの写真が1件、通報により削除されました"
-      : `あなたの写真が${fresh.length}件、通報により削除されました`;
+      ? t("toast.removed_by_report_one")
+      : t("toast.removed_by_report_many", { n: fresh.length });
     showToast(msg);
     for (const x of removed) acks.add(x.id);
     saveRemovalAcks(acks);
@@ -368,7 +368,7 @@ function onLoginMessage(e) {
         }
         renderRadar();
       });
-      showToast("ログインしました");
+      showToast(t("toast.login_ok"));
     }
   });
 }
@@ -387,13 +387,13 @@ function updateUserChip() {
     } else {
       avatar.classList.add("hidden");
       label.classList.remove("hidden");
-      label.textContent = _currentUser.name || "アカウント";
+      label.textContent = _currentUser.name || t("topbar.account_default");
     }
   } else {
     chip.dataset.state = "out";
     avatar.classList.add("hidden");
     label.classList.remove("hidden");
-    label.textContent = "サインイン";
+    label.textContent = t("topbar.signin");
   }
   const adminChip = document.getElementById("admin-chip");
   if (adminChip) {
@@ -505,10 +505,10 @@ function updateSkyMode() {
   body.classList.add(next);
 }
 function onPositionError(err) {
-  gpsError = err?.message || "位置情報を取得できません";
+  gpsError = err?.message || t("radar.hud_no_position");
   const status = $("hud-status");
   if (status) {
-    status.textContent = "現在位置を取得できません";
+    status.textContent = t("radar.hud_no_position");
     status.classList.remove("is-hidden");
   }
   setGpsSteps(0);
@@ -516,7 +516,7 @@ function onPositionError(err) {
 }
 function watchLocation() {
   if (!navigator.geolocation) {
-    $("hud-status").textContent = "位置情報に非対応";
+    $("hud-status").textContent = t("radar.hud_unsupported");
     setGpsSteps(0);
     return;
   }
@@ -930,10 +930,10 @@ async function setRadarToggle(kind, on) {
   if (!(kind in _radarToggles)) return;
   // 「自分」ON はログイン必須
   if (kind === "mine" && on && !_currentUser) {
-    showToast("自分の記憶を見るにはログインしてください");
+    showToast(t("toast.login_needed_self"));
     // 少し待って自動的にログイン誘導
     setTimeout(() => {
-      if (confirm("Googleでログインしますか？")) goToLogin();
+      if (confirm(t("confirm.login_google"))) goToLogin();
     }, 400);
     return;
   }
@@ -953,7 +953,7 @@ async function setRadarToggle(kind, on) {
       }
       if (_radarKey) {
         await refreshKeyedMemories(_radarKey);
-        if (_keyedCache.length === 0) showToast("このグループキーの記憶はありません");
+        if (_keyedCache.length === 0) showToast(t("toast.keyed_empty"));
       } else {
         _keyedCache = [];
       }
@@ -970,8 +970,8 @@ async function applyRadarKey(k) {
   try { localStorage.setItem(RADAR_KEY_STORAGE, k); } catch {}
   await refreshKeyedMemories(k);
   renderRadar();
-  if (_keyedCache.length === 0) showToast("このグループキーの記憶はありません");
-  else showToast(`${_keyedCache.length}件の記憶が見つかりました`);
+  if (_keyedCache.length === 0) showToast(t("toast.keyed_empty"));
+  else showToast(t("toast.keyed_found", { n: _keyedCache.length }));
 }
 function clearRadarKey() {
   _radarKey = "";
@@ -995,16 +995,16 @@ function commitRadarKey() {
   applyRadarKey(raw);
 }
 
-const HUD_ALT_MESSAGES = ["あなたの位置を取得中", "空の下で、ちょっと立ち止まって"];
+const HUD_ALT_KEYS = ["radar.hud_alt_1", "radar.hud_alt_2"];
 let _hudAltIdx = 0;
 let _hudAltTimer = null;
 function startHudAlt(status) {
   if (_hudAltTimer) return;
-  status.textContent = HUD_ALT_MESSAGES[_hudAltIdx];
+  status.textContent = t(HUD_ALT_KEYS[_hudAltIdx]);
   _hudAltTimer = setInterval(() => {
-    _hudAltIdx = (_hudAltIdx + 1) % HUD_ALT_MESSAGES.length;
+    _hudAltIdx = (_hudAltIdx + 1) % HUD_ALT_KEYS.length;
     const el = $("hud-status");
-    if (el) el.textContent = HUD_ALT_MESSAGES[_hudAltIdx];
+    if (el) el.textContent = t(HUD_ALT_KEYS[_hudAltIdx]);
   }, 3000);
 }
 function stopHudAlt() {
@@ -1070,13 +1070,13 @@ function showScreen(id) {
 // ＋記憶を置くボタン押下：GPS精度チェック→OKなら写真選択起動
 function onPlaceButtonTap() {
   if (!_currentUser) {
-    if (confirm("ここにピンするにはGoogleでログインが必要です。ログインしますか？")) goToLogin();
+    if (confirm(t("confirm.login_to_pin"))) goToLogin();
     return;
   }
   if (!myPos) {
     showToast(gpsError
-      ? `位置情報エラー：${gpsError}`
-      : "位置情報を取得中です。もう少しお待ちください");
+      ? t("toast.gps_error", { msg: gpsError })
+      : t("toast.gps_locating"));
     return;
   }
   if (myPos.accuracy > GPS_ACCURACY_THRESHOLD_M) {
@@ -1104,7 +1104,7 @@ async function handleMediaPick(e) {
   if (!file) return;
   // 選択直後にもう一度精度チェック（時間経過で悪化した場合）
   if (!myPos || myPos.accuracy > GPS_ACCURACY_THRESHOLD_M) {
-    showToast("位置精度が低くなりました。もう一度お試しください");
+    showToast(t("toast.accuracy_low"));
     return;
   }
   const dataUrl = await downscaleImage(file, MAX_IMAGE_DIM);
@@ -1164,8 +1164,8 @@ async function populateMyKeysDatalist() {
     const opt = document.createElement("option");
     opt.value = k.key;
     const modeIco = k.mode === "open" ? "🌐" : "🔒";
-    const role = k.isOwner ? "オーナー" : "メンバー";
-    opt.label = `${modeIco} ${k.count}件・${role}`;
+    const role = k.isOwner ? t("compose.key.datalist_owner") : t("compose.key.datalist_member");
+    opt.label = t("compose.key.datalist_label", { icon: modeIco, count: k.count, role });
     list.appendChild(opt);
   }
 }
@@ -1232,7 +1232,7 @@ async function commitComposeKeyMode() {
     _composeKeyMode = null;
     wrap.classList.remove("hidden");
     setRadiosEnabled(true);
-    showStatus("新しいグループキーとして発行されます");
+    showStatus(t("compose.key.status_new"));
     return;
   }
   _composeKeyMode = info.mode;
@@ -1240,12 +1240,12 @@ async function commitComposeKeyMode() {
   setRadiosEnabled(false);
   if (info.mode === "open") {
     showStatus(info.isOwner
-      ? "🌐 誰でも投稿できるグループ（あなたがオーナー）"
-      : "🌐 誰でも投稿できるグループに追加されます");
+      ? t("compose.key.status_open_owner")
+      : t("compose.key.status_open_join"));
   } else {
     showStatus(info.isOwner
-      ? "🔒 自分だけが投稿できるグループ（あなたがオーナー）"
-      : "🔒 このキーは他の人の非公開グループです（投稿できません）", !info.isOwner);
+      ? t("compose.key.status_owner_owner")
+      : t("compose.key.status_owner_locked"), !info.isOwner);
   }
 }
 
@@ -1263,8 +1263,8 @@ function openKeyIssuedModal(key, mode) {
   if (code) code.textContent = key;
   if (desc) {
     desc.textContent = mode === "open"
-      ? "このグループキーを知っている人は誰でも記憶を追加できます。"
-      : "このグループキーを知っている人だけが、この記憶を見つけられます。";
+      ? t("modal.key_issued.desc_open")
+      : t("modal.key_issued.desc_owner");
   }
   el.dataset.key = key;
   el.classList.remove("hidden");
@@ -1284,13 +1284,13 @@ async function copyKey(key) {
       document.execCommand("copy");
       ta.remove();
     }
-    showToast("グループキーをコピーしました");
+    showToast(t("toast.copy_ok"));
   } catch {
-    showToast("コピーできませんでした");
+    showToast(t("toast.copy_failed"));
   }
 }
 async function shareKey(key) {
-  const text = `グループキー「${key}」を「KIOKU PIN」のグループモードに入れると、ピンした記憶を見つけられます。`;
+  const text = t("modal.key_share_text", { key });
   if (navigator.share) {
     try { await navigator.share({ text }); return; }
     catch { /* キャンセル時は無視 */ }
@@ -1513,7 +1513,7 @@ function drawerInit() {
   });
   bindTap(document.getElementById("draw-clear"), () => {
     if (!drawer.strokes.length) return;
-    if (!confirm("書き込みを全て消しますか？")) return;
+    if (!confirm(t("confirm.clear_drawing"))) return;
     drawer.strokes = [];
     drawer.redo = [];
     drawerRender();
@@ -1771,12 +1771,12 @@ async function savePlaced() {
   if (_saving) return;
   if (!cropper.ready || !myPos) return;
   if (myPos.accuracy > GPS_ACCURACY_THRESHOLD_M) {
-    showToast("位置精度が低くなったためピンできませんでした");
+    showToast(t("toast.accuracy_low_at_save"));
     return;
   }
   if (!_currentUser) {
     closeComposeSheet();
-    if (confirm("ここにピンするにはGoogleでログインが必要です。ログインしますか？")) goToLogin();
+    if (confirm(t("confirm.login_to_pin"))) goToLogin();
     return;
   }
   _saving = true;
@@ -1789,7 +1789,7 @@ async function savePlaced() {
     : "";
   // 事前バリデーション（サーバー側でも検証）
   if (visibility === "keyed" && userKey && !isValidUserKey(userKey)) {
-    showToast("グループキーは2〜20文字（英数字・かな・漢字と _ - のみ）");
+    showToast(t("toast.key_invalid_format"));
     if (btn) btn.disabled = false;
     _saving = false;
     return;
@@ -1819,20 +1819,20 @@ async function savePlaced() {
       openKeyIssuedModal(result.accessKey, result.keyMode);
     } else if (result?.accessKey) {
       // 既存キーへの追加
-      showToast(`グループキー「${result.accessKey}」に追加しました`);
+      showToast(t("toast.saved_with_key", { key: result.accessKey }));
     } else {
-      showToast("ピンしました");
+      showToast(t("toast.saved"));
     }
   } catch (e) {
     if (e.message === "unauthorized") {
       closeComposeSheet();
-      if (confirm("ログインが必要です。ログインしますか？")) goToLogin();
+      if (confirm(t("confirm.login_generic"))) goToLogin();
     } else if (e.message === "key_conflict") {
-      showToast("このグループキーは他の人が使用中です。別のグループキーにしてください");
+      showToast(t("toast.key_conflict"));
     } else if (e.message === "key_invalid") {
-      showToast("グループキーの形式が正しくありません");
+      showToast(t("toast.key_invalid_server"));
     } else {
-      showToast("投稿に失敗しました");
+      showToast(t("toast.save_failed"));
     }
   } finally {
     _saving = false;
@@ -1877,7 +1877,7 @@ async function openAR() {
     });
     video.srcObject = arStream;
   } catch (err) {
-    showArError(`カメラを起動できませんでした：${err.message}`);
+    showArError(t("ar.camera_error", { msg: err.message }));
     return;
   }
   arLoop();
@@ -1932,7 +1932,7 @@ function renderArFrame() {
   const overlay = $("ar-overlay");
   if (!myPos) {
     overlay.innerHTML = "";
-    $("ar-count").textContent = "位置情報待ち…";
+    $("ar-count").textContent = t("ar.count_waiting");
     return;
   }
   const memories = loadMemories();
@@ -2033,12 +2033,12 @@ function renderArFrame() {
   // 残存＝視野外に消えた要素を除去
   existing.forEach(el => el.remove());
 
-  $("ar-count").textContent = `視界: ${visibleCount}`;
+  $("ar-count").textContent = t("ar.count_visible", { n: visibleCount });
   const hint = $("ar-hint");
   if (visibleCount === 0) {
-    hint.textContent = "この方向に記憶はありません";
+    hint.textContent = t("ar.hint_none");
   } else {
-    hint.textContent = "近づくと記憶が鮮明になります";
+    hint.textContent = t("ar.hint_near");
   }
 }
 
@@ -2055,16 +2055,16 @@ let _historyTab = "mine"; // "mine" | "finds"
 
 const HISTORY_SORT_OPTIONS = {
   mine: [
-    { value: "created_desc", label: "新しい順" },
-    { value: "created_asc",  label: "古い順" },
-    { value: "dist_asc",     label: "近い順" },
-    { value: "finds_desc",   label: "★が多い順" },
+    { value: "created_desc", labelKey: "history.sort.created_desc" },
+    { value: "created_asc",  labelKey: "history.sort.created_asc" },
+    { value: "dist_asc",     labelKey: "history.sort.dist_asc" },
+    { value: "finds_desc",   labelKey: "history.sort.finds_desc" },
   ],
   finds: [
-    { value: "favorited_desc", label: "保存が新しい順" },
-    { value: "favorited_asc",  label: "保存が古い順" },
-    { value: "created_desc",   label: "投稿が新しい順" },
-    { value: "dist_asc",       label: "近い順" },
+    { value: "favorited_desc", labelKey: "history.sort.favorited_desc" },
+    { value: "favorited_asc",  labelKey: "history.sort.favorited_asc" },
+    { value: "created_desc",   labelKey: "history.sort.created_desc_posted" },
+    { value: "dist_asc",       labelKey: "history.sort.dist_asc" },
   ],
 };
 const _historySort = { mine: "created_desc", finds: "favorited_desc" };
@@ -2112,7 +2112,7 @@ function openHistorySortMenu(tabKey) {
     item.type = "button";
     item.className = "history-sort-item" + (o.value === current ? " selected" : "");
     item.setAttribute("role", "menuitem");
-    item.textContent = o.label;
+    item.textContent = t(o.labelKey);
     item.addEventListener("click", (e) => {
       e.stopPropagation();
       _historySort[tabKey] = o.value;
@@ -2135,7 +2135,7 @@ function openHistorySortMenu(tabKey) {
 
 async function openHistory() {
   if (!_currentUser) {
-    if (confirm("マイページを見るにはGoogleでログインが必要です。ログインしますか？")) goToLogin();
+    if (confirm(t("confirm.login_to_history"))) goToLogin();
     return;
   }
   await refreshCurrentHistoryTab();
@@ -2200,7 +2200,7 @@ async function openAdmin() {
   } catch (e) {
     loading?.classList.add("hidden");
     if (err) {
-      err.textContent = "読み込めませんでした";
+      err.textContent = t("history.load_failed");
       err.classList.remove("hidden");
     }
   }
@@ -2237,7 +2237,7 @@ function renderAdminStats(stats) {
     const total = capacity.total.toLocaleString();
     const avg = capacity.avg ? formatBytes(Math.round(capacity.avg)) : "-";
     const removed = capacity.total - capacity.alive;
-    capSub.textContent = `生存 ${alive}枚 / 全 ${total}枚（回収 ${removed.toLocaleString()}枚） · 平均 ${avg}`;
+    capSub.textContent = t("admin.capacity_sub", { alive, total, removed: removed.toLocaleString(), avg });
   }
   renderSparkline(timeline);
   const list = $("admin-places");
@@ -2295,7 +2295,7 @@ function renderSparkline(timeline) {
       points[i] > 0 && i === coords.length - 1
         ? `<circle cx="${x}" cy="${y}" r="2.5" class="spark-dot"/>` : ""
     ).join("");
-  if (sub) sub.textContent = `合計 ${total.toLocaleString()}枚 · 1日ピーク ${peak.toLocaleString()}枚`;
+  if (sub) sub.textContent = t("admin.flow_sub", { total: total.toLocaleString(), peak: peak.toLocaleString() });
 }
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({
@@ -2312,8 +2312,8 @@ function renderHistoryList() {
   list.innerHTML = "";
   if (memories.length === 0) {
     empty.textContent = isFindsTab
-      ? "まだお気に入りはありません"
-      : "まだピンした記憶はありません";
+      ? t("history.empty_finds")
+      : t("history.empty_mine");
     empty.classList.remove("hidden");
     return;
   }
@@ -2328,7 +2328,7 @@ function renderHistoryList() {
     const delBtn = document.createElement("button");
     delBtn.className = "history-delete";
     delBtn.type = "button";
-    delBtn.textContent = isFindsTab ? "解除" : "回収";
+    delBtn.textContent = isFindsTab ? t("history.unfave") : t("history.pickup_short");
 
     const item = document.createElement("div");
     item.className = "history-item";
@@ -2358,7 +2358,7 @@ function renderHistoryList() {
         ? `${Math.round(meters)}m`
         : `${(meters / 1000).toFixed(1)}km`);
     }
-    dist.textContent = parts.length ? parts.join(" · ") : "—";
+    dist.textContent = parts.length ? parts.join(" · ") : t("history.dist_none");
     const meta = document.createElement("p");
     meta.className = "history-meta";
     const d = new Date(m.createdAt);
@@ -2367,7 +2367,7 @@ function renderHistoryList() {
     if (Number(m.findCount || 0) > 0) {
       const finds = document.createElement("span");
       finds.className = "history-finds";
-      finds.title = "見つけられた回数";
+      finds.title = t("history.finds_title");
       finds.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 L14.85 9.05 L22 9.75 L16.5 14.55 L18.2 21.5 L12 17.8 L5.8 21.5 L7.5 14.55 L2 9.75 L9.15 9.05 Z"/></svg>${m.findCount}`;
       meta.appendChild(finds);
     }
@@ -2387,14 +2387,14 @@ function renderHistoryList() {
       const keyBtn = document.createElement("button");
       keyBtn.type = "button";
       keyBtn.className = "history-keybtn";
-      keyBtn.title = "タップでグループキーを表示";
-      keyBtn.setAttribute("aria-label", "グループキーを表示");
+      keyBtn.title = t("history.key_show_title");
+      keyBtn.setAttribute("aria-label", t("history.key_show_aria"));
       keyBtn.innerHTML = `<span class="history-visibility-icon" aria-hidden="true">${VIS_ICON_SVG.keyed}</span>`;
       const stopBubbleKey = (e) => e.stopPropagation();
       keyBtn.addEventListener("pointerdown", stopBubbleKey);
       keyBtn.addEventListener("click", (e) => {
         e.stopPropagation();
-        if (m.accessKey) showToast(`グループキー: ${m.accessKey}`, 3000, "toast-key");
+        if (m.accessKey) showToast(t("toast.show_key", { key: m.accessKey }), 3000, "toast-key");
       });
       rightControl = keyBtn;
     }
@@ -2402,7 +2402,7 @@ function renderHistoryList() {
     if (!isFindsTab && !rightControl) {
       visLabel = document.createElement("label");
       visLabel.className = "history-visibility";
-      visLabel.title = "プライベート";
+      visLabel.title = t("history.private_title");
       if (m.visibility === "keyed") visLabel.classList.add("invisible");
       const visInput = document.createElement("input");
       visInput.type = "checkbox";
@@ -2429,9 +2429,9 @@ function renderHistoryList() {
         } catch (err) {
           visInput.checked = !visInput.checked;
           if (err.message === "unauthorized") {
-            if (confirm("ログインが必要です。ログインしますか？")) goToLogin();
+            if (confirm(t("confirm.login_generic"))) goToLogin();
           } else {
-            showToast("変更に失敗しました");
+            showToast(t("toast.change_failed"));
           }
         } finally {
           visInput.disabled = false;
@@ -2450,7 +2450,7 @@ function renderHistoryList() {
 
     attachHistorySwipe(item, swipe, () => {
       if (isFindsTab) {
-        if (!confirm("お気に入りから解除しますか？")) {
+        if (!confirm(t("confirm.unfave"))) {
           swipe.classList.remove("revealed");
           return;
         }
@@ -2459,12 +2459,12 @@ function renderHistoryList() {
           renderRadar();
         }).catch((e) => {
           if (e.message === "unauthorized") {
-            if (confirm("ログインが必要です。ログインしますか？")) goToLogin();
-          } else showToast("解除に失敗しました");
+            if (confirm(t("confirm.login_generic"))) goToLogin();
+          } else showToast(t("toast.unfave_failed"));
         });
         return;
       }
-      if (!confirm("この記憶を回収しますか？")) {
+      if (!confirm(t("confirm.pickup"))) {
         swipe.classList.remove("revealed");
         return;
       }
@@ -2477,7 +2477,7 @@ function renderHistoryList() {
         // deleted_at IS NULL でフィルタ済みなので、再取得して残っているか見る）
         await refreshMyFinds();
         if (!_findsCache.some(x => x.id === m.id)) {
-          showToast("この写真は削除されました");
+          showToast(t("toast.already_removed"));
           renderHistoryList();
           return;
         }
@@ -2549,16 +2549,16 @@ async function deleteMemoryWithFeedback(id, { onSuccess } = {}) {
     const { keyReleased } = await removeMemory(id);
     if (onSuccess) onSuccess();
     if (keyReleased) {
-      showToast(`回収しました。グループキー「${keyReleased}」は解放されました`, 3500);
+      showToast(t("toast.pickup_ok_with_key", { key: keyReleased }), 3500);
     } else {
-      showToast("回収しました");
+      showToast(t("toast.pickup_ok"));
     }
     return true;
   } catch (e) {
-    if (e.message === "forbidden") showToast("この記憶は回収できません");
+    if (e.message === "forbidden") showToast(t("toast.pickup_forbidden"));
     else if (e.message === "unauthorized") {
-      if (confirm("ログインが必要です。ログインしますか？")) goToLogin();
-    } else showToast("回収に失敗しました");
+      if (confirm(t("confirm.login_generic"))) goToLogin();
+    } else showToast(t("toast.pickup_failed"));
     return false;
   }
 }
@@ -2570,7 +2570,7 @@ function updateViewerDeleteButton(m) {
   const isPoster = m.userId === _currentUser.id;
   btn.classList.remove("hidden");
   const label = btn.querySelector(".viewer-delete-label");
-  if (label) label.textContent = isPoster ? "回収する" : "回収する（オーナー削除）";
+  if (label) label.textContent = isPoster ? t("viewer.pickup") : t("viewer.pickup_owner");
   btn.dataset.mode = isPoster ? "self" : "owner";
 }
 
@@ -2633,7 +2633,7 @@ function renderViewerAt(idx) {
     updateViewerReportButton(m);
     updateViewerFindButton(m);
   } else {
-    $("viewer-distance").textContent = `距離: 約${Math.round(dist)}m`;
+    $("viewer-distance").textContent = t("viewer.distance", { m: Math.round(dist) });
     $("viewer-delete")?.classList.add("hidden");
     $("viewer-report")?.classList.add("hidden");
     document.getElementById("viewer-find")?.classList.add("hidden");
@@ -2671,7 +2671,7 @@ function viewerStep(delta) {
 // 裏面ダブルタップから呼ぶ: メッセージ全文をクリップボードへ
 function copyViewerNote() {
   const note = _viewerMemory?.note || "";
-  if (!note) { showToast("コピーするメッセージがありません"); return; }
+  if (!note) { showToast(t("toast.no_note")); return; }
   const fallback = () => {
     try {
       const ta = document.createElement("textarea");
@@ -2684,14 +2684,14 @@ function copyViewerNote() {
       ta.setSelectionRange(0, note.length);
       const ok = document.execCommand("copy");
       ta.remove();
-      showToast(ok ? "メッセージをコピーしました" : "コピーに失敗しました");
+      showToast(ok ? t("toast.note_copy_ok") : t("toast.note_copy_failed"));
     } catch {
-      showToast("コピーに失敗しました");
+      showToast(t("toast.note_copy_failed"));
     }
   };
   if (navigator.clipboard?.writeText) {
     navigator.clipboard.writeText(note).then(
-      () => showToast("メッセージをコピーしました"),
+      () => showToast(t("toast.note_copy_ok")),
       fallback
     );
   } else {
@@ -2827,7 +2827,7 @@ async function onViewerFind() {
   const m = _viewerMemory;
   if (!m) return;
   if (!_currentUser) {
-    if (confirm("ログインが必要です。ログインしますか？")) goToLogin();
+    if (confirm(t("confirm.login_generic"))) goToLogin();
     return;
   }
   if (m.userId === _currentUser.id) return;
@@ -2848,9 +2848,9 @@ async function onViewerFind() {
     if (!$("history-sheet").classList.contains("hidden")) renderHistoryList();
   } catch (e) {
     if (e.message === "unauthorized") {
-      if (confirm("ログインが必要です。ログインしますか？")) goToLogin();
+      if (confirm(t("confirm.login_generic"))) goToLogin();
     } else {
-      showToast("失敗しました");
+      showToast(t("toast.action_failed"));
     }
   } finally {
     btn.disabled = false;
@@ -2863,8 +2863,8 @@ async function onViewerDelete() {
   const btn = $("viewer-delete");
   const isOwnerDelete = btn?.dataset.mode === "owner";
   const msg = isOwnerDelete
-    ? "この記憶をオーナー権限で回収しますか？（投稿者には通知されません）"
-    : "この記憶を回収しますか？";
+    ? t("confirm.pickup_owner")
+    : t("confirm.pickup");
   if (!confirm(msg)) return;
   if (btn) btn.disabled = true;
   await deleteMemoryWithFeedback(m.id, {
@@ -2881,10 +2881,10 @@ async function onViewerReport() {
   const m = _viewerMemory;
   if (!m) return;
   if (!_currentUser) {
-    if (confirm("通報にはログインが必要です。ログインしますか？")) goToLogin();
+    if (confirm(t("confirm.login_to_report"))) goToLogin();
     return;
   }
-  if (!confirm("この写真を『不適切』として通報しますか？\n別のアカウントからの通報が合計3件で自動的に削除されます。")) return;
+  if (!confirm(t("confirm.report"))) return;
   const btn = $("viewer-report");
   if (btn) btn.disabled = true;
   try {
@@ -2895,20 +2895,20 @@ async function onViewerReport() {
       releaseImageCache(m.id);
       closeViewer();
       renderRadar();
-      showToast("通報を受け付け、写真は削除されました");
+      showToast(t("toast.report_removed"));
     } else {
-      showToast("通報を受け付けました");
+      showToast(t("toast.report_ok"));
       if (btn) btn.disabled = false;
     }
   } catch (e) {
     if (e.message === "unauthorized") {
-      if (confirm("ログインが必要です。ログインしますか？")) goToLogin();
+      if (confirm(t("confirm.login_generic"))) goToLogin();
     } else if (e.message === "bad request") {
-      showToast("自分の投稿は通報できません");
+      showToast(t("toast.report_self"));
     } else if (e.message === "not found") {
-      showToast("この写真は見つかりません");
+      showToast(t("toast.report_missing"));
     } else {
-      showToast("通報に失敗しました");
+      showToast(t("toast.report_failed"));
     }
     if (btn) btn.disabled = false;
   }
@@ -2928,6 +2928,9 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
   window.addEventListener("message", onLoginMessage);
+
+  // 起動時にDOM内の data-i18n / data-i18n-attr を現在言語で塗る
+  if (window.i18n) window.i18n.applyDom(document);
 
   initRadarMap();
   watchLocation();
@@ -2966,7 +2969,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   $("user-chip").addEventListener("click", async () => {
     if (_currentUser) {
-      if (!confirm(`${_currentUser.name || "アカウント"} からログアウトしますか？`)) return;
+      if (!confirm(t("topbar.logout_confirm", { name: _currentUser.name || t("topbar.account_default") }))) return;
       try { await apiFetch("/api/auth/logout", { method: "POST" }); } catch {}
       setStoredToken(null);
       _currentUser = null; _myCache = [];
@@ -2978,7 +2981,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       updateUserChip();
       renderRadar();
-      showToast("ログアウトしました");
+      showToast(t("toast.logout_ok"));
     } else {
       goToLogin();
     }
@@ -3100,4 +3103,32 @@ document.addEventListener("DOMContentLoaded", () => {
   $("key-issued").addEventListener("click", (e) => {
     if (e.target === $("key-issued")) closeKeyIssuedModal();
   });
+
+  // 言語切替
+  setupLangToggle();
 });
+
+// ---------- 言語切替 ----------
+function setupLangToggle() {
+  const buttons = document.querySelectorAll(".lang-seg-btn");
+  const paint = () => {
+    const cur = window.i18n?.getLocale?.() || "ja";
+    buttons.forEach((b) => b.classList.toggle("is-active", b.dataset.lang === cur));
+  };
+  buttons.forEach((b) => {
+    b.addEventListener("click", () => {
+      window.i18n?.setLocale?.(b.dataset.lang);
+    });
+  });
+  paint();
+  window.addEventListener("i18n:changed", () => {
+    paint();
+    // 動的に描画されるUIを再描画
+    updateUserChip();
+    updatePlaceButtonState();
+    if (!$("history-sheet").classList.contains("hidden")) renderHistoryList();
+    if (!$("compose-sheet").classList.contains("hidden")) {
+      populateMyKeysDatalist();
+    }
+  });
+}

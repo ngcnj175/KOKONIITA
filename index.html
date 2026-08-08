@@ -17,16 +17,16 @@
   <!-- レーダー画面 -->
   <section id="radar-screen" class="screen">
     <header class="topbar">
-      <h1 class="brand">KIOKU PIN</h1>
+      <h1 class="brand" data-i18n="brand">KIOKU PIN</h1>
       <div class="topbar-right">
-        <button id="admin-chip" class="chip admin-chip hidden" type="button" aria-label="星の記録">
+        <button id="admin-chip" class="chip admin-chip hidden" type="button" data-i18n-attr="aria-label:topbar.admin_label" aria-label="星の記録">
           <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
             <path d="M12 2.5 L14.85 9.05 L22 9.75 L16.5 14.55 L18.2 21.5 L12 17.8 L5.8 21.5 L7.5 14.55 L2 9.75 L9.15 9.05 Z" fill="currentColor"/>
           </svg>
         </button>
         <button id="user-chip" class="chip user-chip hidden" type="button">
           <img id="user-avatar" class="user-avatar hidden" alt="" />
-          <span id="user-label" class="user-label">サインイン</span>
+          <span id="user-label" class="user-label" data-i18n="topbar.signin">サインイン</span>
         </button>
       </div>
     </header>
@@ -34,8 +34,8 @@
     <div class="radar-wrap">
       <div class="radar-sky" aria-hidden="true"></div>
       <div id="star-field" class="star-field" aria-hidden="true"></div>
-      <div class="radar-mode" role="group" aria-label="表示レイヤー">
-        <button class="radar-mode-btn is-on" data-toggle="public" type="button" aria-pressed="true" title="公開">
+      <div class="radar-mode" role="group" data-i18n-attr="aria-label:radar.layer_group" aria-label="表示レイヤー">
+        <button class="radar-mode-btn is-on" data-toggle="public" type="button" aria-pressed="true" data-i18n-attr="title:radar.mode_public" title="公開">
           <svg viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round">
             <circle cx="12" cy="12" r="9.2"/>
             <ellipse cx="12" cy="12" rx="4.2" ry="9.2"/>
@@ -44,23 +44,23 @@
             <path d="M4.1 7.4h15.8M4.1 16.6h15.8"/>
           </svg>
         </button>
-        <button class="radar-mode-btn" data-toggle="mine" type="button" aria-pressed="false" title="プライベート">
+        <button class="radar-mode-btn" data-toggle="mine" type="button" aria-pressed="false" data-i18n-attr="title:radar.mode_private" title="プライベート">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12.4a4.6 4.6 0 100-9.2 4.6 4.6 0 000 9.2zm0 1.8c-4.4 0-8 2.7-8 6v1.6c0 .4.3.7.7.7h14.6c.4 0 .7-.3.7-.7v-1.6c0-3.3-3.6-6-8-6z"/></svg>
         </button>
-        <button class="radar-mode-btn" data-toggle="keyed" type="button" aria-pressed="false" title="グループ">
+        <button class="radar-mode-btn" data-toggle="keyed" type="button" aria-pressed="false" data-i18n-attr="title:radar.mode_group" title="グループ">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><circle cx="17" cy="8.5" r="2.8"/><path d="M2 20c0-3.9 3.1-7 7-7s7 3.1 7 7v1H2v-1zm14 1v-1c0-1.7-.4-3.3-1.2-4.7.5-.1 1.1-.2 1.7-.2 3.1 0 5.5 2.5 5.5 5.5v.4H16z"/></svg>
         </button>
       </div>
       <div id="key-bar" class="key-bar hidden">
         <input id="key-input" type="text" autocomplete="off" spellcheck="false"
-               maxlength="20" placeholder="グループキー" aria-label="グループキー" />
+               maxlength="20" data-i18n-attr="placeholder:radar.key_placeholder,aria-label:radar.key_placeholder" placeholder="グループキー" aria-label="グループキー" />
       </div>
       <div id="range-label" class="range-chip" aria-live="polite">500m</div>
-      <div class="range-zoom" role="group" aria-label="表示範囲">
-        <button id="range-up" class="range-zoom-btn" type="button" aria-label="広く表示">
+      <div class="range-zoom" role="group" data-i18n-attr="aria-label:radar.range_group" aria-label="表示範囲">
+        <button id="range-up" class="range-zoom-btn" type="button" data-i18n-attr="aria-label:radar.range_up" aria-label="広く表示">
           <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M12 6 20 18H4z" fill="#fff"/></svg>
         </button>
-        <button id="range-down" class="range-zoom-btn" type="button" aria-label="狭く表示">
+        <button id="range-down" class="range-zoom-btn" type="button" data-i18n-attr="aria-label:radar.range_down" aria-label="狭く表示">
           <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M12 18 4 6h16z" fill="#fff"/></svg>
         </button>
       </div>
@@ -102,7 +102,7 @@
       </svg>
 
       <div class="radar-hud">
-        <p id="hud-status" class="hud-line" aria-live="polite">現在位置を取得中…</p>
+        <p id="hud-status" class="hud-line" aria-live="polite" data-i18n="radar.hud_locating">現在位置を取得中…</p>
         <div id="hud-steps" class="hud-steps" data-step="0" aria-hidden="true">
           <span class="hud-step"></span>
           <span class="hud-step"></span>
@@ -112,7 +112,7 @@
     </div>
 
     <footer class="bottombar">
-      <button id="ar-btn" class="place-fab" type="button" aria-label="AR">
+      <button id="ar-btn" class="place-fab" type="button" data-i18n-attr="aria-label:place_fab.ar" aria-label="AR">
         <span class="place-fab__icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" width="26" height="26">
             <path d="M12 2.5 20.5 7v10L12 21.5 3.5 17V7z" fill="currentColor" stroke="#619FFE" stroke-width="1.4" stroke-linejoin="round"/>
@@ -121,16 +121,16 @@
         </span>
         <span class="place-fab__label">AR</span>
       </button>
-      <button id="place-btn" class="place-fab" type="button" aria-label="ここにピン">
+      <button id="place-btn" class="place-fab" type="button" data-i18n-attr="aria-label:place_fab.pin" aria-label="ここにピン">
         <span class="place-fab__icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" width="26" height="26" fill="none">
             <path d="M12 2C7.58 2 4 5.58 4 10c0 5.25 8 12 8 12s8-6.75 8-12c0-4.42-3.58-8-8-8z" fill="currentColor"/>
             <path d="M12 6.5v6M9 9.5h6" stroke="#619FFE" stroke-width="1.8" stroke-linecap="round"/>
           </svg>
         </span>
-        <span class="place-fab__label">ここにピン</span>
+        <span class="place-fab__label" data-i18n="place_fab.pin">ここにピン</span>
       </button>
-      <button id="history-btn" class="place-fab" type="button" aria-label="マイページ">
+      <button id="history-btn" class="place-fab" type="button" data-i18n-attr="aria-label:place_fab.history" aria-label="マイページ">
         <span class="place-fab__icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" width="26" height="26">
             <!-- ポラロイド白地: 下側の余白を少しだけ厚めにするため縦長 -->
@@ -141,7 +141,7 @@
             <path d="M12 7.0 12.68 8.87 14.66 8.93 13.09 10.16 13.65 12.07 12 10.95 10.35 12.07 10.91 10.16 9.34 8.93 11.32 8.87Z" fill="currentColor" stroke="currentColor" stroke-width="0.4" stroke-linejoin="round"/>
           </svg>
         </span>
-        <span class="place-fab__label">マイページ</span>
+        <span class="place-fab__label" data-i18n="place_fab.history">マイページ</span>
       </button>
     </footer>
   </section>
@@ -155,13 +155,13 @@
     <div class="sheet-panel">
       <div class="sheet-handle"></div>
       <header class="sheet-head">
-        <h2 class="sheet-title">新しい記憶</h2>
-        <button id="compose-cancel" class="chip" type="button">やめる</button>
+        <h2 class="sheet-title" data-i18n="compose.title">新しい記憶</h2>
+        <button id="compose-cancel" class="chip" type="button" data-i18n="common.cancel">やめる</button>
       </header>
       <div class="compose-body">
         <div class="cropper-wrap">
           <div class="zoom-row">
-            <button type="button" class="pan-toggle is-active" id="pan-toggle" aria-label="写真の位置とズーム" aria-pressed="true">
+            <button type="button" class="pan-toggle is-active" id="pan-toggle" data-i18n-attr="aria-label:compose.pan_label" aria-label="写真の位置とズーム" aria-pressed="true">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 15 6 6"/><path d="m15 9 6-6"/><path d="M21 16v5h-5"/><path d="M21 8V3h-5"/><path d="M3 16v5h5"/><path d="m3 21 6-6"/><path d="M3 8V3h5"/><path d="M9 9 3 3"/></svg>
             </button>
             <span class="dim small">−</span>
@@ -174,82 +174,83 @@
               <div class="cropper-grid" aria-hidden="true"></div>
             </div>
             <div class="compose-polaroid-caption" aria-hidden="true"></div>
-            <canvas id="draw-canvas" class="draw-canvas" aria-label="手書きレイヤー"></canvas>
+            <canvas id="draw-canvas" class="draw-canvas" data-i18n-attr="aria-label:compose.draw_layer" aria-label="手書きレイヤー"></canvas>
           </div>
-          <div class="draw-toolbar" role="toolbar" aria-label="描画ツール">
+          <div class="draw-toolbar" role="toolbar" data-i18n-attr="aria-label:compose.draw_toolbar" aria-label="描画ツール">
             <div class="draw-tools">
-              <button type="button" class="draw-tool" data-mode="draw" id="tool-pen" aria-label="ペン" aria-pressed="false">
+              <button type="button" class="draw-tool" data-mode="draw" id="tool-pen" data-i18n-attr="aria-label:compose.tool.pen" aria-label="ペン" aria-pressed="false">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21h15"/><path d="m15 5 4 4"/><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/></svg>
               </button>
-              <button type="button" class="draw-tool" data-mode="erase" id="tool-erase" aria-label="消しゴム" aria-pressed="false">
+              <button type="button" class="draw-tool" data-mode="erase" id="tool-erase" data-i18n-attr="aria-label:compose.tool.erase" aria-label="消しゴム" aria-pressed="false">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 21H8a2 2 0 0 1-1.42-.587l-3.994-3.999a2 2 0 0 1 0-2.828l10-10a2 2 0 0 1 2.829 0l5.999 6a2 2 0 0 1 0 2.828L12.834 21"/><path d="m5.082 11.09 8.828 8.828"/></svg>
               </button>
-              <button type="button" class="draw-tool" id="draw-undo" aria-label="ひとつ戻す" disabled>
+              <button type="button" class="draw-tool" id="draw-undo" data-i18n-attr="aria-label:compose.tool.undo" aria-label="ひとつ戻す" disabled>
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/></svg>
               </button>
-              <button type="button" class="draw-tool" id="draw-redo" aria-label="やり直す" disabled>
+              <button type="button" class="draw-tool" id="draw-redo" data-i18n-attr="aria-label:compose.tool.redo" aria-label="やり直す" disabled>
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5A5.5 5.5 0 0 0 9.5 20H13"/></svg>
               </button>
-              <button type="button" class="draw-tool" id="draw-clear" aria-label="全て消す" disabled>
+              <button type="button" class="draw-tool" id="draw-clear" data-i18n-attr="aria-label:compose.tool.clear" aria-label="全て消す" disabled>
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
               </button>
             </div>
           </div>
           <div class="size-row">
             <span class="size-preview" id="size-preview" aria-hidden="true"><span class="size-dot" id="size-dot"></span></span>
-            <input type="range" id="size-slider" min="0.004" max="0.05" step="0.001" value="0.018" aria-label="ペンサイズ" />
+            <input type="range" id="size-slider" min="0.004" max="0.05" step="0.001" value="0.018" data-i18n-attr="aria-label:compose.tool.size" aria-label="ペンサイズ" />
           </div>
-          <div class="draw-colors" role="group" aria-label="色">
-            <button type="button" class="draw-color" data-color="#AF52DE" style="--sw:#AF52DE" aria-label="紫"></button>
-            <button type="button" class="draw-color" data-color="#32ADE6" style="--sw:#32ADE6" aria-label="青"></button>
-            <button type="button" class="draw-color" data-color="#34C759" style="--sw:#34C759" aria-label="緑"></button>
-            <button type="button" class="draw-color" data-color="#FFD60A" style="--sw:#FFD60A" aria-label="黄"></button>
-            <button type="button" class="draw-color" data-color="#FF3B30" style="--sw:#FF3B30" aria-label="赤"></button>
-            <button type="button" class="draw-color" data-color="#FF5FA2" style="--sw:#FF5FA2" aria-label="ピンク"></button>
-            <button type="button" class="draw-color" data-color="#FFFFFF" style="--sw:#FFFFFF" aria-label="白"></button>
-            <button type="button" class="draw-color is-active" data-color="#111111" style="--sw:#111111" aria-label="黒"></button>
+          <div class="draw-colors" role="group" data-i18n-attr="aria-label:compose.color.group" aria-label="色">
+            <button type="button" class="draw-color" data-color="#AF52DE" style="--sw:#AF52DE" data-i18n-attr="aria-label:compose.color.purple" aria-label="紫"></button>
+            <button type="button" class="draw-color" data-color="#32ADE6" style="--sw:#32ADE6" data-i18n-attr="aria-label:compose.color.blue" aria-label="青"></button>
+            <button type="button" class="draw-color" data-color="#34C759" style="--sw:#34C759" data-i18n-attr="aria-label:compose.color.green" aria-label="緑"></button>
+            <button type="button" class="draw-color" data-color="#FFD60A" style="--sw:#FFD60A" data-i18n-attr="aria-label:compose.color.yellow" aria-label="黄"></button>
+            <button type="button" class="draw-color" data-color="#FF3B30" style="--sw:#FF3B30" data-i18n-attr="aria-label:compose.color.red" aria-label="赤"></button>
+            <button type="button" class="draw-color" data-color="#FF5FA2" style="--sw:#FF5FA2" data-i18n-attr="aria-label:compose.color.pink" aria-label="ピンク"></button>
+            <button type="button" class="draw-color" data-color="#FFFFFF" style="--sw:#FFFFFF" data-i18n-attr="aria-label:compose.color.white" aria-label="白"></button>
+            <button type="button" class="draw-color is-active" data-color="#111111" style="--sw:#111111" data-i18n-attr="aria-label:compose.color.black" aria-label="黒"></button>
           </div>
         </div>
         <label class="field">
-          <span>メッセージ（任意）</span>
-          <textarea id="note-input" maxlength="140" rows="3" placeholder="ここに残す言葉"></textarea>
+          <span data-i18n="compose.field.message">メッセージ（任意）</span>
+          <textarea id="note-input" maxlength="140" rows="3" data-i18n-attr="placeholder:compose.field.message_placeholder" placeholder="ここに残す言葉"></textarea>
         </label>
         <div class="field">
-          <span>公開範囲</span>
-          <div class="vis-seg" role="radiogroup" aria-label="公開範囲">
+          <span data-i18n="compose.field.visibility">公開範囲</span>
+          <div class="vis-seg" role="radiogroup" data-i18n-attr="aria-label:compose.field.visibility" aria-label="公開範囲">
             <button type="button" class="vis-seg-btn is-active" data-vis="public" role="radio" aria-checked="true">
-              <span class="vis-ico"><svg viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round"><circle cx="12" cy="12" r="9.2"/><ellipse cx="12" cy="12" rx="4.2" ry="9.2"/><line x1="2.8" y1="12" x2="21.2" y2="12"/><line x1="12" y1="2.8" x2="12" y2="21.2"/><path d="M4.1 7.4h15.8M4.1 16.6h15.8"/></svg></span><span class="vis-lbl">公開</span><span class="vis-sub">誰でも見れる</span>
+              <span class="vis-ico"><svg viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round"><circle cx="12" cy="12" r="9.2"/><ellipse cx="12" cy="12" rx="4.2" ry="9.2"/><line x1="2.8" y1="12" x2="21.2" y2="12"/><line x1="12" y1="2.8" x2="12" y2="21.2"/><path d="M4.1 7.4h15.8M4.1 16.6h15.8"/></svg></span><span class="vis-lbl" data-i18n="compose.vis.public.label">公開</span><span class="vis-sub" data-i18n="compose.vis.public.sub">誰でも見れる</span>
             </button>
             <button type="button" class="vis-seg-btn" data-vis="private" role="radio" aria-checked="false">
-              <span class="vis-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12.4a4.6 4.6 0 100-9.2 4.6 4.6 0 000 9.2zm0 1.8c-4.4 0-8 2.7-8 6v1.6c0 .4.3.7.7.7h14.6c.4 0 .7-.3.7-.7v-1.6c0-3.3-3.6-6-8-6z"/></svg></span><span class="vis-lbl">プライベート</span><span class="vis-sub">自分だけが見れる</span>
+              <span class="vis-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12.4a4.6 4.6 0 100-9.2 4.6 4.6 0 000 9.2zm0 1.8c-4.4 0-8 2.7-8 6v1.6c0 .4.3.7.7.7h14.6c.4 0 .7-.3.7-.7v-1.6c0-3.3-3.6-6-8-6z"/></svg></span><span class="vis-lbl" data-i18n="compose.vis.private.label">プライベート</span><span class="vis-sub" data-i18n="compose.vis.private.sub">自分だけが見れる</span>
             </button>
             <button type="button" class="vis-seg-btn" data-vis="keyed" role="radio" aria-checked="false">
-              <span class="vis-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><circle cx="17" cy="8.5" r="2.8"/><path d="M2 20c0-3.9 3.1-7 7-7s7 3.1 7 7v1H2v-1zm14 1v-1c0-1.7-.4-3.3-1.2-4.7.5-.1 1.1-.2 1.7-.2 3.1 0 5.5 2.5 5.5 5.5v.4H16z"/></svg></span><span class="vis-lbl">グループ</span><span class="vis-sub">キーを知る人のみ</span>
+              <span class="vis-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><circle cx="17" cy="8.5" r="2.8"/><path d="M2 20c0-3.9 3.1-7 7-7s7 3.1 7 7v1H2v-1zm14 1v-1c0-1.7-.4-3.3-1.2-4.7.5-.1 1.1-.2 1.7-.2 3.1 0 5.5 2.5 5.5 5.5v.4H16z"/></svg></span><span class="vis-lbl" data-i18n="compose.vis.keyed.label">グループ</span><span class="vis-sub" data-i18n="compose.vis.keyed.sub">キーを知る人のみ</span>
             </button>
           </div>
           <div id="key-input-wrap" class="key-input-wrap hidden">
-            <p class="key-input-label">グループキーを設定（空欄なら自動発行）</p>
+            <p class="key-input-label" data-i18n="compose.key.set_label">グループキーを設定（空欄なら自動発行）</p>
             <input id="compose-key" type="text" autocomplete="off"
                    spellcheck="false" maxlength="20"
                    list="my-keys-list"
+                   data-i18n-attr="placeholder:compose.key.placeholder"
                    placeholder="例: とんかつ / matsuri など（2〜20文字）" />
             <datalist id="my-keys-list"></datalist>
-            <p class="dim small key-input-hint">同じキーで複数の記憶をまとめられます。</p>
-            <p class="key-mode-label">投稿権限</p>
-            <div id="key-mode-wrap" class="key-mode-wrap" role="radiogroup" aria-label="投稿権限">
+            <p class="dim small key-input-hint" data-i18n="compose.key.hint">同じキーで複数の記憶をまとめられます。</p>
+            <p class="key-mode-label" data-i18n="compose.key.mode_label">投稿権限</p>
+            <div id="key-mode-wrap" class="key-mode-wrap" role="radiogroup" data-i18n-attr="aria-label:compose.key.mode_label" aria-label="投稿権限">
               <label class="key-mode-opt">
                 <input type="radio" name="key-mode" value="owner_only" checked />
-                <span>自分だけ投稿可能</span>
+                <span data-i18n="compose.key.mode_owner">自分だけ投稿可能</span>
               </label>
               <label class="key-mode-opt">
                 <input type="radio" name="key-mode" value="open" />
-                <span>誰でも投稿可能</span>
+                <span data-i18n="compose.key.mode_open">誰でも投稿可能</span>
               </label>
             </div>
             <p id="key-mode-status" class="dim small key-mode-status hidden"></p>
           </div>
         </div>
-        <button id="save-btn" class="place-btn wide" type="button">ピンする</button>
+        <button id="save-btn" class="place-btn wide" type="button" data-i18n="compose.save">ピンする</button>
       </div>
     </div>
   </div>
@@ -262,15 +263,15 @@
     <video id="ar-video" class="ar-video" autoplay playsinline muted></video>
     <div id="ar-overlay" class="ar-overlay"></div>
     <div class="ar-hud-top">
-      <button id="ar-back" class="chip back" type="button">← 戻る</button>
-      <span id="ar-count" class="chip ar-count">周辺: 0</span>
+      <button id="ar-back" class="chip back" type="button" data-i18n="ar.back">← 戻る</button>
+      <span id="ar-count" class="chip ar-count" data-i18n="ar.count_default">周辺: 0</span>
     </div>
     <div class="ar-hud-bottom">
-      <p id="ar-hint" class="ar-hint">端末をゆっくり動かして周囲を見渡してください</p>
+      <p id="ar-hint" class="ar-hint" data-i18n="ar.hint">端末をゆっくり動かして周囲を見渡してください</p>
     </div>
     <div id="ar-error" class="ar-error hidden">
       <p id="ar-error-msg"></p>
-      <button id="ar-error-back" class="primary" type="button">戻る</button>
+      <button id="ar-error-back" class="primary" type="button" data-i18n="common.back">戻る</button>
     </div>
   </section>
 
@@ -280,22 +281,29 @@
     <div class="sheet-panel" tabindex="-1">
       <div class="sheet-handle"></div>
       <header class="sheet-head">
-        <h2 class="sheet-title">マイページ</h2>
-        <button id="history-close" class="chip" type="button">閉じる</button>
+        <h2 class="sheet-title" data-i18n="history.title">マイページ</h2>
+        <button id="history-close" class="chip" type="button" data-i18n="common.close">閉じる</button>
       </header>
       <div class="history-tabs" role="tablist">
         <button id="history-tab-mine" class="history-tab active" type="button" role="tab" aria-selected="true">
-          <span class="history-tab-label">投稿</span>
+          <span class="history-tab-label" data-i18n="history.tab_mine">投稿</span>
           <span class="history-tab-caret" aria-hidden="true">▾</span>
         </button>
         <button id="history-tab-finds" class="history-tab" type="button" role="tab" aria-selected="false">
-          <span class="history-tab-label">お気に入り</span>
+          <span class="history-tab-label" data-i18n="history.tab_finds">お気に入り</span>
           <span class="history-tab-caret" aria-hidden="true">▾</span>
         </button>
       </div>
       <div id="history-sort-menu" class="history-sort-menu hidden" role="menu"></div>
       <div id="history-list" class="history-list"></div>
-      <p id="history-empty" class="history-empty dim hidden">まだピンした記憶はありません</p>
+      <p id="history-empty" class="history-empty dim hidden" data-i18n="history.empty_mine">まだピンした記憶はありません</p>
+      <div class="history-lang-row">
+        <span class="dim small" data-i18n="history.lang">言語</span>
+        <div class="lang-seg" role="radiogroup">
+          <button id="lang-ja" class="lang-seg-btn" type="button" data-lang="ja">日本語</button>
+          <button id="lang-en" class="lang-seg-btn" type="button" data-lang="en">English</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -305,14 +313,14 @@
     <div class="sheet-panel" tabindex="-1">
       <div class="sheet-handle"></div>
       <header class="sheet-head">
-        <h2 class="sheet-title">星の記録</h2>
-        <button id="admin-close" class="chip" type="button">閉じる</button>
+        <h2 class="sheet-title" data-i18n="admin.title">星の記録</h2>
+        <button id="admin-close" class="chip" type="button" data-i18n="common.close">閉じる</button>
       </header>
       <div class="admin-body">
-        <p id="admin-loading" class="dim small admin-loading">読み込み中…</p>
+        <p id="admin-loading" class="dim small admin-loading" data-i18n="admin.loading">読み込み中…</p>
         <div id="admin-content" class="hidden">
           <section class="admin-section">
-            <h3 class="admin-h">容量</h3>
+            <h3 class="admin-h" data-i18n="admin.h_capacity">容量</h3>
             <div class="admin-capacity">
               <div class="admin-capacity-bar">
                 <div id="admin-capacity-fill" class="admin-capacity-fill"></div>
@@ -322,16 +330,16 @@
             </div>
           </section>
           <section class="admin-section">
-            <h3 class="admin-h">投函の流れ <span class="dim small">（30日）</span></h3>
+            <h3 class="admin-h"><span data-i18n="admin.h_flow">投函の流れ</span> <span class="dim small" data-i18n="admin.h_flow_sub">（30日）</span></h3>
             <div class="admin-spark">
               <svg id="admin-sparkline" viewBox="0 0 300 80" preserveAspectRatio="none" aria-hidden="true"></svg>
               <p id="admin-spark-sub" class="dim small"></p>
             </div>
           </section>
           <section class="admin-section">
-            <h3 class="admin-h">地域 <span class="dim small">TOP10</span></h3>
+            <h3 class="admin-h"><span data-i18n="admin.h_region">地域</span> <span class="dim small" data-i18n="admin.h_region_sub">TOP10</span></h3>
             <ol id="admin-places" class="admin-places"></ol>
-            <p id="admin-places-empty" class="dim small hidden">まだ地名の記録はありません</p>
+            <p id="admin-places-empty" class="dim small hidden" data-i18n="admin.empty_places">まだ地名の記録はありません</p>
           </section>
         </div>
         <p id="admin-error" class="admin-error dim small hidden"></p>
@@ -342,14 +350,14 @@
   <!-- 記憶詳細（レーダーの点タップで開く） -->
   <div id="viewer" class="viewer hidden" role="dialog" aria-modal="true">
     <div id="viewer-locked" class="locked-card hidden">
-      <p class="locked-title">まだ近づいていない</p>
-      <p class="locked-sub">半径20mまで近づくと解放されます</p>
+      <p class="locked-title" data-i18n="viewer.locked_title">まだ近づいていない</p>
+      <p class="locked-sub" data-i18n="viewer.locked_sub">半径20mまで近づくと解放されます</p>
       <p id="viewer-distance" class="dim"></p>
     </div>
     <div id="viewer-open" class="hidden">
       <p id="viewer-counter" class="viewer-counter hidden" aria-live="polite"></p>
       <div class="viewer-flip-nav">
-        <button id="viewer-prev" class="viewer-nav-btn hidden" type="button" aria-label="前の記憶">‹</button>
+        <button id="viewer-prev" class="viewer-nav-btn hidden" type="button" data-i18n-attr="aria-label:viewer.prev" aria-label="前の記憶">‹</button>
         <div class="polaroid-flip" id="polaroid-flip">
           <div class="flip-inner">
             <div class="flip-face flip-front">
@@ -365,11 +373,11 @@
             </div>
           </div>
         </div>
-        <button id="viewer-next" class="viewer-nav-btn hidden" type="button" aria-label="次の記憶">›</button>
+        <button id="viewer-next" class="viewer-nav-btn hidden" type="button" data-i18n-attr="aria-label:viewer.next" aria-label="次の記憶">›</button>
       </div>
       <div class="viewer-actions">
         <div class="viewer-fav-row">
-          <button id="viewer-find" class="star-btn hidden" type="button" aria-pressed="false" aria-label="お気に入り" data-role="find">
+          <button id="viewer-find" class="star-btn hidden" type="button" aria-pressed="false" data-i18n-attr="aria-label:viewer.favorite" aria-label="お気に入り" data-role="find">
             <svg class="star-icon" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M12 2.5 L14.85 9.05 L22 9.75 L16.5 14.55 L18.2 21.5 L12 17.8 L5.8 21.5 L7.5 14.55 L2 9.75 L9.15 9.05 Z"/>
             </svg>
@@ -377,14 +385,14 @@
           </button>
         </div>
         <div class="viewer-bottom-row">
-          <button id="viewer-report" class="viewer-report hidden" type="button" aria-label="報告する">
+          <button id="viewer-report" class="viewer-report hidden" type="button" data-i18n-attr="aria-label:viewer.report" aria-label="報告する">
             <svg class="report-icon" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M5 3 L5 21" />
               <path d="M5 4 L17 4 L14 8 L17 12 L5 12 Z" />
             </svg>
-            <span>報告する</span>
+            <span data-i18n="viewer.report">報告する</span>
           </button>
-          <button id="viewer-delete" class="viewer-delete hidden" type="button" aria-label="回収する">
+          <button id="viewer-delete" class="viewer-delete hidden" type="button" data-i18n-attr="aria-label:viewer.pickup" aria-label="回収する">
             <svg class="delete-icon" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M12 3 L12 15" />
               <path d="M7 10 L12 15 L17 10" />
@@ -392,7 +400,7 @@
             </svg>
             <span class="viewer-delete-label"></span>
           </button>
-          <button id="viewer-close" class="viewer-close" type="button" aria-label="閉じる">✕ 閉じる</button>
+          <button id="viewer-close" class="viewer-close" type="button" data-i18n-attr="aria-label:common.close" aria-label="閉じる" data-i18n="viewer.close">✕ 閉じる</button>
         </div>
       </div>
     </div>
@@ -401,37 +409,40 @@
   <!-- グループキーの発行完了モーダル -->
   <div id="key-issued" class="modal hidden">
     <div class="modal-card key-issued-card">
-      <p class="key-issued-title">グループキーを発行しました</p>
-      <p class="dim small key-issued-desc">このグループキーを知っている人だけが、この記憶を見つけられます。</p>
-      <div id="key-issued-code" class="key-code" aria-label="グループキー">------</div>
+      <p class="key-issued-title" data-i18n="modal.key_issued.title">グループキーを発行しました</p>
+      <p class="dim small key-issued-desc" data-i18n="modal.key_issued.desc_owner">このグループキーを知っている人だけが、この記憶を見つけられます。</p>
+      <div id="key-issued-code" class="key-code" data-i18n-attr="aria-label:radar.key_placeholder" aria-label="グループキー">------</div>
       <div class="actions key-actions">
-        <button id="key-copy" class="ghost" type="button">コピー</button>
-        <button id="key-share" class="primary" type="button">共有</button>
+        <button id="key-copy" class="ghost" type="button" data-i18n="common.copy">コピー</button>
+        <button id="key-share" class="primary" type="button" data-i18n="common.share">共有</button>
       </div>
-      <button id="key-issued-close" class="text-btn" type="button">閉じる</button>
+      <button id="key-issued-close" class="text-btn" type="button" data-i18n="common.close">閉じる</button>
     </div>
   </div>
 
   <!-- 位置精度ガイド -->
   <div id="accuracy-prompt" class="modal hidden">
     <div class="modal-card accuracy-card">
-      <p class="accuracy-title">現在地が定まったら、ここにピンできます。</p>
-      <p class="accuracy-sub">WifiとBluetoothをONにしておくと尚良し。</p>
+      <p class="accuracy-title" data-i18n="modal.accuracy.title">現在地が定まったら、ここにピンできます。</p>
+      <p class="accuracy-sub" data-i18n="modal.accuracy.sub">WifiとBluetoothをONにしておくと尚良し。</p>
     </div>
   </div>
 
   <!-- 方位センサー許可プロンプト（iOS用） -->
   <div id="orient-prompt" class="modal hidden">
     <div class="modal-card">
-      <h3>方位センサーの利用</h3>
-      <p class="dim small">レーダーを端末の向きに合わせるため、方位センサーの使用を許可してください。</p>
+      <h3 data-i18n="modal.orient.title">方位センサーの利用</h3>
+      <p class="dim small" data-i18n="modal.orient.sub">レーダーを端末の向きに合わせるため、方位センサーの使用を許可してください。</p>
       <div class="actions">
-        <button id="orient-allow" class="primary" type="button">許可する</button>
+        <button id="orient-allow" class="primary" type="button" data-i18n="common.allow">許可する</button>
       </div>
     </div>
   </div>
 
   <script src="config.js"></script>
+  <script src="i18n/ja.js"></script>
+  <script src="i18n/en.js"></script>
+  <script src="i18n.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
