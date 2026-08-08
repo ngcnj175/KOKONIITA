@@ -359,20 +359,6 @@ html, body {
   stroke: url(#ring-depth);
   stroke-width: 0.6;
 }
-.sweep-ring {
-  fill: none;
-  stroke: #7CE85A;
-  stroke-width: 1.4;
-  opacity: 0;
-  pointer-events: none;
-  filter: drop-shadow(0 0 2.5px rgba(124, 232, 90, 0.55));
-  animation: radar-sweep 3s linear infinite;
-}
-@keyframes radar-sweep {
-  0%   { r: 0;  opacity: 0;    stroke-width: 1.6; }
-  8%   { opacity: 0.6; }
-  100% { r: 98; opacity: 0;    stroke-width: 0.35; }
-}
 .range-chip {
   position: absolute;
   top: 50%;
@@ -441,25 +427,16 @@ html, body {
 .memory-dot {
   fill: var(--ink);
   cursor: default;
-  pointer-events: all;
-  opacity: 0;
-  animation: radar-dot 3s cubic-bezier(.2,.6,.2,1) infinite;
 }
 .memory-dot.near {
   fill: #FF9A00;
   cursor: pointer;
   filter: drop-shadow(0 0 3px rgba(255, 154, 0, 0.7));
+  animation: near-pulse 1.8s ease-in-out infinite;
 }
-@keyframes radar-dot {
-  0%   { opacity: 0; }
-  6%   { opacity: 1; }
-  22%  { opacity: 1; }
-  96%  { opacity: 0.04; }
-  100% { opacity: 0; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .sweep-ring { animation: none; opacity: 0; }
-  .memory-dot { animation: none; opacity: 1; }
+@keyframes near-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
 }
 .memory-dot.cluster {
   fill: var(--ink);
