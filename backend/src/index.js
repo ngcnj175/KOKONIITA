@@ -36,7 +36,7 @@ app.use("/api/*", async (c, next) => {
 });
 
 // ---------- セッション ----------
-const SESSION_COOKIE = "kk_sess";
+const SESSION_COOKIE = "kp_sess";
 const SESSION_TTL_SEC = 60 * 60 * 24 * 30; // 30日
 
 function cookieOpts(maxAge) {
@@ -215,7 +215,7 @@ app.get("/api/me", async (c) => {
 
 app.get("/api/auth/google", (c) => {
   const state = crypto.randomUUID();
-  setCookie(c, "kk_oauth_state", state, {
+  setCookie(c, "kp_oauth_state", state, {
     httpOnly: true, secure: true, sameSite: "Lax", path: "/", maxAge: 600,
   });
   const params = new URLSearchParams({
@@ -232,11 +232,11 @@ app.get("/api/auth/google", (c) => {
 app.get("/api/auth/google/callback", async (c) => {
   const code = c.req.query("code");
   const state = c.req.query("state");
-  const cookieState = getCookie(c, "kk_oauth_state");
+  const cookieState = getCookie(c, "kp_oauth_state");
   if (!code || !state || state !== cookieState) {
     return c.text("bad state", 400);
   }
-  deleteCookie(c, "kk_oauth_state", { path: "/" });
+  deleteCookie(c, "kp_oauth_state", { path: "/" });
 
   const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
@@ -277,7 +277,7 @@ app.get("/api/auth/google/callback", async (c) => {
 
   // 3rd-party Cookieがブロックされる環境向けに、URLフラグメント経由でトークンも渡す
   const base = c.env.FRONTEND_URL || (c.env.FRONTEND_ORIGIN + "/");
-  return c.redirect(`${base}#kk_token=${encodeURIComponent(token)}`);
+  return c.redirect(`${base}#kp_token=${encodeURIComponent(token)}`);
 });
 
 app.post("/api/auth/logout", async (c) => {

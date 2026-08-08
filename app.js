@@ -297,7 +297,7 @@ async function reportMemory(id) {
 }
 
 // 起動時: 通報削除された自分の投稿を1回だけトースト通知。既読 id は localStorage 管理。
-const REMOVAL_ACK_STORAGE = "kk_removal_ack_v1";
+const REMOVAL_ACK_STORAGE = "kiokupin.removal_ack.v1";
 function loadRemovalAcks() {
   try {
     const raw = localStorage.getItem(REMOVAL_ACK_STORAGE);
@@ -348,7 +348,7 @@ async function updateMemoryVisibility(id, visibility) {
 function goToLogin() {
   // ポップアップで開けば、メイン画面の位置情報／方位センサー許可が保持される
   const url = apiUrl("/api/auth/google");
-  const w = window.open(url, "kk_oauth", "width=480,height=640,menubar=no,toolbar=no");
+  const w = window.open(url, "kp_oauth", "width=480,height=640,menubar=no,toolbar=no");
   if (!w || w.closed || typeof w.closed === "undefined") {
     // ポップアップブロック等：従来のフルリダイレクトにフォールバック
     window.location.href = url;
@@ -356,7 +356,7 @@ function goToLogin() {
 }
 function onLoginMessage(e) {
   if (e.origin !== location.origin) return;
-  if (e.data?.type !== "kk_login" || !e.data.token) return;
+  if (e.data?.type !== "kp_login" || !e.data.token) return;
   setStoredToken(e.data.token);
   refreshMe().then(() => {
     if (_currentUser) {
@@ -2918,10 +2918,10 @@ async function onViewerReport() {
 document.addEventListener("DOMContentLoaded", () => {
   // 自分が OAuth ポップアップとして開かれ、トークン付きで戻ってきたケース。
   // すぐに親へトークンを渡して閉じる（初期化処理はスキップ）。
-  if (window.opener && window.opener !== window && location.hash.startsWith("#kk_token=")) {
-    const t = decodeURIComponent(location.hash.slice("#kk_token=".length));
+  if (window.opener && window.opener !== window && location.hash.startsWith("#kp_token=")) {
+    const t = decodeURIComponent(location.hash.slice("#kp_token=".length));
     try {
-      window.opener.postMessage({ type: "kk_login", token: t }, location.origin);
+      window.opener.postMessage({ type: "kp_login", token: t }, location.origin);
     } catch {}
     // 数百msだけ待ってから閉じる（postMessage 到達の保険）
     setTimeout(() => { try { window.close(); } catch {} }, 200);
@@ -2942,8 +2942,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // OAuthコールバックから戻ってきた場合、URLフラグメントのトークンを保存
   let justLoggedIn = false;
-  if (location.hash.startsWith("#kk_token=")) {
-    const t = decodeURIComponent(location.hash.slice("#kk_token=".length));
+  if (location.hash.startsWith("#kp_token=")) {
+    const t = decodeURIComponent(location.hash.slice("#kp_token=".length));
     setStoredToken(t);
     history.replaceState(null, "", location.pathname + location.search);
     justLoggedIn = true;
