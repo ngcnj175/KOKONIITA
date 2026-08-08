@@ -361,18 +361,17 @@ html, body {
 }
 .sweep-ring {
   fill: none;
-  stroke: #7CE85A;
-  stroke-width: 1.4;
+  stroke: url(#ring-depth);
+  stroke-width: 0.9;
   opacity: 0;
   pointer-events: none;
   transform-origin: center;
   transform-box: fill-box;
-  filter: drop-shadow(0 0 2.5px rgba(124, 232, 90, 0.55));
-  animation: radar-sweep 3s linear infinite;
+  animation: radar-sweep 1.6s linear infinite;
 }
 @keyframes radar-sweep {
   0%   { transform: scale(0);    opacity: 0; }
-  8%   { opacity: 0.6; }
+  10%  { opacity: 1; }
   100% { transform: scale(1);    opacity: 0; }
 }
 .range-chip {
@@ -445,7 +444,7 @@ html, body {
   cursor: default;
   pointer-events: all;
   opacity: 0;
-  animation: radar-dot 3s cubic-bezier(.2,.6,.2,1) infinite;
+  animation: radar-dot 1.6s cubic-bezier(.2,.6,.2,1) infinite;
 }
 .memory-dot.near {
   fill: #FF9A00;
@@ -454,8 +453,8 @@ html, body {
 }
 @keyframes radar-dot {
   0%   { opacity: 0; }
-  6%   { opacity: 1; }
-  22%  { opacity: 1; }
+  8%   { opacity: 1; }
+  20%  { opacity: 1; }
   96%  { opacity: 0.04; }
   100% { opacity: 0; }
 }
